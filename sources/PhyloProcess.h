@@ -1,0 +1,504 @@
+
+/********************
+
+PhyloBayes MPI. Copyright 2010-2013 Nicolas Lartillot, Nicolas Rodrigue, Daniel Stubbs, Jacques Richer.
+
+PhyloBayes is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+PhyloBayes is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+See the GNU General Public License for more details. You should have received a copy of the GNU General Public License
+along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
+
+**********************/
+
+
+#ifndef PHYLOPROCESS_H
+#define PHYLOPROCESS_H
+
+#include "SequenceAlignment.h"
+#include "CodonSequenceAlignment.h"
+#include "ZippedSequenceAlignment.h"
+
+#include "SubstitutionProcess.h"
+#include "BranchProcess.h"
+
+#include "Parallel.h"
+
+#include <map>
+#include <vector>
+
+class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchProcess {
+
+	public:
+
+	virtual void WaitLoop();
+
+	virtual void SlaveExecute(MESSAGE);
+
+        virtual void SlaveRoot(int);
+	virtual void SlaveGibbsSPRScan(int,int);
+	virtual void SlaveLikelihood(int,int);
+	virtual void SlavePropose(int,double);
+	virtual void SlaveRestore(int);
+	virtual void SlaveReset(int,bool);
+	virtual void SlaveSMultiply(int,bool);
+	virtual void SlaveMultiply(int,int,bool);
+	virtual void SlaveInitialize(int,int,bool);
+	virtual void SlavePropagate(int,int,bool,double);
+	virtual void SlaveDetach(int,int);
+	virtual void SlaveAttach(int,int,int,int);
+
+	// virtual void SlaveUpdate();
+
+	// default constructor: pointers set to nil
+	PhyloProcess() :  siteratesuffstatcount(0), siteratesuffstatbeta(0), branchlengthsuffstatcount(0), branchlengthsuffstatbeta(0), condflag(false), data(0), myid(-1), nprocs(0), size(0), version("1.6"), totaltime(0)  {} // smin(0), smax(0) {}
+	virtual ~PhyloProcess() {}
+
+	string GetVersion() {return version;}
+	/*
+	int GetSiteMin(int proc);
+	int GetSiteMax(int proc);
+	*/
+
+	// performs one full cycle of MCMC
+	// returns average success rate
+	virtual double Move(double tuning = 1.0) = 0;
+
+
+	// sample from prior
+	virtual void Sample()	{
+		SampleRate();
+		SampleLength();
+		SampleProfile();
+	}
+
+	// print out the first line (header) of the trace file
+	virtual void TraceHeader(ostream& os) = 0;
+
+	// print out one line of trace (summary statistics such as logprob, treelength, totaltime, etc)
+	virtual void Trace(ostream& os) = 0;
+
+	virtual void Monitor(ostream& os)  {
+		os << "matrix uni" << '\t' << SubMatrix::GetUniSubCount() << '\n';
+		os << "inf prob  " << '\t' << GetInfProbCount() << '\n';
+		os << "stat inf  " << '\t' << GetStatInfCount() << '\n';
+	}
+
+	virtual void ToStreamHeader(ostream& os)	{
+		os << version << '\n';
+		propchrono.ToStream(os);
+		chronototal.ToStream(os);
+	}
+
+	virtual void FromStreamHeader(istream& is)	{
+		is >> version;
+		if (atof(version.substr(0,3).c_str()) < 1.2)	{
+			cerr << "error: version is too old : " << version << '\n';
+			exit(1);
+		}
+		propchrono.FromStream(is);
+		chronototal.FromStream(is);
+	}
+
+	virtual void ToStream(ostream& os)	{
+		cerr << "error: in phyloprocess::ToStream\n";
+		exit(1);
+	}
+
+	virtual void FromStream(istream& is)	{
+		cerr << "error: in phyloprocess::FromStream\n";
+		exit(1);
+	}
+
+	// translation tables : from pointers of type Link* Branch* and Node* to their index and vice versa
+	// this translation is built when the Tree::RegisterWithTaxonSet method is called (in the model, in PB.cpp)
+	Link* GetLink(int linkindex)	{
+		if (! linkindex)	{
+			//return GetRoot();
+			return 0;
+		}
+		return GetTree()->GetLink(linkindex);
+	}
+
+	Link* GetLinkForGibbs(int linkindex)	{
+		if (! linkindex)	{
+			return GetRoot();
+		}
+		return GetTree()->GetLink(linkindex);
+	}
+
+	const Branch* GetBranch(int branchindex)	{
+		return GetTree()->GetBranch(branchindex);
+	}
+
+	const Node* GetNode(int nodeindex)	{
+		return GetTree()->GetNode(nodeindex);
+	}
+
+
+	int GetLinkIndex(const Link* link)	{
+		return link ? link->GetIndex() : 0;
+	}
+
+	int GetBranchIndex(const Branch* branch)	{
+		if (! branch)	{
+			cerr << "error in get branch index\n";
+			exit(1);
+		}
+		return branch->GetIndex();
+	}
+
+	int GetNodeIndex(const Node* node)	{
+		return node->GetIndex();
+	}
+
+	/*
+	// not useful. link->GetIndex() is used instead (same for branches and nodes)
+	int GetBranchIndex(const Branch* branch);
+	int GetNodeIndex(const Node* node);
+	*/
+
+	const TaxonSet* GetTaxonSet() const {return data->GetTaxonSet();}
+
+	void GlobalUpdateConditionalLikelihoods();
+	double GlobalComputeNodeLikelihood(const Link* from, int auxindex = -1);
+
+	protected:
+
+	SequenceAlignment* GetData() {return data;}
+	StateSpace* GetStateSpace() {return data->GetStateSpace();}
+	//virtual int GetNstate() {return data->GetNstate();}
+
+	// returns total number of taxa in the analysis
+	int GetNtaxa()	{
+		return GetData()->GetNtaxa();
+	}
+
+	double* GetEmpiricalFreq()	{
+		return empfreq;
+	}
+
+	// the following methods are particularly important for MPI
+	// Create / Delete / Unfold and Collapse should probably be specialized
+	// according to whether this is a slave or the master processus
+	virtual void Create(Tree* intree, SequenceAlignment* indata, int indim);
+	virtual void Delete();
+
+	public :
+
+	virtual void Unfold();
+	virtual void Collapse();
+
+	void GlobalBroadcastTree();
+	void SlaveBroadcastTree();
+
+	// MPI Global dispatcher functions
+	// all methods with a "Global" prefix are the ones through which MPI parallelization is supposed to go
+	// these methods should dispatch the computation over slaves, and possibly, collect the result of the computation
+	// in the non MPI version, they just call their non MPI counterpart (or nearly so)
+
+	public: 
+
+	void QuickUpdate()	{
+
+		MPI_Status stat;
+		MESSAGE signal = BCAST_TREE;
+		MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+		GlobalBroadcastTree();
+		
+		GlobalCollapse();
+		GlobalUnfold();
+	}
+
+	virtual void SetDataFromLeaves()	{
+		for (int i=sitemin; i<sitemax; i++)	{
+			RecursiveSetDataFromLeaves(i,GetRoot());
+		}
+	}
+
+	void RecursiveSetDataFromLeaves(int site, const Link* from)	{
+		if (from->isLeaf())	{
+			if (data->GetBKState(GetNodeIndex(from->GetNode()),site) != -1)	{
+				data->SetState(GetNodeIndex(from->GetNode()),site,nodestate[GetNodeIndex(from->GetNode())][site]);
+			}
+		}
+		for (const Link* link=from->Next(); link!=from; link=link->Next())	{
+			RecursiveSetDataFromLeaves(site, link->Out());
+		}
+	}
+
+	void GlobalUnclamp();
+	void GlobalRestoreData();
+	void GlobalSetDataFromLeaves();
+	double GlobalGetMeanDiversity();
+	void SlaveUnclamp();
+	void SlaveRestoreData();
+	void SlaveSetDataFromLeaves();
+	void SlaveGetMeanDiversity();
+
+	void GlobalSetNodeStates();
+	void SlaveSetNodeStates();
+	void WriteNodeStates(ostream& os, const Link* from);
+
+	virtual void ReadPB(int argc, char* argv[]);
+	virtual void Read(string name, int burnin, int every, int until);
+	virtual void ReadSiteLogL(string name, int burnin, int every, int until);
+	virtual void ReadCV(string testdatafile, string name, int burnin, int every, int until, int iscodon = 0, GeneticCodeType codetype = Universal);
+	virtual void PostPred(int ppredtype, string name, int burnin, int every, int until);
+
+	// The following methids are here to write the mappings.
+	void ReadMap(string name, int burnin, int every, int until);
+	void ReadPostPredMap(string name, int burnin, int every, int until);
+	void GlobalWriteMappings(string name);
+	virtual void SlaveWriteMappings();
+	void WriteTreeMapping(ostream& os, const Link* from, int i);
+
+
+
+	virtual void GlobalSetTestData();
+	virtual void SlaveSetTestData();
+	void SetTestSiteMinAndMax();
+	virtual void SlaveComputeCVScore() {
+		cerr << "slave compute cv score\n";
+		exit(1);
+	}
+	
+	virtual void SlaveComputeSiteLogL() {
+		cerr << "slave compute site logL\n";
+		exit(1);
+	}
+	
+	double GetLogProb()	{
+		return GetLogPrior() + GetLogLikelihood();
+	}
+
+	double GetLogPrior()	{
+		return 0;
+	}
+
+	double GetLogLikelihood()	{
+		return logL;
+	}
+
+
+	virtual void GlobalUnfold();
+	virtual void GlobalCollapse();
+
+
+	void GlobalReset(const Link* from, bool condalloc = false);
+	void GlobalMultiply(const Link* from, const Link* to, bool condalloc = false);
+	void GlobalMultiplyByStationaries(const Link* from, bool condalloc = false);
+	void GlobalInitialize(const Link* from, const Link* link, bool condalloc = false);
+
+	void GlobalPropagate(const Link* from, const Link* to, double time, bool condalloc = false);
+	double GlobalProposeMove(const Branch* branch, double tuning);
+	void GlobalRestore(const Branch* branch);
+
+	void GlobalRootAtRandom();
+	Link* GlobalDetach(Link* down, Link* up);
+	// void GlobalDetach(Link* down, Link* up);
+	void GlobalAttach(Link* down, Link* up, Link* fromdown, Link* fromup);
+
+	//NNI functions ( in NNI.cpp )
+	void RecursiveGibbsNNI(Link* from, double tuning, int type, int& success, int& moves);
+	double GibbsNNI(double tuning, int);
+	int  GlobalNNI(Link*,double,int);
+	void GlobalKnit(Link*);
+	void GlobalPropagateOverABranch(Link*);
+	void SlaveNNI(Link*,int);
+	void PropagateOverABranch(const Link*);
+	int SlaveSendNNILikelihood(Link*);
+	double SendRandomBranches(Link*,double,Link**&, int);
+	double MoveTopo(int spr, int nni);
+
+	// MCMC on branch lengths
+	double BranchLengthMove(double tuning);
+	double NonMPIBranchLengthMove(double tuning);
+
+	// MCMC on topology
+	double GibbsSPR(int nrep);
+	double OldMPIGibbsSPR(int nrep);
+
+	void CheckLikelihood();
+	void GlobalCheckLikelihood();
+
+	virtual void CreateSuffStat();
+	virtual void DeleteSuffStat();
+
+	// if  i == -1 then create auxiliary array, otherwise use condlmap[auxindex] as the auxiliary array
+	double ComputeNodeLikelihood(const Link* from, int auxindex = -1);
+
+	// assumes that rate allocations have already been defined
+	// and that conditional likelihoods are updated
+	// those conditional likelihoods will be corrupted
+	void SampleNodeStates();
+	void SampleNodeStates(const Link* from, double*** aux);
+
+	// assumes that states at nodes have been sampled (using ResampleState())
+	void SampleSubstitutionMappings(const Link* from);
+
+	// conditional likelihood propagations
+	void PostOrderPruning(const Link* from, double*** aux);
+	void PreOrderPruning(const Link* from, double*** aux);
+	void RecursiveComputeLikelihood(const Link* from, int auxindex, vector<double>& logl);
+	void GlobalRecursiveComputeLikelihood(const Link* from, int auxindex, vector<double>& logl);
+
+	double RecursiveBranchLengthMove(const Link* from, double tuning, int& n);
+	double RecursiveNonMPIBranchLengthMove(const Link* from, double tuning, int& n);
+	double LocalBranchLengthMove(const Link* from, double tuning);
+	double LocalNonMPIBranchLengthMove(const Link* from, double tuning);
+
+
+
+	int GibbsSPR();
+	// double GibbsSPR();
+	void GlobalGibbsSPRScan(Link* down, Link* up, double* loglarray);
+	void RecursiveGibbsSPRScan(Link* from, Link* fromup, Link* down, Link* up, double* loglarray, int& n);
+	void RecursiveGibbsFillMap(Link* from, Link* fromup, map<pair<Link*,Link*>,double>& loglmap, double* loglarray, int& n);
+
+	double OldMPIGibbsSPR();
+	void RecursiveOldMPIGibbsSPRScan(Link* from, Link* fromup, Link* down, Link* up, map<pair<Link*,Link*>,double>& loglmap);
+
+	double NonMPIGibbsSPR();
+	void RecursiveNonMPIGibbsSPRScan(Link* from, Link* fromup, Link* down, Link* up, map<pair<Link*,Link*>,double>& loglmap);
+
+	// various protected accessors
+	// used for computation and maintenance from within PhyloProcess classes
+	const int* GetData(int index)	{
+		return data->GetState(index);
+	}
+
+	const int* GetData(const Link* from)	{
+		if (! from->isLeaf())	{
+			cerr << "error in PhyloProcess::GetData\n";
+			exit(1);
+		}
+		return data->GetState(from->GetNode()->GetIndex());
+	}
+
+	/*
+	int GetData(const Link* from, int site)	{
+		return GetData(from)[site];
+	}
+	*/
+
+	int* GetStates(const Node* node)	{
+		return nodestate[GetNodeIndex(node)];
+	}
+
+	/*
+	int GetState(const Node* node, int site)	{
+		return nodestate[node][site];
+	}
+
+	void SetState(const Node* node, int site, int state)	{
+		nodestate[node][site] = state;
+	}
+
+	BranchSitePath* GetBranchSitePath(const Branch* branch, int site)	{
+		return submap[branch][site];
+	}
+	*/
+
+	void CreateConditionalLikelihoods();
+	void DeleteConditionalLikelihoods();
+	void UpdateConditionalLikelihoods();
+
+	double*** GetConditionalLikelihoodVector(const Link* link)	{
+		return condlmap[GetLinkIndex(link)];
+	}
+
+	void CreateMappings();
+	void DeleteMappings();
+
+	void CreateNodeStates();
+	void DeleteNodeStates();
+	
+	// sufficient statistics for rates and branch lengths (do not depend on the model)
+	int GetSiteRateSuffStatCount(int site) {return siteratesuffstatcount[site];}
+	double GetSiteRateSuffStatBeta(int site) {return siteratesuffstatbeta[site];}
+
+	/*
+	int GetBranchLengthSuffStatCount(const Branch* branch) {return branchlengthsuffstatcount[GetBranchIndex(branch)];}
+	double GetBranchLengthSuffStatBeta(const Branch* branch) {return branchlengthsuffstatbeta[GetBranchIndex(branch)];}
+	*/
+
+	int GetBranchLengthSuffStatCount(int index) {return branchlengthsuffstatcount[index];}
+	double GetBranchLengthSuffStatBeta(int index) {return branchlengthsuffstatbeta[index];}
+
+	void GlobalUpdateSiteRateSuffStat();
+	void GlobalUpdateBranchLengthSuffStat();
+
+	void SlaveUpdateSiteRateSuffStat();
+	void SlaveUpdateBranchLengthSuffStat();
+
+	virtual double GetObservedCompositionalHeterogeneity()	{
+		return data->CompositionalHeterogeneity(0);
+	}
+
+	virtual double GetCompositionalHeterogeneity()	{
+		return data->CompositionalHeterogeneity(0);
+	}
+
+	virtual int GetNprocs() {
+		return nprocs;
+	}
+	virtual int GetMyid() {
+		return myid;
+	}
+
+	double**** condlmap;
+	BranchSitePath*** submap;
+	int** nodestate;
+
+	// sufficient statistics for rates and branch lengths (do not depend on the model)
+	int* siteratesuffstatcount;
+	double* siteratesuffstatbeta;
+	// map<const Branch*, int> branchlengthsuffstatcount;
+	// map<const Branch*, double> branchlengthsuffstatbeta;
+	int* branchlengthsuffstatcount;
+	double* branchlengthsuffstatbeta;
+
+	bool condflag;
+
+	SequenceAlignment* data;
+	string datafile;
+
+	double* empfreq;
+
+	Chrono propchrono;
+	Chrono chronototal;
+	/*
+	Chrono chronopruning;
+	Chrono chronosuffstat;
+	Chrono chronocollapse;
+	Chrono chronounfold;
+	*/
+
+	double* loglarray;
+
+	// MPI
+	int myid,nprocs;
+
+	int size;
+	void IncSize()	{size++;}
+	int GetSize() {return size;}
+	void SetSize(int insize) {size = insize;}
+
+	double GetNormFactor() {return GetNormalizationFactor();}
+
+	string version;
+	double totaltime;
+
+	SequenceAlignment* testdata;
+	int testnsite;
+	int testsitemin;
+	int testsitemax;
+	int bksitemax;
+};
+
+
+
+#endif
