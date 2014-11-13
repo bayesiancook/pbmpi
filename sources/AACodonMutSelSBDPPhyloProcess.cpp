@@ -392,6 +392,7 @@ void AACodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
 	int cv = 0;
 	int sel = 0;
 	int map = 0;
+	int mapcalc = 0;
 	string testdatafile = "";
 
 	try	{
@@ -408,6 +409,9 @@ void AACodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
 			}
 			else if (s == "-map")	{
 				map = 1;
+			}
+			else if (s == "-mapcalc")	{
+				mapcalc = 1;
 			}
 			else if (s == "-cv")	{
 				cv = 1;
@@ -465,11 +469,9 @@ void AACodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
 	if (map)	{
 		ReadMap(name,burnin,every,until);
 	}
-	/*
-	else if (nonsynreadmap)	{
-		NonSynReadMap(name,burnin,every,until);
+	else if (mapcalc)	{
+		ReadMapStats(name,burnin,every,until,AACodonMutSelProfileProcess::statespace);
 	}
-	*/
 	else if (cv)	{
 		ReadCV(testdatafile,name,burnin,every,until,1,codetype);
 	}
@@ -483,163 +485,6 @@ void AACodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
 		Read(name,burnin,every,until);
 	}
 }
-
-/*
-double AACodonMutSelSBDPPhyloProcess::GlobalGetNonSynNumber()	{
-
-	// send signal
-	MPI_Status stat;
-	MESSAGE signal = GETNONSYN;
-	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
-
-	// collect
-
-	double total = 0;
-	for(int i=0; i<GetNprocs()-1; ++i) {
-		double tmp = 0;
-		MPI_Recv(&tmp,1,MPI_DOUBLE,i+1,TAG1,MPI_COMM_WORLD,&stat);
-		total += tmp;
-	}
-	cerr << total << '\n';
-	return total/GetNsite();
-}
-
-void AACodonMutSelSBDPPhyloProcess::SlaveGetNonSynNumber()	{
-
-	// sum over sites
-	double nnonsyn = 0;
-	for (int i=0; i<GetNsite(); i++)	{
-		nnonsyn += GetNonSynNumber(GetRoot());
-	}
-
-	// send
-	MPI_Send(nnonsyn,1,MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
-}
-
-double AACodonMutSelPhyloProcess::GetNonSynNumber(const Link* from, int site){
-
-	int finalstate = 0;
-	if(from->isRoot()){
-		
-	}
-	else{
-		BranchSitePath* mybsp = submap[GetBranchIndex(from->GetBranch())][i];
-		double l = GetLength(from->GetBranch());
-		os << '_' << GetStateSpace()->GetState(mybsp->Last()->GetState());
-		for(Plink* plink = mybsp->Last(); plink ; plink = plink->Prev()){
-			os << ':' << plink->GetRelativeTime() * l << ':' << GetStateSpace()->GetState(plink->GetState());
-		}
-	}
-
-	for (const Link* link=from->Next(); link!=from; link=link->Next()){
-		total += GetNonSynNumber(link->Out(),site);
-	}
-}
-
-void AACodonMutSelSBDPPhyloProcess::NonSynReadMap(string name, int burnin, int every, int until){
-  	ifstream is((name + ".chain").c_str());
-	if (!is)	{
-		cerr << "error: no .chain file found\n";
-		exit(1);
-	}
-	cerr << "burnin : " << burnin << "\n";
-	cerr << "until : " << until << '\n';
-	int i=0;
-	while ((i < until) && (i < burnin))	{
-		FromStream(is);
-		i++;
-	}
-	int samplesize = 0;
-
-	double mean = 0;
-	double var = 0;
-	double meanpost = 0;
-	double varpost = 0;
-	double meanppred = 0;
-	double varppred = 0;
-	double pp = 0;
-
-	while (i < until)	{
-		cerr << ".";
-		cerr.flush();
-		samplesize++;
-		FromStream(is);
-		i++;
-
-		// prepare file for ancestral node states
-		ostringstream s;
-		// s << name << "_" << samplesize << ".nodestates";
-		ofstream sos(s.str().c_str());
-
-		MPI_Status stat;
-		MESSAGE signal = BCAST_TREE;
-		MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
-		GlobalBroadcastTree();
-		GlobalCollapse();
-
-		// write posterior mappings
-		// GlobalWriteMappings(name);
-		double post = GlobalGetNonSynNumber();
-
-		// write posterior ancestral node states
-
-		GlobalUnfold();
-
-		//Posterior Prededictive Mappings
-		GlobalUnclamp();
-		GlobalCollapse();
-		GlobalSetDataFromLeaves();
-
-		// write posterior predictive mappings
-		// GlobalWriteMappings(name);
-		double ppred = GlobalGetNonSynNumber();
-
-		sos << post << '\t' << ppred << '\n';
-		if (post > ppred)	{
-			pp++;
-		}
-		double tmp = post-ppred;
-		mean += tmp;
-		var += tmp*tmp;
-		meanpost += post;
-		varpost += post*post;
-		meanppred += ppred;
-		varppred += ppred*ppred;
-
-		// write posterior predictive ancestral node states
-
-		GlobalRestoreData();
-		GlobalUnfold();
-
-		int nrep = 1;
-		while ((i<until) && (nrep < every))	{
-			FromStream(is);
-			i++;
-			nrep++;
-		}
-	}
-	cerr << '\n';
-
-	// normalize statistics
-	mean /= samplesize;
-	var /= samplesize;
-	var -= mean * mean;
-	meanpost /= samplesize;
-	varpost /= samplesize;
-	varpost -= meanpost * meanpost;
-	meanppred /= samplesize;
-	varppred /= samplesize;
-	varppred -= meanppred * meanppred;
-	pp /= samplesize;
-
-	cerr << '\n';
-	cerr << "mean post : " << meanpost << " +/- " sqrt(varpost) << '\n';
-	cerr << "mean post : " << meanpost << " +/- " sqrt(varpost) << '\n';
-	cerr << "mean post : " << meanpost << " +/- " sqrt(varpost) << '\n';
-	cerr << "post pred pvalue : << pp << '\n';
-	cerr << '\n';
-}
-*/
 
 void AACodonMutSelSBDPPhyloProcess::Read(string name, int burnin, int every, int until)	{
 

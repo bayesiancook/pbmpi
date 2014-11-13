@@ -105,6 +105,10 @@ class CodonStateSpace : public StateSpace	{
 
 	int GetDegeneracy(int codon);
 
+	int GetGeneticCodeType()	{
+		return code;
+	}
+
 	int GetNstop()	{
 		return Nstop;
 	}

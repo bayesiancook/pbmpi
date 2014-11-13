@@ -19,6 +19,7 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 
 #include "SequenceAlignment.h"
 #include "CodonSequenceAlignment.h"
+#include "CodonSubMatrix.h"
 #include "ZippedSequenceAlignment.h"
 
 #include "SubstitutionProcess.h"
@@ -248,12 +249,18 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	virtual void ReadCV(string testdatafile, string name, int burnin, int every, int until, int iscodon = 0, GeneticCodeType codetype = Universal);
 	virtual void PostPred(int ppredtype, string name, int burnin, int every, int until);
 
-	// The following methids are here to write the mappings.
+	// The following methods are here to write the mappings.
 	void ReadMap(string name, int burnin, int every, int until);
+	void ReadMapStats(string name, int burnin, int every, int until, CodonStateSpace* codonstatespace);
 	void ReadPostPredMap(string name, int burnin, int every, int until);
 	void GlobalWriteMappings(string name);
+	int GlobalMappingStats(CodonStateSpace* codonstatespace);
 	virtual void SlaveWriteMappings();
+	virtual void SlaveMappingStats(int codetype);
 	void WriteTreeMapping(ostream& os, const Link* from, int i);
+
+	int CountNonSynMapping(const Link* from, int i, CodonStateSpace* codonstatespace);
+	int NonSynMapping(CodonStateSpace* codonstatespace);
 
 
 
