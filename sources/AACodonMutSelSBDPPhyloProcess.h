@@ -281,6 +281,13 @@ class AACodonMutSelSBDPPhyloProcess : public virtual AACodonMutSelSBDPSubstituti
 
 	virtual void ReadPB(int argc, char* argv[]);
 	void Read(string name, int burnin, int every, int until);
+	void ReadMapStats(string name, int burnin, int every, int until);
+	//int CountNonSynMapping(const Link* from, int i);
+	int CountNonSynMapping(int i);
+	int CountNonSynMapping();
+	int GlobalNonSynMapping();
+	virtual void SlaveNonSynMapping();
+
 	// primary scheduler
 
 	double Move(double tuning = 1.0)	{
