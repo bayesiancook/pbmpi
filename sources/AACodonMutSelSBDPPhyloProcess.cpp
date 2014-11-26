@@ -1160,9 +1160,9 @@ int AACodonMutSelSBDPPhyloProcess::CountNonSynMapping(int i)	{
 	int count = 0;
 	for(int k=0; k<GetNstate(); ++k) {
 		for(int l=0; l<GetNstate(); ++l) {
-			if (!AACodonMutSelProfileProcess::statespace->Synonymous(k, l)) {
+		// 	if (!AACodonMutSelProfileProcess::statespace->Synonymous(k, l)) {
 				count+=sitepaircount[i][pair<int,int>(k,l)];
-			}
+		//	}
 		}
 	}
 	return count;

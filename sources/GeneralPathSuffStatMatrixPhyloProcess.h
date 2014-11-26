@@ -64,6 +64,10 @@ class GeneralPathSuffStatMatrixPhyloProcess : public virtual MatrixPhyloProcess,
 	void UpdateBranchLengthSuffStat();
 	void UpdateSiteProfileSuffStat();
 
+	int CountMapping(int site);
+	// int CountMapping();
+	// int GlobalCountMapping();
+
 	int* siterootstate;
 	map< pair<int,int>, int>* sitepaircount;
 	map<int,double>* sitewaitingtime;

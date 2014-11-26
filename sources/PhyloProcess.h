@@ -434,6 +434,12 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	void SlaveUpdateSiteRateSuffStat();
 	void SlaveUpdateBranchLengthSuffStat();
 
+	virtual int CountMapping();
+	virtual int CountMapping(int site);
+	virtual int GlobalCountMapping();
+	void SlaveCountMapping();
+
+
 	virtual double GetObservedCompositionalHeterogeneity()	{
 		return data->CompositionalHeterogeneity(0);
 	}

@@ -1553,6 +1553,9 @@ void PhyloProcess::SlaveExecute(MESSAGE signal)	{
 	case WRITE_MAPPING:
 		SlaveWriteMappings();
 		break;
+	case COUNTMAPPING:
+		SlaveCountMapping();
+		break;
 	
 	default:
 		// or : SubstitutionProcess::SlaveExecute?
@@ -1982,6 +1985,9 @@ void PhyloProcess::ReadPB(int argc, char* argv[])	{
 			else if (s == "-comp")	{
 				ppred = 3;
 			}
+			else if (s == "-nsub")	{
+				ppred = 4;
+			}
 			else if (s == "-ppred")	{
 				ppred = 1;
 			}
@@ -2145,13 +2151,17 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 		FromStream(is);
 		i++;
 		GlobalUnclamp();
-		// GetData()->Unclamp();
 		MPI_Status stat;
 		MESSAGE signal = BCAST_TREE;
 		MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 		GlobalBroadcastTree();
 		
+		// GlobalUpdateConditionalLikelihoods();
 		GlobalCollapse();
+
+		GlobalUnfold();
+		GlobalCollapse();
+
 		GlobalSetDataFromLeaves();
 		
 		// Trace(cerr);
@@ -2454,6 +2464,8 @@ void PhyloProcess::ReadMap(string name, int burnin, int every, int until){
 		i++;
 	}
 	int samplesize = 0;
+	double meandiff = 0;
+	double vardiff = 0;
 	for(int i = 0; i < GetNsite(); i++){
 		stringstream osfmap;
 		osfmap << name << '_' << i << ".map";
@@ -2476,7 +2488,13 @@ void PhyloProcess::ReadMap(string name, int burnin, int every, int until){
 		MESSAGE signal = BCAST_TREE;
 		MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 		GlobalBroadcastTree();
+		GlobalUpdateConditionalLikelihoods();
 		GlobalCollapse();
+
+		/*
+		GlobalUnfold();
+		GlobalCollapse();
+		*/
 
 		// write posterior mappings
 		GlobalWriteMappings(name);
@@ -2486,11 +2504,19 @@ void PhyloProcess::ReadMap(string name, int burnin, int every, int until){
 		WriteNodeStates(sos,GetRoot());
 		sos << '\n';
 
+		int obs = GlobalCountMapping();
+
 		GlobalUnfold();
 
 		//Posterior Prededictive Mappings
 		GlobalUnclamp();
+		GlobalUpdateConditionalLikelihoods();
 		GlobalCollapse();
+		/*
+		GlobalUnfold();
+		GlobalCollapse();
+		*/
+
 		GlobalSetDataFromLeaves();
 
 		// write posterior predictive mappings
@@ -2499,6 +2525,12 @@ void PhyloProcess::ReadMap(string name, int burnin, int every, int until){
 		// write posterior predictive ancestral node states
 		GlobalSetNodeStates();
 		WriteNodeStates(sos,GetRoot());
+
+		int pred = GlobalCountMapping();
+
+		cerr << obs << '\t' << pred << '\n';
+		meandiff += obs - pred;
+		vardiff += (obs-pred)*(obs-pred);
 
 		GlobalRestoreData();
 		GlobalUnfold();
@@ -2519,6 +2551,10 @@ void PhyloProcess::ReadMap(string name, int burnin, int every, int until){
 		}
 	}
 	cerr << '\n';
+	meandiff /= samplesize;
+	vardiff /= samplesize;
+	vardiff -= meandiff*meandiff;
+	cerr << meandiff << '\t' << sqrt(vardiff) << '\n';
 }
 
 void PhyloProcess::GlobalWriteMappings(string name){
@@ -2609,3 +2645,38 @@ void PhyloProcess::WriteNodeStates(ostream& os, const Link* from)	{
 	}
 }
 
+int PhyloProcess::CountMapping()	{
+
+	int total = 0;	
+	for(int i = sitemin; i < sitemax; i++){
+		total += CountMapping(i);
+	}
+	return total;
+}
+
+int PhyloProcess::CountMapping(int i)	{
+	return 0;
+}
+
+int PhyloProcess::GlobalCountMapping()	{
+
+	assert(myid==0);
+	MESSAGE signal = COUNTMAPPING;
+	MPI_Status stat;
+	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+
+	int i, count, totalcount=0;
+	for (i=1; i<nprocs; ++i)	{
+		MPI_Recv(&count,1,MPI_INT,MPI_ANY_SOURCE,TAG1,MPI_COMM_WORLD, &stat);
+		totalcount += count;
+	}
+	return totalcount;
+
+}
+
+void PhyloProcess::SlaveCountMapping()	{
+
+	int count = CountMapping();
+	MPI_Send(&count,1,MPI_INT,0,TAG1,MPI_COMM_WORLD);
+
+}

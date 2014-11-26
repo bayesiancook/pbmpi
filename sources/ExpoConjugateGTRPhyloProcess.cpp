@@ -356,3 +356,29 @@ void ExpoConjugateGTRPhyloProcess::SlaveUpdateRRSuffStat()	{
 	#endif
 }
 
+int ExpoConjugateGTRPhyloProcess::GlobalCountMapping()	{
+
+	GlobalUpdateSiteProfileSuffStat();
+	return PhyloProcess::GlobalCountMapping();
+}
+
+int ExpoConjugateGTRPhyloProcess::CountMapping()	{
+
+	int total = 0;	
+	for(int i = sitemin; i < sitemax; i++){
+		total += CountMapping(i);
+	}
+	return total;
+}
+
+int ExpoConjugateGTRPhyloProcess::CountMapping(int i)	{
+
+	const int* tmp = GetSiteProfileSuffStatCount(i);
+	int total = 0;
+	for (int k=0; k<GetNstate(i); k++)	{
+		total += tmp[k];
+	}
+	total--;
+	return total;
+}
+
