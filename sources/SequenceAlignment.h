@@ -18,6 +18,7 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 
 #include "StateSpace.h"
 #include "TaxonSet.h"
+#include "Random.h"
 
 // this class works like an interface
 // it does not do any job
@@ -65,6 +66,79 @@ class SequenceAlignment	{
 		BKData = 0;
 	}
 	
+	SequenceAlignment(SequenceAlignment* from, int N, int Ngene, int* genesize, int* exclude)	{
+
+		Ntaxa = from->Ntaxa;
+
+		int* include = new int[Ngene];
+		int nex = 0;
+		for (int i=0; i<Ngene; i++)	{
+			nex += exclude[i];
+			include[i] = exclude[i];
+		}
+
+		int Nleft = Ngene - nex;
+		for (int i=0; i<N; i++)	{
+			int gene = (int) (Nleft * rnd::GetRandom().Uniform());
+			int k = 0;
+			while (gene)	{
+				if (!include[k])	{
+					gene--;
+				}
+				k++;
+			}
+			if (include[k])	{
+				k++;
+			}
+
+			if (k >= Ngene)	{
+				cerr << "error : Ngene overflow\n";
+				exit(1);
+			}
+
+			include[k] = 1;
+			Nleft--;
+		}
+
+		int Ncheck = 0;
+		int totsize = 0;
+		for (int i=0; i<Ngene; i++)	{
+			include[i] -= exclude[i];
+			if (include[i])	{
+				Ncheck++;
+				totsize += genesize[i];
+			}
+		}
+
+		Nsite = totsize;
+
+		taxset = from->taxset;
+		statespace = from->statespace;
+
+		Data = new int*[Ntaxa];
+		for (int i=0; i<Ntaxa; i++)	{
+			Data[i] = new int[Nsite];
+		}
+
+		int kfrom = 0;
+		int kto = 0;
+		for (int i=0; i<Ngene; i++)	{
+			if (include[i])	{
+				for (int k=0; k<genesize[i]; k++)	{
+					for (int j=0; j<Ntaxa; j++)	{
+						Data[j][kto+k] = from->Data[j][kfrom+k];
+					}
+				}
+				kto += genesize[i];
+			}
+			kfrom += genesize[i];
+		}
+
+		delete[] include;
+
+		BKData = 0;
+	}
+
 	SequenceAlignment(SequenceAlignment* from, const TaxonSet* subset)	{
 
 		Ntaxa = subset->GetNtaxa();
