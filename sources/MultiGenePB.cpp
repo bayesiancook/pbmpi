@@ -35,7 +35,7 @@ class MultiGeneModel	{
 	int size;
 	int saveall;
 
-	MultiGeneModel(string datafile, string treefile, int modeltype, int nratecat, int fixtopo, int kappaprior, double gibbsfactor, int dc, int inevery, int inuntil, int insaveall, string inname, int myid, int nprocs)	{
+	MultiGeneModel(string datafile, string treefile, int modeltype, string rrtype, int nratecat, int fixtopo, int kappaprior, double gibbsfactor, int dc, int inevery, int inuntil, int insaveall, string inname, int myid, int nprocs)	{
 
 		every = inevery;
 		until = inuntil;
@@ -53,10 +53,13 @@ class MultiGeneModel	{
 
 		else if (modeltype == 2)	{
 			if (myid == 0) {
-				cerr << "catgtr model\n";
+				if(rrtype == "None")
+					cerr << "catgtr model\n";
+				else
+					cerr << "cat" << rrtype << " model\n";
 			}
 			type = "CATGTRSBDP";
-			process = new MultiGeneGTRSBDPMixture(datafile,treefile,name,nratecat,fixtopo,kappaprior,gibbsfactor,dc,myid,nprocs); 
+			process = new MultiGeneGTRSBDPMixture(datafile,treefile,name,nratecat,rrtype,fixtopo,kappaprior,gibbsfactor,dc,myid,nprocs);
 		}
 	}
 
@@ -215,6 +218,8 @@ int main(int argc, char* argv[])	{
 	int burnin = 0;
 	int randfix = -1;
 
+	string rrtype = "None";
+
 	try	{
 
 		if (argc == 1)	{
@@ -266,6 +271,10 @@ int main(int argc, char* argv[])	{
 			}
 			else if (s == "-gtr")	{
 				modeltype = 2;
+			}
+			else if (s == "-wag")	{
+				modeltype = 2;
+				rrtype = "wag";
 			}
 			else if (s == "-dgam")	{
 				i++;
@@ -324,7 +333,7 @@ int main(int argc, char* argv[])	{
 	MultiGeneModel* model = 0;
 
 	if (datafile != "")	{
-		model = new MultiGeneModel(datafile,treefile,modeltype,dgam,fixtopo,kappaprior,gibbsfactor,dc,every,until,saveall,name,myid,nprocs);
+		model = new MultiGeneModel(datafile,treefile,modeltype,rrtype,dgam,fixtopo,kappaprior,gibbsfactor,dc,every,until,saveall,name,myid,nprocs);
 		if (! myid)	{
 			cerr << "create files\n";
 			cerr << name << '\n';

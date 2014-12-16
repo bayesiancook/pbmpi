@@ -1,6 +1,6 @@
 CC=mpic++
-CPPFLAGS= -w -O3 -c
-LDFLAGS= -O3
+CPPFLAGS= -w -O3 -c -stdlib=libstdc++
+LDFLAGS= -O3 -stdlib=libstdc++
 SRCS=  TaxonSet.cpp Tree.cpp Random.cpp SequenceAlignment.cpp CodonSequenceAlignment.cpp \
 	StateSpace.cpp CodonStateSpace.cpp ZippedSequenceAlignment.cpp SubMatrix.cpp \
 	GTRSubMatrix.cpp CodonSubMatrix.cpp linalg.cpp Chrono.cpp BranchProcess.cpp \
@@ -42,7 +42,7 @@ ALL_SRCS=$(wildcard *.cpp)
 ALL_OBJS=$(patsubst %.cpp,%.o,$(ALL_SRCS))
 
 PROGSDIR=../data
-ALL= simucodon pb_mpi readpb_mpi tracecomp bpcomp bpcomp2
+ALL= simucodon pb_mpi readpb_mpi tracecomp bpcomp bpcomp2 mpb_mpi
 PROGS=$(addprefix $(PROGSDIR)/, $(ALL))
 
 .PHONY: all clean

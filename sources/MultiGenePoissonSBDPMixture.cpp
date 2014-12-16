@@ -26,6 +26,7 @@ MultiGenePoissonSBDPMixture::MultiGenePoissonSBDPMixture(string indatafile, stri
 	name = inname;
 	fixtopo = infixtopo;
 	dc = indc;
+	mrrtype = "None";
 	kappaprior = inkappaprior;
 	Nstate = 0;
 	datafile = indatafile;
@@ -33,7 +34,7 @@ MultiGenePoissonSBDPMixture::MultiGenePoissonSBDPMixture(string indatafile, stri
 	gibbsfactor = ingibbsfactor;
 	AllocateAlignments(datafile,treefile,dc);
 	
-	Create(GetGlobalNsite(0),Nstate,nratecat,indc);
+	Create(GetGlobalNsite(0),Nstate,nratecat,indc,mrrtype);
 	if (! myid)	{
 		GlobalUpdateParameters();
 		GlobalSample();
@@ -52,7 +53,7 @@ MultiGenePoissonSBDPMixture::MultiGenePoissonSBDPMixture(istream& is, int me, in
 	Nstate = 0;
 	AllocateAlignments(datafile,"None",dc);
 	
-	Create(GetGlobalNsite(0),Nstate,nratecat,dc);
+	Create(GetGlobalNsite(0),Nstate,nratecat,dc,mrrtype);
 	if (! myid)	{
 		FromStream(is);
 		GlobalUpdateParameters();
@@ -60,7 +61,7 @@ MultiGenePoissonSBDPMixture::MultiGenePoissonSBDPMixture(istream& is, int me, in
 	}
 }
 
-void MultiGenePoissonSBDPMixture::Create(int inNsite, int Nstate, int nratecat, int dc)	{
+void MultiGenePoissonSBDPMixture::Create(int inNsite, int Nstate, int nratecat, int dc, string rrtype)	{
 
 	// create Nsite Nstate
 	PoissonSBDPProfileProcess::Create(inNsite,Nstate);

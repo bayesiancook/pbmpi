@@ -106,11 +106,11 @@ class ExpoConjugateGTRGeneSubstitutionProcess : public virtual ExpoConjugateGTRS
 		exit(1);
 	}
 
-	virtual void Create(int nsite, int ncat, int nstate, ExpoConjugateGTRProfileProcess* hub, int offset)	{
+	virtual void Create(int nsite, int ncat, int nstate, ExpoConjugateGTRProfileProcess* hub, int offset, string inrrtype)	{
 		ExpoConjugateGTRSubstitutionProcess::Create(nsite,nstate,0,nsite);
 		DGamRateProcess::Create(nsite,ncat);
 		ExpoConjugateGTRGeneProfileProcess::Create(nsite,nstate,hub,offset);
-		// SetRR(inrrtype);
+		SetRR(inrrtype);
 	}
 
 	virtual void Delete()	{
@@ -125,12 +125,13 @@ class ExpoConjugateGTRGeneGammaPhyloProcess : public virtual ExpoConjugateGTRPhy
 
 	public:
 
-	ExpoConjugateGTRGeneGammaPhyloProcess(string indatafile, string treefile, int nratecat, int infixtopo, int indc, ExpoConjugateGTRProfileProcess* inhub, int inoffset)	{
+	ExpoConjugateGTRGeneGammaPhyloProcess(string indatafile, string treefile, int nratecat, string inrrtype, int infixtopo, int indc, ExpoConjugateGTRProfileProcess* inhub, int inoffset)	{
 
 		myid = 1;
 		nprocs = 2;
 		fixtopo = infixtopo;
 		dc = indc;
+		rrtype = inrrtype;
 		hub = inhub;
 		offset = inoffset;
 
@@ -150,7 +151,7 @@ class ExpoConjugateGTRGeneGammaPhyloProcess : public virtual ExpoConjugateGTRPhy
 		tree->RegisterWith(taxonset,0);
 		
 		// cerr << "gene create\n";
-		Create(tree,plaindata,nratecat,inhub,inoffset);
+		Create(tree,plaindata,nratecat,inhub,inoffset,rrtype);
 		// cerr << "gene create ok\n";
 
 		/*
@@ -264,9 +265,9 @@ class ExpoConjugateGTRGeneGammaPhyloProcess : public virtual ExpoConjugateGTRPhy
 
 	protected:
 
-	virtual void Create(Tree* intree, SequenceAlignment* indata, int nratecat, ExpoConjugateGTRProfileProcess* inhub, int inoffset)	{
+	virtual void Create(Tree* intree, SequenceAlignment* indata, int nratecat, ExpoConjugateGTRProfileProcess* inhub, int inoffset, string rrtype)	{
 		ExpoConjugateGTRPhyloProcess::Create(intree,indata,indata->GetNstate(),0,indata->GetNsite());
-		ExpoConjugateGTRGeneSubstitutionProcess::Create(indata->GetNsite(),nratecat,indata->GetNstate(),inhub,inoffset);
+		ExpoConjugateGTRGeneSubstitutionProcess::Create(indata->GetNsite(),nratecat,indata->GetNstate(),inhub,inoffset, rrtype);
 		GammaBranchProcess::Create(intree);
 	}
 		

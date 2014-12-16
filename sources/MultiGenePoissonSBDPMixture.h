@@ -107,7 +107,7 @@ class MultiGenePoissonSBDPMixture : public virtual PoissonSBDPProfileProcess, pu
 		PoissonSBDPProfileProcess::SlaveMixMove();
 	}
 
-	void Create(int inNsite, int Nstate, int nratecat, int dc);
+	void Create(int inNsite, int Nstate, int nratecat, int dc, string rrtype);
 	void CreateSuffStat();
 	void DeleteSuffStat();
 
