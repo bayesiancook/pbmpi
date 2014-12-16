@@ -42,7 +42,7 @@ ALL_SRCS=$(wildcard *.cpp)
 ALL_OBJS=$(patsubst %.cpp,%.o,$(ALL_SRCS))
 
 PROGSDIR=../data
-ALL= jackknife simucodon pb_mpi readpb_mpi tracecomp bpcomp bpcomp2
+ALL= missfrac jackknife simucodon pb_mpi readpb_mpi tracecomp bpcomp bpcomp2
 PROGS=$(addprefix $(PROGSDIR)/, $(ALL))
 
 .PHONY: all clean
@@ -66,6 +66,9 @@ ifneq ($(MAKECMDGOALS),clean)
 endif
 
 # Targets
+
+$(PROGSDIR)/missfrac: MissingFractionPerGene.o $(OBJS)
+	$(CC) MissingFractionPerGene.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@
 
 $(PROGSDIR)/jackknife: JackKnife.o $(OBJS)
 	$(CC) JackKnife.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@

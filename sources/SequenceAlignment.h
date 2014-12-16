@@ -139,6 +139,49 @@ class SequenceAlignment	{
 		BKData = 0;
 	}
 
+	SequenceAlignment(SequenceAlignment* from, int Ngene, int* genesize, int* exclude, double* frac, double minfrac)	{
+
+		cerr << "sub alignment, missing frac per gene less than " << minfrac << '\n';
+
+		Ntaxa = from->Ntaxa;
+
+		int Ninclude = 0;
+		int totsize = 0;
+		for (int i=0; i<Ngene; i++)	{
+			if ((! exclude[i]) && (frac[i] <= minfrac))	{
+				Ninclude++;
+				totsize += genesize[i];
+			}
+		}
+
+		cerr << "alignment size : " << totsize << '\n';
+
+		Nsite = totsize;
+		taxset = from->taxset;
+		statespace = from->statespace;
+
+		Data = new int*[Ntaxa];
+		for (int i=0; i<Ntaxa; i++)	{
+			Data[i] = new int[Nsite];
+		}
+
+		int kfrom = 0;
+		int kto = 0;
+		for (int i=0; i<Ngene; i++)	{
+			if ((! exclude[i]) && (frac[i] <= minfrac))	{
+				for (int k=0; k<genesize[i]; k++)	{
+					for (int j=0; j<Ntaxa; j++)	{
+						Data[j][kto+k] = from->Data[j][kfrom+k];
+					}
+				}
+				kto += genesize[i];
+			}
+			kfrom += genesize[i];
+		}
+
+		BKData = 0;
+	}
+
 	SequenceAlignment(SequenceAlignment* from, const TaxonSet* subset)	{
 
 		Ntaxa = subset->GetNtaxa();
@@ -181,6 +224,28 @@ class SequenceAlignment	{
 			for (int j=0; j<Nsite; j++)	{
 				Data[mapi][j] = inData[i][j];
 			}
+		}
+	}
+
+	void MissingFractionPerGene(int Ngene, int* genesize, int* exclude, double* frac)	{
+
+		int offset = 0;
+
+		for (int gene=0; gene<Ngene; gene++)	{
+			
+
+			int tot = 0;
+			int mis = 0;
+			for (int j=0; j<taxset->GetNtaxa(); j++)	{
+				for (int i=0; i<genesize[gene]; i++)	{
+					if (Data[j][offset+i] == unknown)	{
+						mis++;
+					}
+					tot++;
+				}
+			}
+			frac[gene] = ((double) mis) / tot;
+			offset += genesize[gene];
 		}
 	}
 
