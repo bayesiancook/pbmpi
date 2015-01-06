@@ -2150,17 +2150,21 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 		samplesize++;
 		FromStream(is);
 		i++;
-		GlobalUnclamp();
+
 		MPI_Status stat;
 		MESSAGE signal = BCAST_TREE;
 		MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 		GlobalBroadcastTree();
 		
+		GlobalUpdateConditionalLikelihoods();
+		GlobalUnclamp();
 		// GlobalUpdateConditionalLikelihoods();
 		GlobalCollapse();
 
+		/*
 		GlobalUnfold();
 		GlobalCollapse();
+		*/
 
 		GlobalSetDataFromLeaves();
 		
@@ -2466,6 +2470,7 @@ void PhyloProcess::ReadMap(string name, int burnin, int every, int until){
 	int samplesize = 0;
 	double meandiff = 0;
 	double vardiff = 0;
+	double meanobs = 0;
 	for(int i = 0; i < GetNsite(); i++){
 		stringstream osfmap;
 		osfmap << name << '_' << i << ".map";
@@ -2474,6 +2479,8 @@ void PhyloProcess::ReadMap(string name, int burnin, int every, int until){
 	}
 	while (i < until)	{
 		cerr << ".";
+		// cerr << i << '\t' << rnd::GetRandom().Uniform() << '\n';
+
 		cerr.flush();
 		samplesize++;
 		FromStream(is);
@@ -2484,17 +2491,13 @@ void PhyloProcess::ReadMap(string name, int burnin, int every, int until){
 		s << name << "_" << samplesize << ".nodestates";
 		ofstream sos(s.str().c_str());
 
+		// quick update and mapping on the fly
 		MPI_Status stat;
 		MESSAGE signal = BCAST_TREE;
 		MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 		GlobalBroadcastTree();
 		GlobalUpdateConditionalLikelihoods();
 		GlobalCollapse();
-
-		/*
-		GlobalUnfold();
-		GlobalCollapse();
-		*/
 
 		// write posterior mappings
 		GlobalWriteMappings(name);
@@ -2504,18 +2507,12 @@ void PhyloProcess::ReadMap(string name, int burnin, int every, int until){
 		WriteNodeStates(sos,GetRoot());
 		sos << '\n';
 
-		int obs = GlobalCountMapping();
+		double obs = GlobalCountMapping();
 
+		//Posterior Predictive Mappings
 		GlobalUnfold();
-
-		//Posterior Prededictive Mappings
 		GlobalUnclamp();
-		GlobalUpdateConditionalLikelihoods();
 		GlobalCollapse();
-		/*
-		GlobalUnfold();
-		GlobalCollapse();
-		*/
 
 		GlobalSetDataFromLeaves();
 
@@ -2526,11 +2523,14 @@ void PhyloProcess::ReadMap(string name, int burnin, int every, int until){
 		GlobalSetNodeStates();
 		WriteNodeStates(sos,GetRoot());
 
-		int pred = GlobalCountMapping();
+		double pred = GlobalCountMapping();
 
-		cerr << obs << '\t' << pred << '\n';
+		obs /= GetNsite();
+		pred /= GetNsite();
+
 		meandiff += obs - pred;
 		vardiff += (obs-pred)*(obs-pred);
+		meanobs += obs;
 
 		GlobalRestoreData();
 		GlobalUnfold();
@@ -2554,6 +2554,8 @@ void PhyloProcess::ReadMap(string name, int burnin, int every, int until){
 	meandiff /= samplesize;
 	vardiff /= samplesize;
 	vardiff -= meandiff*meandiff;
+	meanobs /= samplesize;
+	cerr << "mean obs : " << meanobs << '\n';
 	cerr << meandiff << '\t' << sqrt(vardiff) << '\n';
 }
 
