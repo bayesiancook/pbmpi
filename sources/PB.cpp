@@ -207,25 +207,49 @@ int main(int argc, char* argv[])	{
 				i++;
 				rrtype = argv[i];
 			}
-			else if (s == "-lg")	{
+			else if (s == "-dayhoff")	{
 				modeltype = 2;
-				rrtype = "lg";
+				rrtype = "dayhoff";
 			}
-			else if (s == "-wag")	{
+			else if (s == "-dcmut")	{
 				modeltype = 2;
-				rrtype = "wag";
+				rrtype = "dcmut";
 			}
 			else if (s == "-jtt")	{
 				modeltype = 2;
 				rrtype = "jtt";
 			}
-			else if (s == "-mtzoa")	{
-				modeltype = 2;
-				rrtype = "mtzoa";
-			}
 			else if (s == "-mtrev")	{
 				modeltype = 2;
 				rrtype = "mtrev";
+			}
+			else if (s == "-wag")	{
+				modeltype = 2;
+				rrtype = "wag";
+			}
+			else if (s == "-rtrev")	{
+				modeltype = 2;
+				rrtype = "rtrev";
+			}
+			else if (s == "-cprev")	{
+				modeltype = 2;
+				rrtype = "cprev";
+			}
+			else if (s == "-vt")	{
+				modeltype = 2;
+				rrtype = "vt";
+			}
+			else if (s == "-blosum62")	{
+				modeltype = 2;
+				rrtype = "blosum62";
+			}
+			else if (s == "-mtmam")	{
+				modeltype = 2;
+				rrtype = "mtmam";
+			}
+			else if (s == "-lg")	{
+				modeltype = 2;
+				rrtype = "lg";
 			}
 			else if (s == "-mtart")	{
 				modeltype = 2;
@@ -234,6 +258,26 @@ int main(int argc, char* argv[])	{
 			else if (s == "-mtzoa")	{
 				modeltype = 2;
 				rrtype = "mtzoa";
+			}
+			else if (s == "-pmb")	{
+				modeltype = 2;
+				rrtype = "pmb";
+			}
+			else if (s == "-hivb")	{
+				modeltype = 2;
+				rrtype = "hivb";
+			}
+			else if (s == "-hivw")	{
+				modeltype = 2;
+				rrtype = "hivw";
+			}
+			else if (s == "-jttdcmut")	{
+				modeltype = 2;
+				rrtype = "jttdcmut";
+			}
+			else if (s == "-flu")	{
+				modeltype = 2;
+				rrtype = "flu";
 			}
 			else if (s == "-cg6")	{
 				mixturetype = 1;

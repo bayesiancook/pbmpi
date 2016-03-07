@@ -15,54 +15,84 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 
 
 #include "Parallel.h"
-#include "GTRProfileProcess.h"
+#include "PartitionedGTRProfileProcess.h"
 #include "Random.h"
 
 //-------------------------------------------------------------------------
 //-------------------------------------------------------------------------
-//	* GTRProfileProcess
+//	* PartitionedGTRProfileProcess
 //-------------------------------------------------------------------------
 //-------------------------------------------------------------------------
 
 
-void GTRProfileProcess::Create(int innsite, int indim)	{
+void PartitionedGTRProfileProcess::Create(int indim, PartitionScheme inscheme)	{
 	if (! rr)	{
-		ProfileProcess::Create(innsite,indim);
+		ProfileProcess::Create(inscheme.GetNsite(),indim);
+		PartitionProcess::Create(inscheme);
 		Nrr = GetDim() * (GetDim()-1) / 2;
-		rr = new double[Nrr];
+
+		rr = new double* [GetNpart()];
+		fixrr = new bool[GetNpart()];
+
+		for(int i = 0; i < GetNpart(); i++)
+		{
+			fixrr[i] = false;
+			rr[i] = new double[Nrr];
+		}
 		SampleRR();
+
+		for(int p = 0; p < inscheme.Npart; p++)
+			SetRR(p, inscheme.partType[p]);
 	}
 }
 
-void GTRProfileProcess::Delete()	{
+void PartitionedGTRProfileProcess::Delete()	{
 	if (rr)	{
 		DeleteMatrices();
+		for(int i = 0; i < GetNpart(); i++)
+		{
+			delete[] rr[i];
+		}
 		delete[] rr;
+		delete[] fixrr;
+
 		rr = 0;
+		fixrr = 0;
+
+		PartitionProcess::Delete();
 		ProfileProcess::Delete();
 	}
 }
 
-double GTRProfileProcess::LogRRPrior()	{
+double PartitionedGTRProfileProcess::LogRRPrior()	{
 	double total = 0;
-	for (int i=0; i<GetNrr(); i++)	{
-		total -= rr[i];
+	for(int p = 0; p < GetNpart(); p++)
+	{
+		if(!fixrr[p])
+			for (int i=0; i<GetNrr(); i++)	{
+				total -= rr[p][i];
+			}
 	}
 	return total;
 }
 
-void GTRProfileProcess::SampleRR()	{
-	for (int i=0; i<GetNrr(); i++)	{
-		// rr[i] = LG_RR[i];
-		rr[i] = rnd::GetRandom().sExpo();
+void PartitionedGTRProfileProcess::SampleRR()	{
+	for(int p = 0; p < GetNpart(); p++)
+	{
+		if(!fixrr[p])
+			for (int i=0; i<GetNrr(); i++)	{
+				// rr[i] = LG_RR[i];
+				rr[p][i] = rnd::GetRandom().sExpo();
+			}
 	}
 }
 
-void GTRProfileProcess::SetRR(string type)	{
+void PartitionedGTRProfileProcess::SetRR(int inpart, string type)	{
 
-	rrtype = type;
+	int p = inpart;
 	if (type != "None")	{
-		fixrr = true;
+		fixrr[inpart] = true;
+
 		const double * RR = 0;
 
 		if (type == "dayhoff")	{
@@ -166,6 +196,7 @@ void GTRProfileProcess::SetRR(string type)	{
 		}
 
 
+
 		if(RR != 0){
 			if (Nrr != 190)	{
 				if (! GetMyid())	{
@@ -177,11 +208,11 @@ void GTRProfileProcess::SetRR(string type)	{
 			}
 			double total = 0;
 			for (int i=0; i<Nrr; i++)	{
-				rr[i]= RR[i];
-				total += rr[i];
+				rr[p][i]= RR[i];
+				total += rr[p][i];
 			}
 			for (int i=0; i<Nrr; i++)	{
-				rr[i] /= total / Nrr;
+				rr[p][i] /= total / Nrr;
 			}
 		}
 		else	{
@@ -210,11 +241,21 @@ void GTRProfileProcess::SetRR(string type)	{
 						MPI_Finalize();
 						exit(1);
 					}
-					rr[rrindex(permut[k],permut[l],GetDim())] = tmp;
+					rr[p][rrindex(permut[k],permut[l],GetDim())] = tmp;
 					
 				}
 			}
 		}	
+	}
+	else
+	{
+		fixrr[inpart] = false;
+	}
+
+	nfreerr = GetNpart();
+	for(int p = 0; p < GetNpart(); p++)
+	{
+		nfreerr -= fixrr[p];
 	}
 }
 

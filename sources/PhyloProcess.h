@@ -497,6 +497,11 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	int testsitemin;
 	int testsitemax;
 	int bksitemax;
+
+	// Communicator for this phyloprocess
+	// Allows groups of CPUs to be assigned to separate phyloprocesses
+	// Making partitioning possible
+	//MPI_Comm* communicator;
 };
 
 

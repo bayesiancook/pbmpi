@@ -1,6 +1,6 @@
 CC=mpic++
-CPPFLAGS= -w -O3 -c -stdlib=libstdc++
-LDFLAGS= -O3 -stdlib=libstdc++
+CPPFLAGS= -w -O3 -c
+LDFLAGS= -O3
 SRCS=  TaxonSet.cpp Tree.cpp Random.cpp SequenceAlignment.cpp CodonSequenceAlignment.cpp \
 	StateSpace.cpp CodonStateSpace.cpp ZippedSequenceAlignment.cpp SubMatrix.cpp \
 	GTRSubMatrix.cpp CodonSubMatrix.cpp linalg.cpp Chrono.cpp BranchProcess.cpp \
@@ -34,7 +34,12 @@ SRCS=  TaxonSet.cpp Tree.cpp Random.cpp SequenceAlignment.cpp CodonSequenceAlign
 	AACodonMutSelSBDPPhyloProcess.cpp MultiGeneMixture.cpp MultiGeneGTRSBDPMixture.cpp \
 	MultiGenePoissonSBDPMixture.cpp \
 	Bipartition.cpp BipartitionList.cpp Consensus.cpp TaxaParameters.cpp PBTree.cpp TreeList.cpp PolyNode.cpp correl.cpp correlation.cpp NNI.cpp \
-	BP2Stat.cpp BP2util.cpp
+	BP2Stat.cpp BP2util.cpp \
+	PartitionedRASGTRGammaPhyloProcess.cpp PartitionedProfileProcess.cpp PartitionedGTRProfileProcess.cpp \
+	PartitionedGTRPhyloProcess.cpp PartitionedGTRPartitionedProfileProcess.cpp PartitionedGTRMixtureProfileProcess.cpp \
+	PartitionedExpoConjugateGTRSubstitutionProcess.cpp PartitionedExpoConjugateGTRProfileProcess.cpp \
+	PartitionedExpoConjugateGTRPartitionedProfileProcess.cpp PartitionedExpoConjugateGTRMixtureProfileProcess.cpp \
+	PartitionedExpoConjugateGTRPhyloProcess.cpp PartitionedDGamRateProcess.cpp
 
 
 OBJS=$(patsubst %.cpp,%.o,$(SRCS))
