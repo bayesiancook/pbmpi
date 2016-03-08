@@ -20,6 +20,7 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 
 #include "PhyloProcess.h"
 #include "PartitionedGTRSubstitutionProcess.h"
+#include "PartitionedDGamRateProcess.h"
 
 
 class PartitionedGTRPhyloProcess : public virtual PhyloProcess, public virtual PartitionedGTRSubstitutionProcess	{
@@ -48,6 +49,41 @@ class PartitionedGTRPhyloProcess : public virtual PhyloProcess, public virtual P
 
 
 	double LengthRelRateMove(double tuning, int nrep);
+};
+
+class PartitionedGTRGammaPhyloProcess : public virtual PartitionedGTRPhyloProcess, public virtual PartitionedDGamRateProcess	{
+
+
+	public:
+
+	PartitionedGTRGammaPhyloProcess() {}
+	virtual ~PartitionedGTRGammaPhyloProcess() {}
+
+	protected:
+
+	virtual void Create(Tree* intree, SequenceAlignment* indata,int indim, PartitionScheme rrscheme, int ncat, PartitionScheme dgamscheme, int insitemin,int insitemax)	{
+		PartitionedGTRPhyloProcess::Create(intree,indata,indata->GetNstate(),rrscheme,insitemin,insitemax);
+		PartitionedDGamRateProcess::Create(ncat,dgamscheme);
+	}
+
+	void Delete() {
+		PartitionedDGamRateProcess::Delete();
+		PartitionedGTRPhyloProcess::Delete();
+	}
+
+	void ToStream(ostream& os)
+	{
+		PartitionedGTRPhyloProcess::ToStream(os);
+		PartitionedDGamRateProcess::ToStream(os);
+	}
+	void FromStream(istream& is)
+	{
+		PartitionedGTRPhyloProcess::FromStream(is);
+		PartitionedDGamRateProcess::FromStream(is);
+	}
+
+	double LengthMultiplierMove(double tuning, int nrep);
+	double MultiplierRelRateMove(double tuning, int nrep);
 };
 
 #endif

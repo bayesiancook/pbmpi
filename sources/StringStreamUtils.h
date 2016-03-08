@@ -200,7 +200,7 @@ inline double Decimal(double d, int ndigit)	{
 	for (int k=0; k<ndigit; k++)	{
 		precision *= 10;
 	}
-	return	((double) ((int) (precision * d + 0.1/precision))) / precision;
+	return	((double) ((int) (precision * d + 0.5))) / precision;
 }
 
 #endif

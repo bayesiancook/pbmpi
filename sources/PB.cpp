@@ -68,6 +68,8 @@ int main(int argc, char* argv[])	{
 	string mixtype = "None";
 	string rrtype = "None";
 
+	string schemefile = "None";
+
 	int kappaprior = 0;
 	int dirweightprior=0;
 	// int betaprior = 0;
@@ -113,6 +115,10 @@ int main(int argc, char* argv[])	{
 			else if (s == "-d")	{
 				i++;
 				datafile = argv[i];
+			}
+			else if (s == "-p")	{
+				i++;
+				schemefile = argv[i];
 			}
 			else if (s == "-iscodon")	{
 				iscodon = 1;
@@ -495,7 +501,7 @@ int main(int argc, char* argv[])	{
 		exit(1);
 	}
 
-	if ((modeltype == -1) && (mixturetype == -1))	{
+	if ((modeltype == -1) && (mixturetype == -1) && schemefile == "None")	{
 		modeltype = 2;
 		mixturetype = 3;
 	}
@@ -588,7 +594,7 @@ int main(int argc, char* argv[])	{
 				exit(1);
 			}
 		}
-		model = new Model(datafile,treefile,modeltype,dgam,mixturetype,ncat,type,suffstat,fixncomp,empmix,mixtype,rrtype,iscodon,fixtopo,NSPR,NNNI,fixcodonprofile,fixomega,fixbl,omegaprior,kappaprior,dirweightprior,mintotweight,dc,every,until,saveall,name,myid,nprocs);
+		model = new Model(datafile,treefile,schemefile,modeltype,dgam,mixturetype,ncat,type,suffstat,fixncomp,empmix,mixtype,rrtype,iscodon,fixtopo,NSPR,NNNI,fixcodonprofile,fixomega,fixbl,omegaprior,kappaprior,dirweightprior,mintotweight,dc,every,until,saveall,name,myid,nprocs);
 		if (! myid)	{
 			// cerr << "create files\n";
 			cerr << '\n';

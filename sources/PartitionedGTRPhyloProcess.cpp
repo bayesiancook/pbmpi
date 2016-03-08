@@ -82,7 +82,7 @@ double PartitionedGTRPhyloProcess::LengthRelRateMove(double tuning, int nrep)	{
 			}
 		}
 		deltalogratio += LogRRPrior() + LogLengthPrior();
-		deltalogratio += (nbranch-nfreerr*GetNrr()) * m;
+		deltalogratio += (nbranch-GetNpart()*GetNrr()) * m;
 
 		int accepted = (log(rnd::GetRandom().Uniform()) < deltalogratio);
 
@@ -98,6 +98,103 @@ double PartitionedGTRPhyloProcess::LengthRelRateMove(double tuning, int nrep)	{
 				}
 			}
 		}	
+	}
+	return naccept / nrep;
+}
+
+double PartitionedGTRGammaPhyloProcess::LengthMultiplierMove(double tuning, int nrep)	{
+
+	int nmult = PartitionedDGamRateProcess::GetNpart();
+
+	double naccept = 0;
+	for (int rep=0; rep<nrep; rep++)	{
+		double deltalogratio = - LogLengthPrior() - LogMultiplierPrior();
+		double m = tuning * (rnd::GetRandom().Uniform() - 0.5);
+		double e = exp(m);
+		int nbranch = MoveAllBranches(e);
+		for(int p = 0; p < nmult; p++)
+		{
+			ratemult[p] /= e;
+		}
+		deltalogratio += LogLengthPrior() + LogMultiplierPrior();
+		deltalogratio += (nbranch-nmult) * m;
+
+		int accepted = (log(rnd::GetRandom().Uniform()) < deltalogratio);
+
+		if (accepted)	{
+			naccept++;
+		}
+		else	{
+			MoveAllBranches(1.0/e);
+			for(int p = 0; p < nmult; p++)
+			{
+				ratemult[p] *= e;
+			}
+		}
+	}
+	return naccept / nrep;
+}
+
+double PartitionedGTRGammaPhyloProcess::MultiplierRelRateMove(double tuning, int nrep)	{
+
+
+	int nmult = PartitionedDGamRateProcess::GetNpart();
+	int nrrpart = PartitionedGTRProfileProcess::GetNpart();
+
+	map<int, vector<int> > gtrmults;
+
+	// find each GTR partition and associated multipliers
+	for(int p = 0; p < nmult; p++)
+	{
+		int site = PartitionedDGamRateProcess::GetPartSites(p).front();
+
+		int rrpart = PartitionedGTRProfileProcess::GetSitePart(site);
+		if(PartitionedGTRProfileProcess::GetPartType(rrpart) == "None")
+		{
+			gtrmults[rrpart].push_back(p);
+		}
+	}
+
+	// iterate over each gtr partition and perform the move separately on each of them
+	double naccept = 0;
+	for (map<int, vector<int> >::iterator it = gtrmults.begin(); it != gtrmults.end(); it++)
+	{
+		int rrpart = it->first;
+		vector<int> mults = it->second;
+
+		for (int rep=0; rep<nrep; rep++)	{
+			double deltalogratio = - LogRRPrior() - LogMultiplierPrior();
+			double m = tuning * (rnd::GetRandom().Uniform() - 0.5);
+			double e = exp(m);
+
+			//perform the move
+			for (int i=0; i<GetNrr(); i++)	{
+				rr[rrpart][i] *= e;
+			}
+			for(int i = 0; i < mults.size(); i++)
+			{
+				ratemult[mults[i]] /= e;
+			}
+
+			deltalogratio += LogRRPrior() + LogMultiplierPrior();
+			deltalogratio += (GetNrr()-mults.size()) * m;
+
+			int accepted = (log(rnd::GetRandom().Uniform()) < deltalogratio);
+
+			if (accepted)	{
+				naccept++;
+			}
+			else	{
+				//undo the move
+				for (int i=0; i<GetNrr(); i++)	{
+					rr[rrpart][i] /= e;
+				}
+				for(int i = 0; i < mults.size(); i++)
+				{
+					ratemult[mults[i]] *= e;
+				}
+			}
+		}
 	}
 	return naccept / nrep;
 }

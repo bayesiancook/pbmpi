@@ -19,9 +19,9 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 #include <cassert>
 #include "PartitionedRASGTRGammaPhyloProcess.h"
 #include "Parallel.h"
+#include "StringStreamUtils.h"
 #include <string>
 #include <list>
-#include "TexTab.h"
 
 void PartitionedRASGTRGammaPhyloProcess::GlobalUpdateParameters()	{
 	// MPI2
@@ -343,4 +343,213 @@ void PartitionedRASGTRGammaPhyloProcess::SlaveComputeSiteLogL()	{
 	
 	delete[] meansitelogl;
 
+}
+
+vector<PartitionScheme> PartitionedRASGTRGammaPhyloProcess::ReadSchemes(string schemefile)
+{
+	string error = "Error: improperly formatted scheme file\n";
+
+	ifstream theStream((Path + schemefile).c_str());
+
+	map<string, size_t> fixrrparts;
+	map<string, size_t> fixstatparts;
+
+	PartitionScheme rrscheme(GetNsite());
+	PartitionScheme statscheme(GetNsite());
+	PartitionScheme dgamscheme(GetNsite());
+
+	vector<size_t> partsites;
+
+	// get the unlinked partition info
+	string line;
+	while(getline(theStream, line))
+	{
+		stringstream ss(line);
+
+		string item;
+		vector<string> elems;
+		while (getline(ss, item, ',')) {
+			elems.push_back(item);
+		}
+
+		if(elems.size() < 2)
+		{
+			cerr << error;
+			exit(1);
+		}
+
+		string type;
+		bool fixprof;
+
+		for(vector<string>::iterator it = elems.begin(); it != elems.end(); it++)
+		{
+			if(it == elems.begin())
+			{
+				ss.clear();
+				ss.str(*it);
+
+				ss >> type;
+
+				if(type.empty())
+				{
+						cerr << error;
+						exit(1);
+				}
+
+				std::transform(type.begin(), type.end(), type.begin(), ::tolower);
+
+				if(type == "gtr")
+				{
+					type = "None";
+					fixprof = false;
+				}
+				else
+				{
+					fixprof = ((*type.rbegin()) != 'f' || type == "dayhoff" );
+
+					if(!fixprof)
+					{
+						// remove 'f' character
+						if (type.size () > 0)  type.resize (type.size () - 1);
+					}
+					else if(fixstatparts.find(type) == fixstatparts.end())
+					{
+						statscheme.partType.push_back(type);
+						fixstatparts[type] = statscheme.Npart++;
+					}
+				}
+
+				if(fixrrparts.find(type) == fixrrparts.end())
+				{
+					rrscheme.partType.push_back(type);
+					fixrrparts[type] = rrscheme.Npart++;
+				}
+			}
+			else
+			{
+				ss.clear();
+				ss.str(*it);
+
+				while(ss >> item) {}
+
+				ss.clear();
+				ss.str(item);
+
+				vector<int> range;
+				while (getline(ss, item, '-'))
+				{
+					if(IsInt(item))
+					{
+						range.push_back(atoi(item.c_str()) - 1);
+					}
+					else
+					{
+						cerr << error;
+						exit(1);
+					}
+				}
+
+				if(range.empty() || range.size() > 2)
+				{
+					cerr << error;
+					exit(1);
+				}
+
+				if(range.size() == 1)
+				{
+					partsites.push_back(range[0]);
+
+					dgamscheme.sitePart[range[0]] = dgamscheme.Npart;
+
+					rrscheme.sitePart[range[0]] = fixrrparts[type];
+
+					if(fixprof)
+					{
+						statscheme.sitePart[range[0]] = fixstatparts[type];
+					}
+					else
+					{
+						statscheme.sitePart[range[0]] = statscheme.Npart;
+					}
+				}
+				else
+				{
+					for(size_t i = range[0]; i <= range[1]; i++)
+					{
+						partsites.push_back(i);
+
+						dgamscheme.sitePart[i] = dgamscheme.Npart;
+
+						rrscheme.sitePart[i] = fixrrparts[type];
+
+						if(fixprof)
+						{
+							statscheme.sitePart[i] = fixstatparts[type];
+						}
+						else
+						{
+							statscheme.sitePart[i] = statscheme.Npart;
+						}
+					}
+				}
+			}
+		}
+
+		dgamscheme.Npart++;
+
+		if(!fixprof)
+		{
+			statscheme.partType.push_back("None");
+			statscheme.Npart++;
+		}
+
+	}
+
+	if(partsites.size() != GetNsite())
+	{
+		size_t rrpart;
+		if(fixrrparts.find("None") != fixrrparts.end())
+		{
+			rrpart = fixrrparts["None"];
+		}
+		else
+		{
+			rrscheme.partType.push_back("None");
+			rrpart = rrscheme.Npart++;
+		}
+
+		statscheme.partType.push_back("None");
+
+		std::sort(partsites.begin(), partsites.end());
+
+		vector<size_t>::iterator it = partsites.begin();
+		for(size_t site = 0; site < GetNsite(); site++)
+		{
+			if(*it != site)
+			{
+				rrscheme.sitePart[site] = rrpart;
+				statscheme.sitePart[site] = statscheme.Npart;
+				dgamscheme.sitePart[site] = dgamscheme.Npart;
+			}
+			else
+			{
+				it++;
+			}
+		}
+
+		statscheme.Npart++;
+		dgamscheme.Npart++;
+	}
+
+	rrscheme.update();
+	statscheme.update();
+	dgamscheme.update();
+
+	vector<PartitionScheme> schemes;
+
+	schemes.push_back(rrscheme);
+	schemes.push_back(statscheme);
+	schemes.push_back(dgamscheme);
+
+	return schemes;
 }

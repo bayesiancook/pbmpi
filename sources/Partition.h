@@ -24,15 +24,18 @@ struct PartitionScheme {
 
 public:
 
-	PartitionScheme();
+	PartitionScheme(int Nsite = 0) : Npart(0)
+	{
+		sitePart.resize(Nsite);
+	};
 
-	PartitionScheme(int innpart, std::vector<int> inscheme, std::vector<std::string> inparttype) : Npart(innpart), sitePart(inscheme), partType(inparttype) {
-		numSites.resize(Npart);
-		std::fill(numSites.begin(), numSites.end(), 0);
+	void update(){
+		partSites.clear();
+		partSites.resize(Npart);
 
 		for(int i = 0; i < sitePart.size(); i++)
 		{
-			numSites[sitePart[i]]++;
+			partSites[sitePart[i]].push_back(i);
 		}
 	}
 
@@ -40,7 +43,7 @@ public:
 
 	int Npart;
 	std::vector<int> sitePart;
-	std::vector<int> numSites;
+	std::vector<std::vector<int> > partSites;
 	std::vector<std::string> partType;
 };
 
@@ -55,7 +58,11 @@ public:
 
 	int GetSitePart(int site) {return scheme.sitePart[site];}
 
-	int GetPartNsite(int part) {return scheme.numSites[part];}
+	std::vector<int> GetPartSites(int part) {return scheme.partSites[part];}
+
+	int GetPartNsite(int part) {return scheme.partSites[part].size();}
+
+	std::string GetPartType(int part){ return scheme.partType[part]; }
 
 	protected:
 

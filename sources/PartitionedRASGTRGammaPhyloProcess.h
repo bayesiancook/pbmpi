@@ -17,41 +17,15 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 #ifndef PARTRASGTR_H
 #define PARTRASGTR_H
 
-#include "PartitionedExpoConjugateGTRPhyloProcess.h"
 #include "PartitionedDGamRateProcess.h"
 #include "PartitionedExpoConjugateGTRPartitionedProfileProcess.h"
 #include "GammaBranchProcess.h"
 #include "CodonSequenceAlignment.h"
-
-// this is the final class implementing the PartitionedGTRPartitionedProfile phyloprocess
-
-class PartitionedRASGTRSubstitutionProcess : public virtual PartitionedExpoConjugateGTRSubstitutionProcess, public virtual PartitionedDGamRateProcess, public virtual PartitionedExpoConjugateGTRPartitionedProfileProcess {
-
-	public:
-
-	PartitionedRASGTRSubstitutionProcess() {}
-	virtual ~PartitionedRASGTRSubstitutionProcess() {}
-
-	virtual void Create(int, int)	{
-		cerr << "error : in PartitionedRASGTRSubstitutionProcess::Create(int,int)\n";
-		exit(1);
-	}
-
-	virtual void Create(int indim, int ncat, PartitionScheme rrscheme, PartitionScheme statscheme, PartitionScheme dgamscheme, int insitemin,int insitemax)	{
-		PartitionedExpoConjugateGTRSubstitutionProcess::Create(indim, rrscheme, insitemin, insitemax);
-		PartitionedDGamRateProcess::Create(ncat, dgamscheme);
-		PartitionedExpoConjugateGTRPartitionedProfileProcess::Create(indim, rrscheme, statscheme);
-	}
-
-	virtual void Delete()	{
-		PartitionedExpoConjugateGTRPartitionedProfileProcess::Delete();
-		PartitionedDGamRateProcess::Delete();
-		PartitionedExpoConjugateGTRSubstitutionProcess::Delete();
-	}
-};
+#include "PartitionedExpoConjugateGTRSubstitutionProcess.h"
+#include "PartitionedExpoConjugateGTRGammaPhyloProcess.h"
 
 
-class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjugateGTRPhyloProcess, public virtual PartitionedRASGTRSubstitutionProcess, public virtual GammaBranchProcess	{
+class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjugateGTRPartitionedProfileProcess, public virtual PartitionedExpoConjugateGTRGammaPhyloProcess, public virtual GammaBranchProcess	{
 
 	public:
 
@@ -60,7 +34,7 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 	void SlaveUpdateParameters();
 
 
-	PartitionedRASGTRGammaPhyloProcess(string indatafile, string treefile, string partfile, int nratecat, int iniscodon, GeneticCodeType incodetype, int innrrpart, string* inrrtype, int innstatpart, string* instattype, int infixtopo, int inNSPR, int inNNNI, double inmintotweight, int me, int np)	{
+	PartitionedRASGTRGammaPhyloProcess(string indatafile, string treefile, string partfile, int nratecat, int iniscodon, GeneticCodeType incodetype, int infixtopo, int inNSPR, int inNNNI, double inmintotweight, int me, int np)	{
 		myid = me;
 		nprocs = np;
 
@@ -289,10 +263,23 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 			PartitionedExpoConjugateGTRPartitionedProfileProcess::Move(0.01,1,15);
 		}
 
-		if (! fixrr){
+		if (PartitionedGTRProfileProcess::GetNpart() == nfreerr){
 			LengthRelRateMove(1,10);
 			LengthRelRateMove(0.1,10);
 			LengthRelRateMove(0.01,10);
+		}
+		else
+		{
+			LengthMultiplierMove(1,10);
+			LengthMultiplierMove(0.1,10);
+			LengthMultiplierMove(0.01,10);
+
+			if(nfreerr > 0)
+			{
+				MultiplierRelRateMove(1,10);
+				MultiplierRelRateMove(0.1,10);
+				MultiplierRelRateMove(0.01,10);
+			}
 		}
 
 		// chronosuffstat.Stop();
@@ -326,15 +313,30 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 
 	void ToStream(ostream& os)	{
 		GammaBranchProcess::ToStream(os);
-		PartitionedDGamRateProcess::ToStream(os);
+		PartitionedExpoConjugateGTRGammaPhyloProcess::ToStream(os);
 		PartitionedExpoConjugateGTRPartitionedProfileProcess::ToStream(os);
 	}
 
 	void FromStream(istream& is)	{
 		GammaBranchProcess::FromStream(is);
-		PartitionedDGamRateProcess::FromStream(is);
+		PartitionedExpoConjugateGTRGammaPhyloProcess::FromStream(is);
 		PartitionedExpoConjugateGTRPartitionedProfileProcess::FromStream(is);
 		GlobalUpdateParameters();
+	}
+
+	virtual double GetNormalizationFactor()	{
+		double total = 0;
+		for (int dgampart=0; dgampart<PartitionedDGamRateProcess::GetNpart(); dgampart++)
+		{
+			vector<int> partsites = PartitionedDGamRateProcess::GetPartSites(dgampart);
+
+			size_t rrpart = PartitionedGTRProfileProcess::GetSitePart(partsites.front());
+			size_t statpart = PartitionedProfileProcess::GetSitePart(partsites.front());
+
+			total += PartitionedGTRPartitionedProfileProcess::GetNormRate(rrpart,statpart) * PartitionedDGamRateProcess::GetRateMultiplier(dgampart) * partsites.size();
+		}
+		total /= GetNsite();
+		return total;
 	}
 
 	virtual void ReadPB(int argc, char* argv[]);
@@ -346,15 +348,15 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 	protected:
 
 	virtual void Create(Tree* intree, SequenceAlignment* indata, int ncat, PartitionScheme rrscheme, PartitionScheme statscheme, PartitionScheme dgamscheme, int insitemin,int insitemax)	{
-		PartitionedExpoConjugateGTRPhyloProcess::Create(intree,indata,indata->GetNstate(),rrscheme,insitemin,insitemax);
-		PartitionedRASGTRSubstitutionProcess::Create(indata->GetNstate(), ncat, rrscheme, statscheme, dgamscheme,insitemin,insitemax);
+		PartitionedExpoConjugateGTRGammaPhyloProcess::Create(intree,indata,indata->GetNstate(),rrscheme,ncat,dgamscheme,insitemin,insitemax);
+		PartitionedExpoConjugateGTRPartitionedProfileProcess::Create(indata->GetNstate(), rrscheme, statscheme);
 		GammaBranchProcess::Create(intree);
 	}
 		
 	virtual void Delete()	{
 		GammaBranchProcess::Delete();
-		PartitionedRASGTRSubstitutionProcess::Delete();
-		PartitionedExpoConjugateGTRPhyloProcess::Delete();
+		PartitionedExpoConjugateGTRPartitionedProfileProcess::Delete();
+		PartitionedExpoConjugateGTRGammaPhyloProcess::Delete();
 	}
 
 	int fixtopo;

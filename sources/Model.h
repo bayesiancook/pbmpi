@@ -32,6 +32,7 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 #include "CodonMutSelFinitePhyloProcess.h"
 #include "CodonMutSelSBDPPhyloProcess.h"
 #include "AACodonMutSelSBDPPhyloProcess.h"
+#include "PartitionedRASGTRGammaPhyloProcess.h"
 #include "Parallel.h"
 #include <iostream>
 #include <fstream>
@@ -53,7 +54,7 @@ class Model	{
 	int until;
 	int saveall;
 
-	Model(string datafile, string treefile, int modeltype, int nratecat, int mixturetype, int ncat, GeneticCodeType codetype, int suffstat, int fixncomp, int empmix, string mixtype, string rrtype, int iscodon, int fixtopo, int NSPR, int NNNI, int fixcodonprofile, int fixomega, int fixbl, int omegaprior, int kappaprior, int dirweightprior, double mintotweight, int dc, int inevery, int inuntil, int insaveall, string inname, int myid, int nprocs)	{
+	Model(string datafile, string treefile, string schemefile, int modeltype, int nratecat, int mixturetype, int ncat, GeneticCodeType codetype, int suffstat, int fixncomp, int empmix, string mixtype, string rrtype, int iscodon, int fixtopo, int NSPR, int NNNI, int fixcodonprofile, int fixomega, int fixbl, int omegaprior, int kappaprior, int dirweightprior, double mintotweight, int dc, int inevery, int inuntil, int insaveall, string inname, int myid, int nprocs)	{
 
 		every = inevery;
 		until = inuntil;
@@ -72,8 +73,26 @@ class Model	{
 		// 4 : sbdp
 		// 5 : site specific
 		
+		// PARTITIONED
+		if (schemefile != "None")
+		{
+			if (mixturetype == 1)	{
+				type = "PARTCATFINITE";
+				//process = new PartitionedRASGTRGammaPhyloProcess(datafile,treefile,schemefile,nratecat,iscodon,codetype,fixtopo,NSPR,NNNI,mintotweight,myid,nprocs);
+			}
+			else if (mixturetype == 3)	{
+				type = "PARTCATSBDP";
+				//process = new PartitionedRASGTRGammaPhyloProcess(datafile,treefile,schemefile,nratecat,iscodon,fixtopo,NSPR,NNNI,myid,nprocs);
+			}
+			else
+			{
+				type = "PARTCATFIX";
+				process = new PartitionedRASGTRGammaPhyloProcess(datafile,treefile,schemefile,nratecat,iscodon,codetype,fixtopo,NSPR,NNNI,mintotweight,myid,nprocs);
+			}
+		}
+
 		// CAT
-		if (modeltype == 1)	{
+		else if (modeltype == 1)	{
 			if (myid == 0) {
 				// cerr << "cat model\n";
 			}
@@ -239,6 +258,9 @@ class Model	{
 		}
 		else if (type == "AACODONMUTSELSBDP")	{
 			process = new AACodonMutSelSBDPPhyloProcess(is,myid,nprocs);
+		}
+		else if (type == "PARTFIX")	{
+			process = new PartitionedRASGTRGammaPhyloProcess(is,myid,nprocs);
 		}
 		else	{
 			cerr << "error, does not recognize model type : " << type << '\n';

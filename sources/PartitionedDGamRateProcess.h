@@ -119,6 +119,7 @@ class PartitionedDGamRateProcess : public virtual RateProcess, public PartitionP
 
 	void SampleRate();
 
+	double LogRatePrior();
 	double LogAlphaPrior(int inpart);
 	double LogRateLikelihood(int inpart);
 

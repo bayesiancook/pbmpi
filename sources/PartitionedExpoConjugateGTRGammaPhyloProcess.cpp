@@ -14,21 +14,21 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 **********************/
 
 #include <cassert>
-#include "PartitionedExpoConjugateGTRPhyloProcess.h"
 #include "Parallel.h"
 #include <string.h>
+#include "PartitionedExpoConjugateGTRGammaPhyloProcess.h"
 
 //-------------------------------------------------------------------------
 //-------------------------------------------------------------------------
-//	* PartitionedExpoConjugateGTRPhyloProcess
+//	* PartitionedExpoConjugateGTRGammaPhyloProcess
 //-------------------------------------------------------------------------
 //-------------------------------------------------------------------------
 
-void PartitionedExpoConjugateGTRPhyloProcess::CreateSuffStat()	{
+void PartitionedExpoConjugateGTRGammaPhyloProcess::CreateSuffStat()	{
 
 	PhyloProcess::CreateSuffStat();
 	if (siteprofilesuffstatcount)	{
-		cerr << "error in PartitionedExpoConjugateGTRPhyloProcess::CreateSuffStat\n";
+		cerr << "error in PartitionedExpoConjugateGTRGammaPhyloProcess::CreateSuffStat\n";
 		cerr << myid << '\n';
 		exit(1);
 	}
@@ -45,7 +45,7 @@ void PartitionedExpoConjugateGTRPhyloProcess::CreateSuffStat()	{
 	}
 }
 
-void PartitionedExpoConjugateGTRPhyloProcess::DeleteSuffStat()	{
+void PartitionedExpoConjugateGTRGammaPhyloProcess::DeleteSuffStat()	{
 
 	if (siteprofilesuffstatcount)	{
 		// for (int i=sitemin; i<sitemax; i++)	{
@@ -71,9 +71,9 @@ void PartitionedExpoConjugateGTRPhyloProcess::DeleteSuffStat()	{
 	PhyloProcess::DeleteSuffStat();
 }
 
-void PartitionedExpoConjugateGTRPhyloProcess::UpdateRRSuffStat()	{
+void PartitionedExpoConjugateGTRGammaPhyloProcess::UpdateRRSuffStat()	{
 
-	for (int p=0; p<GetNpart(); p++)
+	for (int p=0; p<PartitionedGTRProfileProcess::GetNpart(); p++)
 	{
 		for (int k=0; k<GetNrr(); k++)	{
 			rrsuffstatcount[p][k] = 0;
@@ -85,7 +85,7 @@ void PartitionedExpoConjugateGTRPhyloProcess::UpdateRRSuffStat()	{
 	}
 }
 
-void PartitionedExpoConjugateGTRPhyloProcess::UpdateSiteRateSuffStat()	{
+void PartitionedExpoConjugateGTRGammaPhyloProcess::UpdateSiteRateSuffStat()	{
 
 	// cerr << "in update site rate : " << GetTotalLength() << '\n';
 	for (int i=sitemin; i<sitemax; i++)	{
@@ -97,7 +97,7 @@ void PartitionedExpoConjugateGTRPhyloProcess::UpdateSiteRateSuffStat()	{
 	}
 }
 
-void PartitionedExpoConjugateGTRPhyloProcess::UpdateBranchLengthSuffStat()	{
+void PartitionedExpoConjugateGTRGammaPhyloProcess::UpdateBranchLengthSuffStat()	{
 
 	
 	branchlengthsuffstatcount[0] = 0;
@@ -111,7 +111,7 @@ void PartitionedExpoConjugateGTRPhyloProcess::UpdateBranchLengthSuffStat()	{
 	}
 }
 
-void PartitionedExpoConjugateGTRPhyloProcess::UpdateSiteProfileSuffStat()	{
+void PartitionedExpoConjugateGTRGammaPhyloProcess::UpdateSiteProfileSuffStat()	{
 
 	for (int i=sitemin; i<sitemax; i++)	{
 		for (int k=0; k<GetDim(); k++)	{
@@ -124,7 +124,7 @@ void PartitionedExpoConjugateGTRPhyloProcess::UpdateSiteProfileSuffStat()	{
 	}
 }
 
-void PartitionedExpoConjugateGTRPhyloProcess::GlobalUpdateSiteProfileSuffStat()	{
+void PartitionedExpoConjugateGTRGammaPhyloProcess::GlobalUpdateSiteProfileSuffStat()	{
 
 	// MPI2
 	// ask slaves to update siteprofilesuffstats
@@ -206,7 +206,7 @@ void PartitionedExpoConjugateGTRPhyloProcess::GlobalUpdateSiteProfileSuffStat()	
 	#endif
 }
 
-void PartitionedExpoConjugateGTRPhyloProcess::SlaveUpdateSiteProfileSuffStat()	{
+void PartitionedExpoConjugateGTRGammaPhyloProcess::SlaveUpdateSiteProfileSuffStat()	{
 
 	UpdateSiteProfileSuffStat();
 	int i,j,workload = (sitemax - sitemin)*GetNstate();
@@ -257,7 +257,7 @@ void PartitionedExpoConjugateGTRPhyloProcess::SlaveUpdateSiteProfileSuffStat()	{
 	#endif
 }
 
-void PartitionedExpoConjugateGTRPhyloProcess::GlobalUpdateRRSuffStat()	{
+void PartitionedExpoConjugateGTRGammaPhyloProcess::GlobalUpdateRRSuffStat()	{
 
 	// MPI2
 	// should send message to slaves for updating their rrsuffstats
@@ -276,7 +276,7 @@ void PartitionedExpoConjugateGTRPhyloProcess::GlobalUpdateRRSuffStat()	{
 
 	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 
-	int Np = GetNpart();
+	int Np = PartitionedGTRProfileProcess::GetNpart();
 
 	for(int p=0; p<Np; ++p)
 	{
@@ -340,11 +340,11 @@ void PartitionedExpoConjugateGTRPhyloProcess::GlobalUpdateRRSuffStat()	{
 	#endif
 }
 
-void PartitionedExpoConjugateGTRPhyloProcess::SlaveUpdateRRSuffStat()	{
+void PartitionedExpoConjugateGTRGammaPhyloProcess::SlaveUpdateRRSuffStat()	{
 
 	UpdateRRSuffStat();
 	int workload = Nrr;
-	int Np = GetNpart();
+	int Np = PartitionedGTRProfileProcess::GetNpart();
 	#ifdef BYTE_COM
 	int i,n = 0;
 	unsigned int j;

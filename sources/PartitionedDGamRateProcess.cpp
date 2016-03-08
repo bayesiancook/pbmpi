@@ -187,6 +187,11 @@ double PartitionedDGamRateProcess::MoveHyper(double tuning, int nrep)	{
 	return ((double) naccepted) / nrep;
 }
 
+double PartitionedDGamRateProcess::LogRatePrior()
+{
+	return -alphaHyper;
+}
+
 double PartitionedDGamRateProcess::LogAlphaPrior(int inpart)	{
 	return -alpha[inpart];
 }

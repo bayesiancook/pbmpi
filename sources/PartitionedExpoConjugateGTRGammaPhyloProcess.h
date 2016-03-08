@@ -14,31 +14,31 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 **********************/
 
 
-#ifndef EXPCONGTRPHYLO_H
-#define EXPCONGTRPHYLO_H
+#ifndef PARTEXPCONGTRPHYLO_H
+#define PARTEXPCONGTRPHYLO_H
 
 #include "PartitionedGTRPhyloProcess.h"
 #include "PartitionedExpoConjugateGTRSubstitutionProcess.h"
 #include "RateProcess.h"
 
 // this is the Exponential Conjugate version
-class PartitionedExpoConjugateGTRPhyloProcess : public virtual PartitionedGTRPhyloProcess, public virtual PartitionedExpoConjugateGTRSubstitutionProcess, public virtual RateProcess {
+class PartitionedExpoConjugateGTRGammaPhyloProcess : public virtual PartitionedGTRGammaPhyloProcess, public virtual PartitionedExpoConjugateGTRSubstitutionProcess {
 
 	public:
 
-	PartitionedExpoConjugateGTRPhyloProcess() : siteprofilesuffstatcount(0), siteprofilesuffstatbeta(0), allocsiteprofilesuffstatcount(0), allocsiteprofilesuffstatbeta(0) {}
-	virtual ~PartitionedExpoConjugateGTRPhyloProcess() {}
+	PartitionedExpoConjugateGTRGammaPhyloProcess() : siteprofilesuffstatcount(0), siteprofilesuffstatbeta(0), allocsiteprofilesuffstatcount(0), allocsiteprofilesuffstatbeta(0) {}
+	virtual ~PartitionedExpoConjugateGTRGammaPhyloProcess() {}
 
 	protected:
 
-	virtual void Create(Tree* intree, SequenceAlignment* indata,int indim, PartitionScheme rrscheme, int insitemin,int insitemax)	{
+	virtual void Create(Tree* intree, SequenceAlignment* indata,int indim, PartitionScheme rrscheme, int ncat, PartitionScheme dgamscheme, int insitemin,int insitemax)	{
 		RateProcess::Create(indata->GetNsite());
 		PartitionedExpoConjugateGTRSubstitutionProcess::Create(indata->GetNstate(), rrscheme, insitemin,insitemax);
-		PartitionedGTRPhyloProcess::Create(intree,indata, indata->GetNstate(), rrscheme, insitemin,insitemax);
+		PartitionedGTRGammaPhyloProcess::Create(intree,indata, indata->GetNstate(), rrscheme, ncat, dgamscheme, insitemin,insitemax);
 	}
 
 	virtual void Delete()	{
-		PartitionedGTRPhyloProcess::Delete();
+		PartitionedGTRGammaPhyloProcess::Delete();
 		PartitionedExpoConjugateGTRSubstitutionProcess::Delete();
 		RateProcess::Delete();
 	}

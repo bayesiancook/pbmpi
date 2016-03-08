@@ -39,14 +39,14 @@ SRCS=  TaxonSet.cpp Tree.cpp Random.cpp SequenceAlignment.cpp CodonSequenceAlign
 	PartitionedGTRPhyloProcess.cpp PartitionedGTRPartitionedProfileProcess.cpp PartitionedGTRMixtureProfileProcess.cpp \
 	PartitionedExpoConjugateGTRSubstitutionProcess.cpp PartitionedExpoConjugateGTRProfileProcess.cpp \
 	PartitionedExpoConjugateGTRPartitionedProfileProcess.cpp PartitionedExpoConjugateGTRMixtureProfileProcess.cpp \
-	PartitionedExpoConjugateGTRPhyloProcess.cpp PartitionedDGamRateProcess.cpp
+	PartitionedExpoConjugateGTRGammaPhyloProcess.cpp PartitionedDGamRateProcess.cpp
 
 
 OBJS=$(patsubst %.cpp,%.o,$(SRCS))
 ALL_SRCS=$(wildcard *.cpp)
 ALL_OBJS=$(patsubst %.cpp,%.o,$(ALL_SRCS))
 
-PROGSDIR=../data
+PROGSDIR=..
 ALL= simucodon pb_mpi readpb_mpi tracecomp bpcomp bpcomp2 mpb_mpi
 PROGS=$(addprefix $(PROGSDIR)/, $(ALL))
 
