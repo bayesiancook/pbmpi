@@ -40,6 +40,21 @@ class SimpleStateSpace : public StateSpace	{
 
 	public:
 
+	SimpleStateSpace() {}
+
+	SimpleStateSpace(int inNstate, int inNAlphabetSet, char* inAlphabet, char* inAlphabetSet)	{
+
+		Nstate = inNstate;
+		NAlphabetSet = inNAlphabetSet;
+		Alphabet = new char[Nstate];
+		AlphabetSet = new char[NAlphabetSet];
+		for (int k=0; k<Nstate; k++)	{
+			Alphabet[k] = inAlphabet[k];
+		}
+		for (int k=0; k<NAlphabetSet; k++)	{
+			AlphabetSet[k] = inAlphabetSet[k];
+		}
+	}
 
 	int GetState(string from);
 
