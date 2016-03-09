@@ -191,7 +191,7 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 
 	void TraceHeader(ostream& hs)	{
 		stringstream os;
-		os << "iter\ttime\ttopologlik\tlength\talpha\tNmode\tstatent\tstatalpha\tmultent\tmultalpha";
+		os << "iter\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha\tmultent\tmultalpha";
 		if (nfreerr > 0)
 		{
 			os << "\trrent\trrmean";
@@ -253,7 +253,6 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 			MoveTopo(NSPR,NNNI);
 		}
 
-		// cerr << "gibbs ok\n";
 		propchrono.Stop();
 
 		
@@ -355,7 +354,7 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 	double GetNormalizationFactor();
 	double GetNormPartRate(int d, int p);
 
-	void UpdateOccupancyNumbers();
+	void UpdatePartOccupancyNumbers();
 
 	int fixtopo;
 	int NSPR;

@@ -26,9 +26,8 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 //-------------------------------------------------------------------------
 
 void PartitionedGTRMixtureProfileProcess::Create(int indim, PartitionScheme rrscheme)	{
-	PartitionedGTRProfileProcess::Create(indim, rrscheme);
-
 	if (! matrixarray)	{
+		PartitionedGTRProfileProcess::Create(indim, rrscheme);
 		MixtureProfileProcess::Create(rrscheme.GetNsite(),indim);
 		matrixarray = new SubMatrix**[GetNpart()];
 		for (int p=0; p<GetNpart(); p++)	{
@@ -52,9 +51,8 @@ void PartitionedGTRMixtureProfileProcess::Delete() {
 		delete[] matrixarray;
 		matrixarray = 0;
 		MixtureProfileProcess::Delete();
+		PartitionedGTRProfileProcess::Delete();
 	}
-
-	PartitionedGTRProfileProcess::Delete();
 }
 
 void PartitionedGTRMixtureProfileProcess::CreateMatrix(int p, int k)	{

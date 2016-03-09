@@ -54,8 +54,7 @@ void PartitionedRASCATGTRSBDPGammaPhyloProcess::Delete() {
 	PartitionedExpoConjugateGTRGammaPhyloProcess::Delete();
 }
 
-// Importantly, this assumes that DGam partitions are always sub-partitions of GTR partitions
-void PartitionedRASCATGTRSBDPGammaPhyloProcess::UpdateOccupancyNumbers()
+void PartitionedRASCATGTRSBDPGammaPhyloProcess::UpdatePartOccupancyNumbers()
 {
 	for(int d = 0; d < PartitionedDGamRateProcess::GetNpart(); d++)
 	{
@@ -68,7 +67,7 @@ void PartitionedRASCATGTRSBDPGammaPhyloProcess::UpdateOccupancyNumbers()
 		vector<int> partsites = PartitionedDGamRateProcess::GetPartSites(d);
 
 		for (int i=0; i < partsites.size(); i++)	{
-			partoccupancy[d][PartitionedGTRProfileProcess::GetSitePart(i)][MixtureProfileProcess::alloc[partsites[i]]]++;
+			partoccupancy[d][PartitionedGTRProfileProcess::GetSitePart(partsites[i])][MixtureProfileProcess::alloc[partsites[i]]]++;
 		}
 	}
 }
@@ -76,8 +75,7 @@ void PartitionedRASCATGTRSBDPGammaPhyloProcess::UpdateOccupancyNumbers()
 // Importantly, this assumes that DGam partitions are always sub-partitions of GTR partitions
 double PartitionedRASCATGTRSBDPGammaPhyloProcess::GetNormalizationFactor()
 {
-	UpdateOccupancyNumbers();
-
+	UpdatePartOccupancyNumbers();
 	double total = 0;
 	for (int dgampart=0; dgampart<PartitionedDGamRateProcess::GetNpart(); dgampart++)
 	{
@@ -88,6 +86,7 @@ double PartitionedRASCATGTRSBDPGammaPhyloProcess::GetNormalizationFactor()
 		total += GetNormPartRate(dgampart, rrpart) * PartitionedDGamRateProcess::GetRateMultiplier(dgampart) * partsites.size();
 	}
 	total /= GetNsite();
+
 	return total;
 }
 
@@ -540,7 +539,7 @@ void PartitionedRASCATGTRSBDPGammaPhyloProcess::ReadNocc(string name, int burnin
 		FromStream(is);
 		i++;
 
-		UpdateOccupancyNumbers();
+		MixtureProfileProcess::UpdateOccupancyNumbers();
 		double nocc = GetNOccupiedComponent();
 		nocclist.push_back(nocc);
 

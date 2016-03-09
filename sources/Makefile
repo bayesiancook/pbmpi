@@ -48,7 +48,7 @@ ALL_SRCS=$(wildcard *.cpp)
 ALL_OBJS=$(patsubst %.cpp,%.o,$(ALL_SRCS))
 
 PROGSDIR=../data
-ALL= simucodon pb_mpi readpb_mpi tracecomp bpcomp bpcomp2 mpb_mpi
+ALL= simucodon pb_mpi readpb_mpi tracecomp bpcomp bpcomp2
 PROGS=$(addprefix $(PROGSDIR)/, $(ALL))
 
 .PHONY: all clean
