@@ -26,7 +26,7 @@ class PartitionedGTRProfileProcess : public virtual MatrixProfileProcess, public
 
 	public:
 
-	PartitionedGTRProfileProcess() {}
+	PartitionedGTRProfileProcess() : rr(0) {}
 	virtual ~PartitionedGTRProfileProcess() {}
 
 	int GetNrr()	{

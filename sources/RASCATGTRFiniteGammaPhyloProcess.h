@@ -191,40 +191,44 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 
 	void SlaveUpdateParameters();
 
-	void TraceHeader(ostream& os)	{
-		os << "#iter\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
+	void TraceHeader(ostream& hs)	{
+		stringstream os;
+		os << "iter\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
 		if (! fixrr)	{
 			os << "\trrent\trrmean";
 		}
-		os << '\n'; 
+		os << endl;
+		hs << os.str();
 	}
 
-	void Trace(ostream& os)	{
+	void Trace(ostream& hs)	{
 
-		os << GetSize();
+		stringstream os;
+		os << GetSize() - 1;
 		if (chronototal.GetTime())	{
-			os << '\t' << chronototal.GetTime() / 1000;
-			os << '\t' << ((int) (propchrono.GetTime() / chronototal.GetTime() * 100));
+			os << "\t" << chronototal.GetTime() / 1000;
+			os << "\t" << ((int) (propchrono.GetTime() / chronototal.GetTime() * 100));
 			chronototal.Reset();
 			propchrono.Reset();
 		}
 		else	{
-			os << '\t' << 0;
-			os << '\t' << 0;
+			os << "\t" << 0;
+			os << "\t" << 0;
 		}
 
-		os << '\t' << GetLogLikelihood();
-		os << '\t' << GetRenormTotalLength();
-		os << '\t' << GetAlpha();
-		os << '\t' << GetNDisplayedComponent();
-		os << '\t' << GetStatEnt();
-		os << '\t' << GetMeanDirWeight();
+		os << "\t" << GetLogLikelihood();
+		os << "\t" << GetRenormTotalLength();
+		os << "\t" << GetAlpha();
+		os << "\t" << GetNDisplayedComponent();
+		os << "\t" << GetStatEnt();
+		os << "\t" << GetMeanDirWeight();
 		if (! fixrr)	{
-			os << '\t' << GetRREntropy();
-			os << '\t' << GetRRMean();
+			os << "\t" << GetRREntropy();
+			os << "\t" << GetRRMean();
 		}
 
-		os << '\n';
+		os << endl;
+		hs << os.str();
 	}
 
 	double Move(double tuning = 1.0)	{

@@ -1508,7 +1508,7 @@ void PhyloProcess::SlaveExecute(MESSAGE signal)	{
 	case COLLAPSE:
 		Collapse();
 		break;
-	case 	UPDATE:
+	case UPDATE:
 		UpdateConditionalLikelihoods();
 		break;
 	case UPDATE_SRATE:

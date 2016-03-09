@@ -86,9 +86,10 @@ void PartitionedDGamRateProcess::ToStream(ostream& os)	{
 	{
 		os << ratemult[i] << '\n';
 		os << alpha[i] << '\n';
-		os << alphaHyper << '\n';
-		os << multHyper << '\n';
 	}
+
+	os << alphaHyper << '\n';
+	os << multHyper << '\n';
 }
 
 void PartitionedDGamRateProcess::FromStream(istream& is)	{
@@ -98,10 +99,10 @@ void PartitionedDGamRateProcess::FromStream(istream& is)	{
 		is >> ratemult[i];
 		is >> tmp;
 		SetAlpha(i,tmp);
-
-		is >> alphaHyper;
-		is >> multHyper;
 	}
+
+	is >> alphaHyper;
+	is >> multHyper;
 }
 
 void PartitionedDGamRateProcess::UpdateDiscreteCategories(int inpart)	{
@@ -150,6 +151,8 @@ double PartitionedDGamRateProcess::Move(double tuning, int nrep)	{
 	for (int rep=0; rep<nrep; rep++)	{
 		naccepted += MoveAlphas(tuning);
 	}
+
+	MoveHyper(tuning,nrep);
 
 	chronorate.Stop();
 
@@ -340,7 +343,7 @@ void PartitionedDGamRateProcess::GlobalUpdateRateSuffStat()	{
 	int ivector[workload*GetNpart()];
 	double dvector[workload*GetNpart()];
 	for(p=1; p<nprocs; ++p) {
-			MPI_Recv(ivector,workload,MPI_INT,MPI_ANY_SOURCE,TAG1,MPI_COMM_WORLD,&stat);
+			MPI_Recv(ivector,workload*GetNpart(),MPI_INT,MPI_ANY_SOURCE,TAG1,MPI_COMM_WORLD,&stat);
 			for(i=0; i<GetNpart(); ++i) {
 				for(j=0; j<workload; ++j) {
 					ratesuffstatcount[i][j] += ivector[i*workload + j];
@@ -349,7 +352,7 @@ void PartitionedDGamRateProcess::GlobalUpdateRateSuffStat()	{
 	}
 	MPI_Barrier(MPI_COMM_WORLD);
 	for(p=1; p<nprocs; ++p) {
-			MPI_Recv(dvector,workload,MPI_DOUBLE,MPI_ANY_SOURCE,TAG1,MPI_COMM_WORLD,&stat);
+			MPI_Recv(dvector,workload*GetNpart(),MPI_DOUBLE,MPI_ANY_SOURCE,TAG1,MPI_COMM_WORLD,&stat);
 			for(i=0; i<GetNpart(); ++i) {
 				for(j=0; j<workload; ++j) {
 					ratesuffstatbeta[i][j] += dvector[i*workload + j];
@@ -407,8 +410,8 @@ void PartitionedDGamRateProcess::SlaveUpdateRateSuffStat()	{
 	double dvector[GetNcat()*GetNpart()];
 
 	for(int i=0; i<GetNpart(); ++i){
-		memcpy(&ivector[i], ratesuffstatcount[i], GetNcat()*sizeof(double));
-		memcpy(&dvector[i], ratesuffstatbeta[i], GetNcat()*sizeof(double));
+		memcpy(&ivector[i*GetNcat()], ratesuffstatcount[i], GetNcat()*sizeof(double));
+		memcpy(&dvector[i*GetNcat()], ratesuffstatbeta[i], GetNcat()*sizeof(double));
 	}
 
 	MPI_Send(ivector,GetNcat()*GetNpart(),MPI_INT,0,TAG1,MPI_COMM_WORLD);

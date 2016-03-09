@@ -49,16 +49,14 @@ void PartitionedRASGTRGammaPhyloProcess::GlobalUpdateParameters()	{
 	// ResampleWeights();
 	RenormalizeProfiles();
 
-	int i,j,nrr,nalpha,nbranch = GetNbranch(),ni,nd,ndim,nrrpart,nstatpart;
+	int i,j,nrr,nalpha,nbranch = GetNbranch(),nd,ndim,nrrpart,nstatpart;
 	nalpha = PartitionedDGamRateProcess::GetNpart();
 	nrr = GetNrr();
 	nrrpart = PartitionedGTRProfileProcess::GetNpart();
 	ndim = GetDim();
 	nstatpart = PartitionedProfileProcess::GetNpart();
-	nd = 2 + 2*nalpha + nbranch + nrrpart*nrr + nstatpart*ndim + ndim + 1;
-	ni = 1 + GetNsite();
-	int ivector[ni];
-	double dvector[nd]; 
+	nd = 2*nalpha + 2 + nbranch + nrrpart*nrr + nstatpart*ndim + ndim;
+	double* dvector = new double[nd];
 	MESSAGE signal = PARAMETER_DIFFUSION;
 	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 
@@ -73,6 +71,7 @@ void PartitionedRASGTRGammaPhyloProcess::GlobalUpdateParameters()	{
 		dvector[index] = GetRateMultiplier(i);
 		index++;
 	}
+
 	dvector[index] = branchalpha;
 	index++;
 	dvector[index] = branchbeta;
@@ -83,7 +82,7 @@ void PartitionedRASGTRGammaPhyloProcess::GlobalUpdateParameters()	{
 		index++;
 	}
 	
-	for(int p=0; p<nrrpart; ++i)
+	for(int p=0; p<nrrpart; ++p)
 	{
 		for(i=0; i<nrr ; ++i) {
 			dvector[index] = rr[p][i];
@@ -97,14 +96,14 @@ void PartitionedRASGTRGammaPhyloProcess::GlobalUpdateParameters()	{
 			index++;
 		}
 	}
-	for (int i=0; i<GetDim(); i++)	{
+	for (int i=0; i<ndim; i++)	{
 		dvector[index] = dirweight[i];
 		index++;
 	}
 
 	// Now send out the doubles and ints over the wire...
-	MPI_Bcast(ivector,ni,MPI_INT,0,MPI_COMM_WORLD);
 	MPI_Bcast(dvector,nd,MPI_DOUBLE,0,MPI_COMM_WORLD);
+	delete[] dvector;
 }
 
 
@@ -132,17 +131,14 @@ void PartitionedRASGTRGammaPhyloProcess::SlaveUpdateParameters()	{
 
 	// SlaveBroadcastTree();
 
-	int i,j,nrr,nalpha,nbranch = GetNbranch(),ni,nd,ndim,nrrpart,nstatpart;
+	int i,j,nrr,nalpha,nbranch = GetNbranch(),nd,ndim,nrrpart,nstatpart;
 	nalpha = PartitionedDGamRateProcess::GetNpart();
 	nrr = GetNrr();
 	nrrpart = PartitionedGTRProfileProcess::GetNpart();
 	ndim = GetDim();
 	nstatpart = PartitionedProfileProcess::GetNpart();
-	nd = 2 + 2*nalpha + nbranch + nrrpart*nrr + nstatpart*ndim + ndim + 1;
-	ni = 1 + GetNsite();
-	int* ivector = new int[ni];
+	nd = 2*nalpha + 2 + nbranch + nrrpart*nrr + nstatpart*ndim + ndim;
 	double* dvector = new double[nd];
-	MPI_Bcast(ivector,ni,MPI_INT,0,MPI_COMM_WORLD);
 	MPI_Bcast(dvector,nd,MPI_DOUBLE,0,MPI_COMM_WORLD);
 	int index = 0;
 	for(i=0; i<nalpha; ++i)
@@ -152,11 +148,12 @@ void PartitionedRASGTRGammaPhyloProcess::SlaveUpdateParameters()	{
 		ratemult[i] = dvector[index];
 		index++;
 	}
-	index++;
+
 	branchalpha = dvector[index];
 	index++;
 	branchbeta = dvector[index];
 	index++;
+
 	for(i=0; i<nbranch; ++i) {
 		blarray[i] = dvector[index];
 		index++;
@@ -180,7 +177,6 @@ void PartitionedRASGTRGammaPhyloProcess::SlaveUpdateParameters()	{
 		index++;
 	}
 	delete[] dvector;
-	delete[] ivector;
 }
 
 
@@ -345,7 +341,7 @@ void PartitionedRASGTRGammaPhyloProcess::SlaveComputeSiteLogL()	{
 
 }
 
-vector<PartitionScheme> PartitionedRASGTRGammaPhyloProcess::ReadSchemes(string schemefile)
+vector<PartitionScheme> PartitionedRASGTRGammaPhyloProcess::ReadSchemes(int Nsite)
 {
 	string error = "Error: improperly formatted scheme file\n";
 
@@ -354,9 +350,9 @@ vector<PartitionScheme> PartitionedRASGTRGammaPhyloProcess::ReadSchemes(string s
 	map<string, size_t> fixrrparts;
 	map<string, size_t> fixstatparts;
 
-	PartitionScheme rrscheme(GetNsite());
-	PartitionScheme statscheme(GetNsite());
-	PartitionScheme dgamscheme(GetNsite());
+	PartitionScheme rrscheme(Nsite);
+	PartitionScheme statscheme(Nsite);
+	PartitionScheme dgamscheme(Nsite);
 
 	vector<size_t> partsites;
 
@@ -505,7 +501,7 @@ vector<PartitionScheme> PartitionedRASGTRGammaPhyloProcess::ReadSchemes(string s
 
 	}
 
-	if(partsites.size() != GetNsite())
+	if(partsites.size() != Nsite)
 	{
 		size_t rrpart;
 		if(fixrrparts.find("None") != fixrrparts.end())
@@ -523,7 +519,7 @@ vector<PartitionScheme> PartitionedRASGTRGammaPhyloProcess::ReadSchemes(string s
 		std::sort(partsites.begin(), partsites.end());
 
 		vector<size_t>::iterator it = partsites.begin();
-		for(size_t site = 0; site < GetNsite(); site++)
+		for(size_t site = 0; site < Nsite; site++)
 		{
 			if(*it != site)
 			{
@@ -544,6 +540,19 @@ vector<PartitionScheme> PartitionedRASGTRGammaPhyloProcess::ReadSchemes(string s
 	rrscheme.update();
 	statscheme.update();
 	dgamscheme.update();
+
+	if(myid == 0)
+	{
+		cerr << endl;
+		cerr << "Read " << dgamscheme.Npart << " partitions in scheme file '" << schemefile << "':\n";
+		for(size_t i = 0; i < rrscheme.Npart; i++)
+		{
+			string t = rrscheme.partType[i] == "None" ? "GTR" : rrscheme.partType[i];
+
+			cerr << t << "\t" << rrscheme.partSites[i].size() << " sites" << endl;
+		}
+		cerr << endl;
+	}
 
 	vector<PartitionScheme> schemes;
 

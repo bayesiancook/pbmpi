@@ -161,43 +161,49 @@ class RASCATGTRDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProcess
 		Delete();
 	}
 
-	void TraceHeader(ostream& os)	{
-		os << "#time\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
+	void TraceHeader(ostream& hs)	{
+		stringstream os;
+		os << "iter\ttime\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
 		if (! fixrr)	{
 			os << "\trrent\trrmean";
 		}
 		os << "\tkappa\tallocent";
 		// os << "\tunicount";
-		os << '\n'; 
+		os << endl;
+		hs << os.str();
 	}
 
-	void Trace(ostream& os)	{
+	void Trace(ostream& hs)	{
 
 		UpdateOccupancyNumbers();
 
-		os << ((int) (chronototal.GetTime() / 1000));
+		stringstream os;
+
+		os << GetSize() - 1;
+		os << "\t" << ((int) (chronototal.GetTime() / 1000));
 		if (chronototal.GetTime())	{
-			os << '\t' << ((double) ((int) (chronototal.GetTime() / (1 + GetSize())))) / 1000;
-			os << '\t' << ((int) (propchrono.GetTime() / chronototal.GetTime() * 100));
-			// os << '\t' << ((int) (chronosuffstat.GetTime() / chronototal.GetTime() * 100));
+			os << "\t" << ((double) ((int) (chronototal.GetTime() / (1 + GetSize())))) / 1000;
+			os << "\t" << ((int) (propchrono.GetTime() / chronototal.GetTime() * 100));
+			// os << "\t" << ((int) (chronosuffstat.GetTime() / chronototal.GetTime() * 100));
 		}
 		else	{
-			os << '\t' << 0;
-			os << '\t' << 0;
+			os << "\t" << 0;
+			os << "\t" << 0;
 		}
 
-		os << '\t' << GetLogLikelihood();
-		os << '\t' << GetRenormTotalLength();
-		os << '\t' << GetAlpha();
-		os << '\t' << GetNDisplayedComponent();
-		os << '\t' << GetStatEnt();
-		os << '\t' << GetMeanDirWeight();
+		os << "\t" << GetLogLikelihood();
+		os << "\t" << GetRenormTotalLength();
+		os << "\t" << GetAlpha();
+		os << "\t" << GetNDisplayedComponent();
+		os << "\t" << GetStatEnt();
+		os << "\t" << GetMeanDirWeight();
 		if (! fixrr)	{
-			os << '\t' << GetRREntropy();
-			os << '\t' << GetRRMean();
+			os << "\t" << GetRREntropy();
+			os << "\t" << GetRRMean();
 		}
 		// os << '\t' << kappa << '\t' << GetAllocEntropy();
-		os << '\n';
+		os << endl;
+		hs << os.str();
 	}
 
 	double Move(double tuning = 1.0)	{

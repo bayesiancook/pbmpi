@@ -34,7 +34,7 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 	void SlaveUpdateParameters();
 
 
-	PartitionedRASGTRGammaPhyloProcess(string indatafile, string treefile, string partfile, int nratecat, int iniscodon, GeneticCodeType incodetype, int infixtopo, int inNSPR, int inNNNI, double inmintotweight, int me, int np)	{
+	PartitionedRASGTRGammaPhyloProcess(string indatafile, string treefile, string inschemefile, int nratecat, int iniscodon, GeneticCodeType incodetype, int infixtopo, int inNSPR, int inNNNI, double inmintotweight, int me, int np)	{
 		myid = me;
 		nprocs = np;
 
@@ -82,7 +82,8 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 			}
 		}
 
-		vector<PartitionScheme> schemes = ReadSchemes(schemefile);
+		schemefile = inschemefile;
+		vector<PartitionScheme> schemes = ReadSchemes(plaindata->GetNsite());
 
 		Create(tree,plaindata,nratecat,schemes[0],schemes[1],schemes[2],insitemin,insitemax);
 
@@ -123,7 +124,6 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 			NSPR = 10;
 			NNNI = 0;
 		}
-		//SequenceAlignment* plaindata = new FileSequenceAlignment(datafile,0,myid);
 		SequenceAlignment* plaindata;
 		if (iscodon)	{
 			SequenceAlignment* tempdata = new FileSequenceAlignment(datafile,0,myid);
@@ -156,7 +156,7 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 		}
 		tree->RegisterWith(taxonset,0);
 
-		vector<PartitionScheme> schemes = ReadSchemes(schemefile);
+		vector<PartitionScheme> schemes = ReadSchemes(plaindata->GetNsite());
 
 		Create(tree,plaindata,nratecat,schemes[0],schemes[1],schemes[2],insitemin,insitemax);
 
@@ -172,24 +172,26 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 	}
 
 	void TraceHeader(ostream& os)	{
-		os << "iter\ttime\ttopo\tloglik\tlength\talpha";
+		stringstream line;
+		line << "iter\tloglik\tlength\tmeanalpha";
 
 		if (nfreestat > 0)	{
-			os << "\tstatent";
+			line << "\tmeanstatent";
 			if(nfreestat > 1)
-				os << "\tstatalpha";
+				line << "\tstatalpha";
 		}
 		if (nfreerr > 0)
 		{
-			os << "\trrent\trrmean";
+			line << "\tmeanrrent\tmeanrr";
 		}
-		os << '\n'; 
+		line << endl;
+		os << line.str();
 	}
 
 	void Trace(ostream& os)	{
-
-		os << GetSize();
-		if (chronototal.GetTime())	{
+		stringstream line;
+		line << GetSize() - 1;
+		/*if (chronototal.GetTime())	{
 			os << "\t" << chronototal.GetTime() / 1000;
 			os << "\t" << ((int) (propchrono.GetTime() / chronototal.GetTime() * 100));
 			chronototal.Reset();
@@ -198,24 +200,25 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 		else	{
 			os << "\t" << 0;
 			os << "\t" << 0;
-		}
+		}*/
 
-		os << "\t" << GetLogLikelihood();
-		os << "\t" << GetRenormTotalLength();
-		os << "\t" << GetAlpha();
+		line << "\t" << GetLogLikelihood();
+		line << "\t" << GetRenormTotalLength();
+		line << "\t" << GetAlpha();
 		if (nfreestat > 0)
 		{
-			os << "\t" << GetStatEnt();
+			line << "\t" << GetStatEnt();
 
 			if (nfreestat > 1)
-				os << "\t" << GetMeanDirWeight();
+				line << "\t" << GetMeanDirWeight();
 		}
 		if (nfreerr > 0)	{
-			os << "\t" << GetRREntropy();
-			os << "\t" << GetRRMean();
+			line << "\t" << GetRREntropy();
+			line << "\t" << GetRRMean();
 		}
 		// os << '\t' << kappa << '\t' << GetAllocEntropy();
-		os << "\n";
+		line << endl;
+		os << line.str();
 
 	}
 
@@ -224,37 +227,28 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 		chronototal.Start();
 
 		propchrono.Start();
-		// cerr << "BL move\n";
 		BranchLengthMove(tuning);
 		BranchLengthMove(0.1 * tuning);
-		// cerr << "BL move ok\n";
-		// cerr << "gibbs\n";
 		if (! fixtopo)	{
 			MoveTopo(NSPR,NNNI);
 		}
 
-		// cerr << "gibbs ok\n";
 		propchrono.Stop();
 
 		
 		// MPI2: reactivate this in order to test the suff stat code
 		// chronocollapse.Start();
-		// cerr << "collapse\n";
 		GlobalCollapse();
-		// cerr << "collapse ok\n";
 		// chronocollapse.Stop();
 
 		// chronosuffstat.Start();
-		// cerr << "branch process move\n";
 		GammaBranchProcess::Move(tuning,10);
-		// cerr << "branch process move ok\n";
 
-		// cerr << "rate move\n";
 		GlobalUpdateParameters();
+
 		PartitionedDGamRateProcess::Move(0.3*tuning,10);
 		PartitionedDGamRateProcess::Move(0.03*tuning,10);
 
-		// cerr << "profile move\n";
 		// is called inside ExpoConjugateGTRSBDPProfileProcess::Move(1,1,10);
 		// GlobalUpdateParameters();
 		PartitionedExpoConjugateGTRPartitionedProfileProcess::Move(1,1,10);
@@ -285,9 +279,7 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 		// chronosuffstat.Stop();
 
 		// chronounfold.Start();
-		// cerr << "unfold\n";
 		GlobalUnfold();
-		// cerr << "unfold ok\n";
 		// chronounfold.Stop();
 
 		chronototal.Stop();
@@ -313,13 +305,13 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 
 	void ToStream(ostream& os)	{
 		GammaBranchProcess::ToStream(os);
-		PartitionedExpoConjugateGTRGammaPhyloProcess::ToStream(os);
+		PartitionedDGamRateProcess::ToStream(os);
 		PartitionedExpoConjugateGTRPartitionedProfileProcess::ToStream(os);
 	}
 
 	void FromStream(istream& is)	{
 		GammaBranchProcess::FromStream(is);
-		PartitionedExpoConjugateGTRGammaPhyloProcess::FromStream(is);
+		PartitionedDGamRateProcess::FromStream(is);
 		PartitionedExpoConjugateGTRPartitionedProfileProcess::FromStream(is);
 		GlobalUpdateParameters();
 	}
@@ -343,7 +335,7 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 	void SlaveComputeCVScore();
 	void SlaveComputeSiteLogL();
 
-	vector<PartitionScheme> ReadSchemes(string partfile);
+	vector<PartitionScheme> ReadSchemes(int Nsite);
 
 	protected:
 

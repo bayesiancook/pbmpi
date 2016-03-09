@@ -314,23 +314,23 @@ void PartitionedExpoConjugateGTRGammaPhyloProcess::GlobalUpdateRRSuffStat()	{
 	int ivector[workload*Np];
 	double dvector[workload*Np];
 	for(i=1; i<nprocs; ++i) {
-		MPI_Recv(ivector,workload,MPI_INT,i,TAG1,MPI_COMM_WORLD,&stat);
+		MPI_Recv(ivector,workload*Np,MPI_INT,i,TAG1,MPI_COMM_WORLD,&stat);
 		// MPI_Recv(ivector,workload,MPI_INT,MPI_ANY_SOURCE,TAG1,MPI_COMM_WORLD,&stat);
 		for(int p=0; p<Np; ++p)
 		{
 			for(j=0; j<workload; ++j) {
-				rrsuffstatcount[p][j] += ivector[j];
+				rrsuffstatcount[p][j] += ivector[p*workload + j];
 			}
 		}
 	}
 	MPI_Barrier(MPI_COMM_WORLD);
 	for(i=1; i<nprocs; ++i) {
-		MPI_Recv(dvector,workload,MPI_DOUBLE,i,TAG1,MPI_COMM_WORLD,&stat);
+		MPI_Recv(dvector,workload*Np,MPI_DOUBLE,i,TAG1,MPI_COMM_WORLD,&stat);
 		// MPI_Recv(dvector,workload,MPI_DOUBLE,MPI_ANY_SOURCE,TAG1,MPI_COMM_WORLD,&stat);
 		for(int p=0; p<Np; ++p)
 		{
 			for(j=0; j<workload; ++j) {
-				rrsuffstatbeta[p][j] += dvector[j];
+				rrsuffstatbeta[p][j] += dvector[p*workload + j];
 			}
 		}
 	}

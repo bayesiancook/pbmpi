@@ -46,7 +46,7 @@ OBJS=$(patsubst %.cpp,%.o,$(SRCS))
 ALL_SRCS=$(wildcard *.cpp)
 ALL_OBJS=$(patsubst %.cpp,%.o,$(ALL_SRCS))
 
-PROGSDIR=..
+PROGSDIR=../data
 ALL= simucodon pb_mpi readpb_mpi tracecomp bpcomp bpcomp2 mpb_mpi
 PROGS=$(addprefix $(PROGSDIR)/, $(ALL))
 
@@ -63,7 +63,7 @@ all: $(PROGS)
 
 # Rules to create .o files from .cpp files
 %.o: %.cpp %.d
-	$(CC) -c $(CPPFLAGS) $*.cpp
+	$(CC) $(CPPFLAGS) $*.cpp
 
 # Include the dependencies unless the request was to clean eveything up
 ifneq ($(MAKECMDGOALS),clean)

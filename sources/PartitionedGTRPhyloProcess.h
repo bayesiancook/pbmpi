@@ -71,16 +71,8 @@ class PartitionedGTRGammaPhyloProcess : public virtual PartitionedGTRPhyloProces
 		PartitionedGTRPhyloProcess::Delete();
 	}
 
-	void ToStream(ostream& os)
-	{
-		PartitionedGTRPhyloProcess::ToStream(os);
-		PartitionedDGamRateProcess::ToStream(os);
-	}
-	void FromStream(istream& is)
-	{
-		PartitionedGTRPhyloProcess::FromStream(is);
-		PartitionedDGamRateProcess::FromStream(is);
-	}
+	void ToStream(ostream& os){ PhyloProcess::ToStream(os); }
+	void FromStream(istream& is){ PhyloProcess::FromStream(is); }
 
 	double LengthMultiplierMove(double tuning, int nrep);
 	double MultiplierRelRateMove(double tuning, int nrep);

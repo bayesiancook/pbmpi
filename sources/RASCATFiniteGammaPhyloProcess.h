@@ -190,41 +190,45 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 		return logL;
 	}
 
-	void TraceHeader(ostream& os)	{
-		os << "#iter\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
+	void TraceHeader(ostream& hs)	{
+		stringstream os;
+		os << "iter\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
 		// os << "#time\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
 		// os << "\tkappa\tallocent";
-		os << '\n'; 
+		os << endl;
+		hs << os.str();
 	}
 
-	void Trace(ostream& os)	{
+	void Trace(ostream& hs)	{
 
 		/*
 		os << ((int) (chronototal.GetTime() / 1000));
 		if (chronototal.GetTime())	{
-			os << '\t' << ((double) ((int) (chronototal.GetTime() / GetSize()))) / 1000;
-			os << '\t' << ((int) (propchrono.GetTime() / chronototal.GetTime() * 100));
-			// os << '\t' << ((int) (chronosuffstat.GetTime() / chronototal.GetTime() * 100));
+			os << "\t" << ((double) ((int) (chronototal.GetTime() / GetSize()))) / 1000;
+			os << "\t" << ((int) (propchrono.GetTime() / chronototal.GetTime() * 100));
+			// os << "\t" << ((int) (chronosuffstat.GetTime() / chronototal.GetTime() * 100));
 		}
 		*/
-		os << GetSize();
+		stringstream os;
+		os << GetSize() - 1;
 		if (chronototal.GetTime())	{
-			os << '\t' << chronototal.GetTime() / 1000;
-			os << '\t' << ((int) (propchrono.GetTime() / chronototal.GetTime() * 100));
+			os << "\t" << chronototal.GetTime() / 1000;
+			os << "\t" << ((int) (propchrono.GetTime() / chronototal.GetTime() * 100));
 			chronototal.Reset();
 			propchrono.Reset();
 		}
 		else	{
-			os << '\t' << 0;
-			os << '\t' << 0;
+			os << "\t" << 0;
+			os << "\t" << 0;
 		}
 
-		os << '\t' << GetLogLikelihood() << '\t' << GetRenormTotalLength() << '\t' << GetAlpha();
-		os << '\t' << GetNOccupiedComponent() << '\t' << GetStatEnt();
-		os << '\t' << GetMeanDirWeight();
-		// os << '\t' << kappa << '\t' << GetAllocEntropy();
+		os << "\t" << GetLogLikelihood() << "\t" << GetRenormTotalLength() << "\t" << GetAlpha();
+		os << "\t" << GetNOccupiedComponent() << "\t" << GetStatEnt();
+		os << "\t" << GetMeanDirWeight();
+		// os << "\t" << kappa << "\t" << GetAllocEntropy();
 
-		os << '\n';
+		os << endl;
+		hs << os.str();
 	}
 
 	virtual double Move(double tuning = 1.0)	{

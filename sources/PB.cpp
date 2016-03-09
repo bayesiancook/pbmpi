@@ -59,7 +59,7 @@ int main(int argc, char* argv[])	{
 	int fixtopo = 0;
 	int fixcodonprofile = 1;
 	int fixomega = 1;
-	int NSPR = 10;
+	int NSPR = 1;
 	int NNNI = 0;
 	int fixbl = 0;
 	int fixncomp = 0;
@@ -501,34 +501,37 @@ int main(int argc, char* argv[])	{
 		exit(1);
 	}
 
-	if ((modeltype == -1) && (mixturetype == -1) && schemefile == "None")	{
-		modeltype = 2;
-		mixturetype = 3;
-	}
-	else	{
-		if (modeltype == -1)	{
-			if (!myid)	{
-			cerr << '\n';
-			cerr << "error: incompletely specified model\n";
-			cerr << "exchangeability parameters should be explicitly given\n";
-			cerr << "-gtr -poisson (-f81) -lg -wag -jtt -mtrev -mtart -mtzoa or custom (-rr <filename>)\n";
-			cerr << '\n';
-			}
-			MPI_Finalize();
-			exit(1);
+	if(schemefile == "None")
+	{
+		if ((modeltype == -1) && (mixturetype == -1))	{
+			modeltype = 2;
+			mixturetype = 3;
 		}
-		if (mixturetype == -1)	{
-			if (!myid)	{
-			cerr << '\n';
-			cerr << "error: incompletely specified model\n";
-			cerr << "mixture of equilibrium frequency profiles should be explicitly chosen among:\n";
-			cerr << "-cat (or -dp) : infinite mixture (Dirichlet process)\n";
-			cerr << "-ncat 1 : one matrix model\n";
-			cerr << "-catfix <empmix>: empirical mixture (see manual for details)\n";
-			cerr << '\n';
+		else	{
+			if (modeltype == -1)	{
+				if (!myid)	{
+				cerr << '\n';
+				cerr << "error: incompletely specified model\n";
+				cerr << "exchangeability parameters should be explicitly given\n";
+				cerr << "-gtr -poisson (-f81) -lg -wag -jtt -mtrev -mtart -mtzoa or custom (-rr <filename>)\n";
+				cerr << '\n';
+				}
+				MPI_Finalize();
+				exit(1);
 			}
-			MPI_Finalize();
-			exit(1);
+			if (mixturetype == -1)	{
+				if (!myid)	{
+				cerr << '\n';
+				cerr << "error: incompletely specified model\n";
+				cerr << "mixture of equilibrium frequency profiles should be explicitly chosen among:\n";
+				cerr << "-cat (or -dp) : infinite mixture (Dirichlet process)\n";
+				cerr << "-ncat 1 : one matrix model\n";
+				cerr << "-catfix <empmix>: empirical mixture (see manual for details)\n";
+				cerr << '\n';
+				}
+				MPI_Finalize();
+				exit(1);
+			}
 		}
 	}
 	if (randfix != -1)	{
@@ -546,6 +549,10 @@ int main(int argc, char* argv[])	{
 	if (datafile != "")	{
 		if (myid == 0) {
 			cerr << "model:\n";
+			if(schemefile != "None")
+			{
+				cerr << "partitioned model\n";
+			}
 			if (mixturetype == 1)	{
 				if (empmix)	{
 					cerr << "empirical mixture: " << mixtype << '\n';
