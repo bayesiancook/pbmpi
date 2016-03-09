@@ -558,7 +558,10 @@ int main(int argc, char* argv[])	{
 					cerr << "empirical mixture: " << mixtype << '\n';
 				}
 				else if (ncat == 1)	{
-					cerr << "one-matrix model\n";
+					if(schemefile != "None")
+						cerr << "one-profile model\n";
+					else
+						cerr << "one-matrix model\n";
 				}
 				else	{
 					cerr << "finite mixture of " << ncat << " components\n";
