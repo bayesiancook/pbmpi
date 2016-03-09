@@ -34,6 +34,7 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 #include "AACodonMutSelSBDPPhyloProcess.h"
 #include "PartitionedRASGTRGammaPhyloProcess.h"
 #include "PartitionedRASCATGTRSBDPGammaPhyloProcess.h"
+#include "PartitionedRASCATGTRFiniteGammaPhyloProcess.h"
 #include "Parallel.h"
 #include <iostream>
 #include <fstream>
@@ -79,7 +80,7 @@ class Model	{
 		{
 			if (mixturetype == 1)	{
 				type = "PARTCATFINITE";
-				//process = new PartitionedRASGTRGammaPhyloProcess(datafile,treefile,schemefile,nratecat,iscodon,codetype,fixtopo,NSPR,NNNI,mintotweight,myid,nprocs);
+				process = new PartitionedRASCATGTRFiniteGammaPhyloProcess(datafile,treefile,schemefile,nratecat,ncat,fixncomp,empmix,mixtype,fixtopo,NSPR,NNNI,myid,nprocs);
 			}
 			else if (mixturetype == 3)	{
 				type = "PARTCATSBDP";

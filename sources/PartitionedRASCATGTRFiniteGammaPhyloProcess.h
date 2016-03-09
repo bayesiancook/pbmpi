@@ -14,17 +14,17 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 **********************/
 
 
-#ifndef PARTRASCATGTRSBDP_H
-#define PARTRASCATGTRSBDP_H
+#ifndef PARTRASCATGTRFINITE_H
+#define PARTRASCATGTRFINITE_H
 
 #include "PartitionedDGamRateProcess.h"
-#include "PartitionedExpoConjugateGTRSBDPProfileProcess.h"
+#include "PartitionedExpoConjugateGTRFiniteProfileProcess.h"
 #include "GammaBranchProcess.h"
 #include "CodonSequenceAlignment.h"
 #include "PartitionedExpoConjugateGTRGammaPhyloProcess.h"
 
 
-class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpoConjugateGTRSBDPProfileProcess, public virtual PartitionedExpoConjugateGTRGammaPhyloProcess, public virtual GammaBranchProcess	{
+class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedExpoConjugateGTRFiniteProfileProcess, public virtual PartitionedExpoConjugateGTRGammaPhyloProcess, public virtual GammaBranchProcess	{
 
 	public:
 
@@ -33,7 +33,7 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 	void SlaveUpdateParameters();
 
 
-	PartitionedRASCATGTRSBDPGammaPhyloProcess(string indatafile, string treefile, string inschemefile, int nratecat, int iniscodon, GeneticCodeType incodetype, int infixtopo, int inNSPR, int inNNNI, int inkappaprior, double inmintotweight, int me, int np)	{
+	PartitionedRASCATGTRFiniteGammaPhyloProcess(string indatafile, string treefile, string inschemefile, int nratecat, int ncat, int infixncomp, int inempmix, string inmixtype, int infixtopo, int inNSPR, int inNNNI, int me, int np)	{
 		partoccupancy = 0;
 
 		myid = me;
@@ -42,20 +42,11 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 		fixtopo = infixtopo;
 		NSPR = inNSPR;
 		NNNI = inNNNI;
-		iscodon = iniscodon;
-		codetype = incodetype;
-		kappaprior = inkappaprior;
-		SetMinTotWeight(inmintotweight);
 
 		datafile = indatafile;
-		SequenceAlignment* plaindata;
-		if (iscodon)	{
-			SequenceAlignment* tempdata = new FileSequenceAlignment(datafile,0,myid);
-			plaindata = new CodonSequenceAlignment(tempdata,true,codetype);
-		}
-		else	{
-			plaindata = new FileSequenceAlignment(datafile,0,myid);
-		}
+		SequenceAlignment* plaindata = new FileSequenceAlignment(datafile,0,myid);
+
+		// data = new FileSequenceAlignment(datafile,0,myid);
 		const TaxonSet* taxonset = plaindata->GetTaxonSet();
 		if (treefile == "None")	{
 			tree = new Tree(taxonset);
@@ -99,15 +90,14 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 			}
 			cerr << endl;
 		}
-
-		Create(tree,plaindata,nratecat,schemes[0],schemes[2],insitemin,insitemax);
+		Create(tree,plaindata,nratecat,ncat,schemes[0],schemes[2],infixncomp,inempmix,inmixtype,insitemin,insitemax);
 		if (myid == 0)	{
 			Sample();
 			GlobalUnfold();
 		}
 	}
 
-	PartitionedRASCATGTRSBDPGammaPhyloProcess(istream& is, int me, int np)	{
+	PartitionedRASCATGTRFiniteGammaPhyloProcess(istream& is, int me, int np)	{
 		partoccupancy = 0;
 
 		myid = me;
@@ -118,19 +108,11 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 		is >> schemefile;
 		int nratecat;
 		is >> nratecat;
-		if (atof(version.substr(0,3).c_str()) > 1.3)	{
-			is >> iscodon;
-			is >> codetype;
-			is >> kappaprior;
-			is >> mintotweight;
-		}
-		else	{
-			iscodon = 0;
-			codetype = Universal;
-			kappaprior = 0;
-			mintotweight = -1;
-		}
+		int infixncomp;
+		int inempmix;
+		string inmixtype;
 		string inrrtype;
+		is >> infixncomp >> inempmix >> inmixtype;
 		is >> inrrtype;
 		is >> fixtopo;
 		if (atof(version.substr(0,3).c_str()) > 1.4)	{
@@ -141,15 +123,7 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 			NSPR = 10;
 			NNNI = 0;
 		}
-		//SequenceAlignment* plaindata = new FileSequenceAlignment(datafile,0,myid);
-		SequenceAlignment* plaindata;
-		if (iscodon)	{
-			SequenceAlignment* tempdata = new FileSequenceAlignment(datafile,0,myid);
-			plaindata = new CodonSequenceAlignment(tempdata,true,codetype);
-		}
-		else	{
-			plaindata = new FileSequenceAlignment(datafile,0,myid);
-		}
+		SequenceAlignment* plaindata = new FileSequenceAlignment(datafile,0,myid);
 		const TaxonSet* taxonset = plaindata->GetTaxonSet();
 
 		int insitemin = -1,insitemax = -1;
@@ -176,7 +150,7 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 
 		vector<PartitionScheme> schemes = PartitionedDGamRateProcess::ReadSchemes(schemefile, plaindata->GetNsite());
 
-		Create(tree,plaindata,nratecat,schemes[0],schemes[2],insitemin,insitemax);
+		Create(tree,plaindata,nratecat,1,schemes[0],schemes[2],infixncomp,inempmix,inmixtype,insitemin,insitemax);
 
 		if (myid == 0)	{
 			FromStream(is);
@@ -185,7 +159,7 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 
 	}
 
-	~PartitionedRASCATGTRSBDPGammaPhyloProcess() {
+	~PartitionedRASCATGTRFiniteGammaPhyloProcess() {
 		Delete();
 	}
 
@@ -236,12 +210,6 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 
 	}
 
-	virtual void Monitor(ostream& os)  {
-		PhyloProcess::Monitor(os);
-		os << "weight " << '\t' << GetMaxWeightError() << '\n';
-		ResetMaxWeightError();
-	}
-
 	double Move(double tuning = 1.0)	{
 
 		chronototal.Start();
@@ -270,11 +238,7 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 
 		// is called inside ExpoConjugateGTRSBDPProfileProcess::Move(1,1,10);
 		// GlobalUpdateParameters();
-		PartitionedExpoConjugateGTRSBDPProfileProcess::Move(1,1,10);
-		if (iscodon){
-			PartitionedExpoConjugateGTRSBDPProfileProcess::Move(0.1,1,15);
-			PartitionedExpoConjugateGTRSBDPProfileProcess::Move(0.01,1,15);
-		}
+		PartitionedExpoConjugateGTRFiniteProfileProcess::Move(1,1,10);
 
 		if (PartitionedGTRProfileProcess::GetNpart() == nfreerr){
 			LengthRelRateMove(1,10);
@@ -313,10 +277,7 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 		os << datafile << '\n';
 		os << schemefile << '\n';
 		os << GetNcat() << '\n';
-		os << iscodon << '\n';
-		os << codetype << '\n';
-		os << kappaprior << '\n';
-		os << mintotweight << '\n';
+		os << fixncomp << '\t' << empmix << '\t' << mixtype << '\n';
 		os << fixtopo << '\n';
 		os << NSPR << '\t' << NNNI << '\n';
 		SetNamesFromLengths();
@@ -326,26 +287,23 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 	void ToStream(ostream& os)	{
 		GammaBranchProcess::ToStream(os);
 		PartitionedDGamRateProcess::ToStream(os);
-		PartitionedExpoConjugateGTRSBDPProfileProcess::ToStream(os);
+		PartitionedExpoConjugateGTRFiniteProfileProcess::ToStream(os);
 	}
 
 	void FromStream(istream& is)	{
 		GammaBranchProcess::FromStream(is);
 		PartitionedDGamRateProcess::FromStream(is);
-		PartitionedExpoConjugateGTRSBDPProfileProcess::FromStream(is);
-		GlobalUpdateParameters();
+		PartitionedExpoConjugateGTRFiniteProfileProcess::FromStream(is);
+		//GlobalUpdateParameters();
 	}
 
 	virtual void ReadPB(int argc, char* argv[]);
-	void ReadNocc(string name, int burnin, int every, int until);
-	void ReadRelRates(string name, int burnin, int every, int until);
-	void ReadSiteProfiles(string name, int burnin, int every, int until);
 	void SlaveComputeCVScore();
 	void SlaveComputeSiteLogL();
 
 	protected:
 
-	virtual void Create(Tree* intree, SequenceAlignment* indata, int ncat, PartitionScheme rrscheme, PartitionScheme dgamscheme, int insitemin,int insitemax);
+	virtual void Create(Tree* intree, SequenceAlignment* indata, int nratecat,int ncat,PartitionScheme rrscheme, PartitionScheme dgamscheme, int infixncomp, int inempmix, string inmixtype, int insitemin,int insitemax);
 		
 	virtual void Delete();
 
@@ -359,8 +317,6 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 	int fixtopo;
 	int NSPR;
 	int NNNI;
-	int iscodon;
-	GeneticCodeType codetype;
 
 	string schemefile;
 
