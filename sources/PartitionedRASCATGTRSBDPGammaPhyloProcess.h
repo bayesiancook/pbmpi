@@ -14,17 +14,17 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 **********************/
 
 
-#ifndef PARTRASGTR_H
-#define PARTRASGTR_H
+#ifndef PARTRASCATGTRSBDP_H
+#define PARTRASCATGTRSBDP_H
 
 #include "PartitionedDGamRateProcess.h"
-#include "PartitionedExpoConjugateGTRPartitionedProfileProcess.h"
+#include "PartitionedExpoConjugateGTRSBDPProfileProcess.h"
 #include "GammaBranchProcess.h"
 #include "CodonSequenceAlignment.h"
 #include "PartitionedExpoConjugateGTRGammaPhyloProcess.h"
 
 
-class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjugateGTRPartitionedProfileProcess, public virtual PartitionedExpoConjugateGTRGammaPhyloProcess, public virtual GammaBranchProcess	{
+class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpoConjugateGTRSBDPProfileProcess, public virtual PartitionedExpoConjugateGTRGammaPhyloProcess, public virtual GammaBranchProcess	{
 
 	public:
 
@@ -33,7 +33,9 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 	void SlaveUpdateParameters();
 
 
-	PartitionedRASGTRGammaPhyloProcess(string indatafile, string treefile, string inschemefile, int nratecat, int iniscodon, GeneticCodeType incodetype, int infixtopo, int inNSPR, int inNNNI, double inmintotweight, int me, int np)	{
+	PartitionedRASCATGTRSBDPGammaPhyloProcess(string indatafile, string treefile, string inschemefile, int nratecat, int iniscodon, GeneticCodeType incodetype, int infixtopo, int inNSPR, int inNNNI, int inkappaprior, double inmintotweight, int me, int np)	{
+		partoccupancy = 0;
+
 		myid = me;
 		nprocs = np;
 
@@ -42,6 +44,7 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 		NNNI = inNNNI;
 		iscodon = iniscodon;
 		codetype = incodetype;
+		kappaprior = inkappaprior;
 		SetMinTotWeight(inmintotweight);
 
 		datafile = indatafile;
@@ -97,15 +100,15 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 			cerr << endl;
 		}
 
-		Create(tree,plaindata,nratecat,schemes[0],schemes[1],schemes[2],insitemin,insitemax);
-
+		Create(tree,plaindata,nratecat,schemes[0],schemes[1],insitemin,insitemax);
 		if (myid == 0)	{
 			Sample();
 			GlobalUnfold();
 		}
 	}
 
-	PartitionedRASGTRGammaPhyloProcess(istream& is, int me, int np)	{
+	PartitionedRASCATGTRSBDPGammaPhyloProcess(istream& is, int me, int np)	{
+		partoccupancy = 0;
 
 		myid = me;
 		nprocs = np;
@@ -118,11 +121,13 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 		if (atof(version.substr(0,3).c_str()) > 1.3)	{
 			is >> iscodon;
 			is >> codetype;
+			is >> kappaprior;
 			is >> mintotweight;
 		}
 		else	{
 			iscodon = 0;
 			codetype = Universal;
+			kappaprior = 0;
 			mintotweight = -1;
 		}
 		string inrrtype;
@@ -136,6 +141,7 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 			NSPR = 10;
 			NNNI = 0;
 		}
+		//SequenceAlignment* plaindata = new FileSequenceAlignment(datafile,0,myid);
 		SequenceAlignment* plaindata;
 		if (iscodon)	{
 			SequenceAlignment* tempdata = new FileSequenceAlignment(datafile,0,myid);
@@ -170,7 +176,7 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 
 		vector<PartitionScheme> schemes = PartitionedDGamRateProcess::ReadSchemes(schemefile, plaindata->GetNsite());
 
-		Create(tree,plaindata,nratecat,schemes[0],schemes[1],schemes[2],insitemin,insitemax);
+		Create(tree,plaindata,nratecat,schemes[0],schemes[1],insitemin,insitemax);
 
 		if (myid == 0)	{
 			FromStream(is);
@@ -179,28 +185,26 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 
 	}
 
-	~PartitionedRASGTRGammaPhyloProcess() {
+	~PartitionedRASCATGTRSBDPGammaPhyloProcess() {
 		Delete();
 	}
 
-	void TraceHeader(ostream& os)	{
-		stringstream line;
-		line << "iter\ttime\ttopo\tloglik\tlength\talpha\tmultent\tmultalpha";
-
-		if (nfreestat > 0)	{
-			line << "\tstatent";
-			if(nfreestat > 1)
-				line << "\tstatalpha";
-		}
+	void TraceHeader(ostream& hs)	{
+		stringstream os;
+		os << "iter\ttime\ttopologlik\tlength\talpha\tNmode\tstatent\tstatalpha\tmultent\tmultalpha";
 		if (nfreerr > 0)
 		{
-			line << "\trrent\trrmean";
+			os << "\trrent\trrmean";
 		}
-		line << endl;
-		os << line.str();
+		// os << "\tkappa\tallocent";
+		os << endl;
+		hs << os.str();
 	}
 
 	void Trace(ostream& hs)	{
+
+		UpdateOccupancyNumbers();
+
 		stringstream os;
 		os << GetSize() - 1;
 		if (chronototal.GetTime())	{
@@ -216,16 +220,13 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 		os << "\t" << GetLogLikelihood();
 		os << "\t" << GetRenormTotalLength();
 		os << "\t" << GetAlpha();
+		os << "\t" << GetNDisplayedComponent();
+		os << "\t" << GetStatEnt();
+		os << "\t" << GetMeanDirWeight();
 		os << "\t" << GetMultiplierEntropy();
 		os << "\t" << GetMultHyper();
-		if (nfreestat > 0)
+		if (nfreerr > 0)
 		{
-			os << "\t" << GetStatEnt();
-
-			if (nfreestat > 1)
-				os << "\t" << GetMeanDirWeight();
-		}
-		if (nfreerr > 0)	{
 			os << "\t" << GetRREntropy();
 			os << "\t" << GetRRMean();
 		}
@@ -233,6 +234,12 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 		os << endl;
 		hs << os.str();
 
+	}
+
+	virtual void Monitor(ostream& os)  {
+		PhyloProcess::Monitor(os);
+		os << "weight " << '\t' << GetMaxWeightError() << '\n';
+		ResetMaxWeightError();
 	}
 
 	double Move(double tuning = 1.0)	{
@@ -246,6 +253,7 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 			MoveTopo(NSPR,NNNI);
 		}
 
+		// cerr << "gibbs ok\n";
 		propchrono.Stop();
 
 		
@@ -263,10 +271,10 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 
 		// is called inside ExpoConjugateGTRSBDPProfileProcess::Move(1,1,10);
 		// GlobalUpdateParameters();
-		PartitionedExpoConjugateGTRPartitionedProfileProcess::Move(1,1,10);
+		PartitionedExpoConjugateGTRSBDPProfileProcess::Move(1,1,10);
 		if (iscodon){
-			PartitionedExpoConjugateGTRPartitionedProfileProcess::Move(0.1,1,15);
-			PartitionedExpoConjugateGTRPartitionedProfileProcess::Move(0.01,1,15);
+			PartitionedExpoConjugateGTRSBDPProfileProcess::Move(0.1,1,15);
+			PartitionedExpoConjugateGTRSBDPProfileProcess::Move(0.01,1,15);
 		}
 
 		if (PartitionedGTRProfileProcess::GetNpart() == nfreerr){
@@ -308,6 +316,7 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 		os << GetNcat() << '\n';
 		os << iscodon << '\n';
 		os << codetype << '\n';
+		os << kappaprior << '\n';
 		os << mintotweight << '\n';
 		os << fixtopo << '\n';
 		os << NSPR << '\t' << NNNI << '\n';
@@ -318,49 +327,35 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 	void ToStream(ostream& os)	{
 		GammaBranchProcess::ToStream(os);
 		PartitionedDGamRateProcess::ToStream(os);
-		PartitionedExpoConjugateGTRPartitionedProfileProcess::ToStream(os);
+		PartitionedExpoConjugateGTRSBDPProfileProcess::ToStream(os);
 	}
 
 	void FromStream(istream& is)	{
 		GammaBranchProcess::FromStream(is);
 		PartitionedDGamRateProcess::FromStream(is);
-		PartitionedExpoConjugateGTRPartitionedProfileProcess::FromStream(is);
+		PartitionedExpoConjugateGTRSBDPProfileProcess::FromStream(is);
 		GlobalUpdateParameters();
 	}
 
-	// Importantly, this assumes that DGam partitions are always sub-partitions of GTR partitions
-	virtual double GetNormalizationFactor()	{
-		double total = 0;
-		for (int dgampart=0; dgampart<PartitionedDGamRateProcess::GetNpart(); dgampart++)
-		{
-			vector<int> partsites = PartitionedDGamRateProcess::GetPartSites(dgampart);
-
-			size_t rrpart = PartitionedGTRProfileProcess::GetSitePart(partsites.front());
-			size_t statpart = PartitionedProfileProcess::GetSitePart(partsites.front());
-
-			total += PartitionedGTRPartitionedProfileProcess::GetNormRate(rrpart,statpart) * PartitionedDGamRateProcess::GetRateMultiplier(dgampart) * partsites.size();
-		}
-		total /= GetNsite();
-		return total;
-	}
-
 	virtual void ReadPB(int argc, char* argv[]);
+	void ReadNocc(string name, int burnin, int every, int until);
+	void ReadRelRates(string name, int burnin, int every, int until);
+	void ReadSiteProfiles(string name, int burnin, int every, int until);
 	void SlaveComputeCVScore();
 	void SlaveComputeSiteLogL();
 
 	protected:
 
-	virtual void Create(Tree* intree, SequenceAlignment* indata, int ncat, PartitionScheme rrscheme, PartitionScheme statscheme, PartitionScheme dgamscheme, int insitemin,int insitemax)	{
-		PartitionedExpoConjugateGTRGammaPhyloProcess::Create(intree,indata,indata->GetNstate(),rrscheme,ncat,dgamscheme,insitemin,insitemax);
-		PartitionedExpoConjugateGTRPartitionedProfileProcess::Create(indata->GetNstate(), rrscheme, statscheme);
-		GammaBranchProcess::Create(intree);
-	}
+	virtual void Create(Tree* intree, SequenceAlignment* indata, int ncat, PartitionScheme rrscheme, PartitionScheme dgamscheme, int insitemin,int insitemax);
 		
-	virtual void Delete()	{
-		GammaBranchProcess::Delete();
-		PartitionedExpoConjugateGTRPartitionedProfileProcess::Delete();
-		PartitionedExpoConjugateGTRGammaPhyloProcess::Delete();
-	}
+	virtual void Delete();
+
+
+	// Importantly, this assumes that DGam partitions are always sub-partitions of GTR partitions
+	double GetNormalizationFactor();
+	double GetNormPartRate(int d, int p);
+
+	void UpdateOccupancyNumbers();
 
 	int fixtopo;
 	int NSPR;
@@ -369,6 +364,8 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 	GeneticCodeType codetype;
 
 	string schemefile;
+
+	int*** partoccupancy;
 };
 
 #endif

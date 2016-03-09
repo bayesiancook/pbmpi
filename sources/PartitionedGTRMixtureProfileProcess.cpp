@@ -58,7 +58,7 @@ void PartitionedGTRMixtureProfileProcess::Delete() {
 }
 
 void PartitionedGTRMixtureProfileProcess::CreateMatrix(int p, int k)	{
-	if (matrixarray[k][p])	{
+	if (matrixarray[p][k])	{
 		cerr << "error in gen path suff stat gtr dp profile process: matrixarray is not 0\n";
 		cerr << matrixarray[p][k]->GetNstate() << '\n';
 		exit(1);
@@ -90,7 +90,6 @@ void PartitionedGTRMixtureProfileProcess::SwapComponents(int cat1, int cat2)	{
 	}
 
 }
-
 
 
 double PartitionedGTRMixtureProfileProcess::GlobalMoveProfile(double tuning, int n, int nrep)	{

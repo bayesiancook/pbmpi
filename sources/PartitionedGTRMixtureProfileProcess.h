@@ -25,7 +25,7 @@ class PartitionedGTRMixtureProfileProcess : public virtual PartitionedGTRProfile
 
 	public:
 
-	PartitionedGTRMixtureProfileProcess() {}
+	PartitionedGTRMixtureProfileProcess() : matrixarray(0) {}
 	virtual ~PartitionedGTRMixtureProfileProcess() {}
 
 	SubMatrix* GetMatrix(int site)	{
@@ -55,7 +55,6 @@ class PartitionedGTRMixtureProfileProcess : public virtual PartitionedGTRProfile
 	double MoveProfile(double tuning = 1, int n = 1, int nrep = 1);
 	double MoveProfile(int cat, double tuning, int n, int nrep);
 
-
 	virtual void UpdateModeProfileSuffStat() = 0;
 
 	// should be called each time global parameters are modified
@@ -69,8 +68,10 @@ class PartitionedGTRMixtureProfileProcess : public virtual PartitionedGTRProfile
 
 	virtual void CreateMatrices()	{
 		for (int p=0; p<GetNpart(); p++)	{
-		for (int k=0; k<GetNcomponent(); k++)	{
-				if (! matrixarray[p][k])	{
+			for (int k=0; k<GetNcomponent(); k++)
+			{
+				if (! matrixarray[p][k])
+				{
 					CreateMatrix(p, k);
 				}
 			}

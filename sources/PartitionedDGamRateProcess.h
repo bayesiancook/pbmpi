@@ -33,13 +33,15 @@ class PartitionedDGamRateProcess : public virtual RateProcess, public PartitionP
 
 	double GetAlpha() {
 		double total = 0.0;
-		for(int i = 0; i < Ncat; i++)
+		for(int i = 0; i < GetNpart(); i++)
 		{
 			total += alpha[i];
 		}
 
-		return total / Ncat;
+		return total / GetNpart();
 	}
+
+	double GetMultiplierEntropy();
 
 	int GetNrate(int site)	{
 		if (SumOverRateAllocations())	{
@@ -65,6 +67,10 @@ class PartitionedDGamRateProcess : public virtual RateProcess, public PartitionP
 		return 1.0;
 	}
 
+	double GetMultHyper()	{
+		return multHyper;
+	}
+
 	void ActivateSumOverRateAllocations() {
 		sumflag = true;
 	}
@@ -85,7 +91,7 @@ class PartitionedDGamRateProcess : public virtual RateProcess, public PartitionP
 			}
 			part /= GetNcat();
 
-			total += part * GetPartNsite(p);
+			total += part * GetPartNsite(p) * ratemult[p];
 		}
 		return total / GetNsite();
 	}

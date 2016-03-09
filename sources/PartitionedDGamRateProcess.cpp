@@ -22,6 +22,8 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 #include "Parallel.h"
 #include <string.h>
 
+#include <cmath>
+
 //-------------------------------------------------------------------------
 //-------------------------------------------------------------------------
 //	* PartitionedDGamRateProcess
@@ -105,6 +107,24 @@ void PartitionedDGamRateProcess::FromStream(istream& is)	{
 	is >> multHyper;
 }
 
+double PartitionedDGamRateProcess::GetMultiplierEntropy()
+{
+	double total = 0.0;
+	for(int i = 0; i < GetNpart(); i++)
+	{
+		total += ratemult[i];
+	}
+
+	double ent = 0;
+	for(int i = 0; i < GetNpart(); i++)
+	{
+		double norm = (ratemult[i] / total);
+		ent -= norm * log(norm);
+	}
+
+	return ent;
+}
+
 void PartitionedDGamRateProcess::UpdateDiscreteCategories(int inpart)	{
 
 	double* x = new double[GetNcat()];
@@ -145,14 +165,16 @@ double PartitionedDGamRateProcess::Move(double tuning, int nrep)	{
 
 	GlobalUpdateRateSuffStat();
 
-	MoveMultipliers();
-
 	int naccepted = 0;
 	for (int rep=0; rep<nrep; rep++)	{
 		naccepted += MoveAlphas(tuning);
 	}
 
-	MoveHyper(tuning,nrep);
+	if(GetNpart() > 1)
+	{
+		MoveMultipliers();
+		MoveHyper(tuning,nrep);
+	}
 
 	chronorate.Stop();
 
@@ -164,12 +186,13 @@ double PartitionedDGamRateProcess::NonMPIMove(double tuning, int nrep)	{
 
 	UpdateRateSuffStat();
 
-	MoveMultipliers();
-
 	int naccepted = 0;
 	for (int rep=0; rep<nrep; rep++)	{
 		naccepted += MoveAlphas(tuning);
 	}
+
+	if(GetNpart())
+		MoveMultipliers();
 
 	return ((double) naccepted) / (nrep*GetNpart());
 }
@@ -247,11 +270,13 @@ void PartitionedDGamRateProcess::MoveAlphaHyper()
 
 double PartitionedDGamRateProcess::LogMultiplierPrior()	{
 
-	double logProb = GetNpart()*( (multHyper + 1.0)*log(multHyper + 1.0) - rnd::GetRandom().logGamma(multHyper + 1.0) );
+	double logProb = -multHyper;
+
+	logProb += GetNpart()*( multHyper*log(multHyper) - rnd::GetRandom().logGamma(multHyper) );
 
 	for(int p = 0; p < GetNpart(); p++)
 	{
-		logProb += log(ratemult[p])*multHyper - ratemult[p]*(multHyper + 1.0);
+		logProb += (multHyper - 1.0)*log(ratemult[p]) - multHyper*ratemult[p];
 	}
 
 	return logProb;
@@ -271,7 +296,7 @@ void PartitionedDGamRateProcess::MoveMultipliers()
 			b += ratesuffstatbeta[p][k]*rate[p][k];
 		}
 
-		ratemult[p] = rnd::GetRandom().Gamma(a + multHyper, b + multHyper + 1.0);
+		ratemult[p] = rnd::GetRandom().Gamma(a + multHyper - 1.0, b + multHyper);
 	}
 
 }
@@ -283,11 +308,11 @@ int PartitionedDGamRateProcess::MoveMultiplierHyper(double tuning)	{
 
 	int naccepted = 0;
 	double bkhyper = multHyper;
-	double deltalogprob = -LogMultiplierPrior() - multHyper;
+	double deltalogprob = - LogMultiplierPrior();
 	double m = tuning * (rnd::GetRandom().Uniform() - 0.5);
 	double e = exp(m);
 	multHyper *= e;
-	deltalogprob += m + LogMultiplierPrior() + multHyper;
+	deltalogprob += m + LogMultiplierPrior();
 	bool accepted = (log(rnd::GetRandom().Uniform()) < deltalogprob);
 	if (accepted) {
 		naccepted++;

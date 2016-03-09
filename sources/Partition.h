@@ -75,6 +75,8 @@ public:
 
 	}
 
+	std::vector<PartitionScheme> ReadSchemes(std::string schemefile, int Nsite);
+
 	PartitionScheme scheme;
 };
 

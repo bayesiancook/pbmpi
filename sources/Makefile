@@ -39,7 +39,8 @@ SRCS=  TaxonSet.cpp Tree.cpp Random.cpp SequenceAlignment.cpp CodonSequenceAlign
 	PartitionedGTRPhyloProcess.cpp PartitionedGTRPartitionedProfileProcess.cpp PartitionedGTRMixtureProfileProcess.cpp \
 	PartitionedExpoConjugateGTRSubstitutionProcess.cpp PartitionedExpoConjugateGTRProfileProcess.cpp \
 	PartitionedExpoConjugateGTRPartitionedProfileProcess.cpp PartitionedExpoConjugateGTRMixtureProfileProcess.cpp \
-	PartitionedExpoConjugateGTRGammaPhyloProcess.cpp PartitionedDGamRateProcess.cpp
+	PartitionedExpoConjugateGTRGammaPhyloProcess.cpp PartitionedDGamRateProcess.cpp Partition.cpp \
+	PartitionedGTRSBDPProfileProcess.cpp PartitionedExpoConjugateGTRSBDPProfileProcess.cpp PartitionedRASCATGTRSBDPGammaPhyloProcess.cpp
 
 
 OBJS=$(patsubst %.cpp,%.o,$(SRCS))

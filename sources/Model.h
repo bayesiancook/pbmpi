@@ -33,6 +33,7 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 #include "CodonMutSelSBDPPhyloProcess.h"
 #include "AACodonMutSelSBDPPhyloProcess.h"
 #include "PartitionedRASGTRGammaPhyloProcess.h"
+#include "PartitionedRASCATGTRSBDPGammaPhyloProcess.h"
 #include "Parallel.h"
 #include <iostream>
 #include <fstream>
@@ -82,7 +83,7 @@ class Model	{
 			}
 			else if (mixturetype == 3)	{
 				type = "PARTCATSBDP";
-				//process = new PartitionedRASGTRGammaPhyloProcess(datafile,treefile,schemefile,nratecat,iscodon,fixtopo,NSPR,NNNI,myid,nprocs);
+				process = new PartitionedRASCATGTRSBDPGammaPhyloProcess(datafile,treefile,schemefile,nratecat,iscodon,codetype,fixtopo,NSPR,NNNI,kappaprior,mintotweight,myid,nprocs);
 			}
 			else
 			{
