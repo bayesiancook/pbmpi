@@ -267,7 +267,7 @@ class Model	{
 		else if (type == "PARTCATSBDP")	{
 			process = new PartitionedRASCATGTRSBDPGammaPhyloProcess(is,myid,nprocs);
 		}
-		else if (type == "PARTFIX")	{
+		else if (type == "PARTCATFIX")	{
 			process = new PartitionedRASGTRGammaPhyloProcess(is,myid,nprocs);
 		}
 		else	{

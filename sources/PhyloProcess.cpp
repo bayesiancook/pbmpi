@@ -2360,7 +2360,7 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until)	{
 		if (maxwidth < (smax[i] - smin[i]))	{
 			maxwidth = smax[i] - smin[i];
 		}
-		cerr << i+1 << '\t' << smin[i] << '\t' << smax[i] << '\n';
+		//cerr << i+1 << '\t' << smin[i] << '\t' << smax[i] << '\n';
 	}
 
 	while (i < until)	{
