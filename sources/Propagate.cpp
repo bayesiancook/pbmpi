@@ -150,7 +150,7 @@ void MatrixSubstitutionProcess::Propagate(double*** from, double*** to, double t
 						max = down[k];
 					}
 				}
-				if (maxup == 0.0)	{
+				/*if (maxup == 0.0)	{
 					cerr << "error in backward propagate: null up array\n";
 					for(l=0; l<nstate; l++)	{
 						cerr << matrix->Stationary(l) << '\n';
@@ -166,7 +166,7 @@ void MatrixSubstitutionProcess::Propagate(double*** from, double*** to, double t
 					cerr << length << '\n';
 					cerr << '\n';
 					exit(1);
-				}
+				}*/
 
 
 				// this is the offset (in log)
