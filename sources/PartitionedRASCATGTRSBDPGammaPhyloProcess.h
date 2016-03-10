@@ -195,8 +195,7 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 		Delete();
 	}
 
-	void TraceHeader(ostream& hs)	{
-		stringstream os;
+	void TraceHeader(ostream& os)	{
 		os << "iter\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
 
 		if(PartitionedDGamRateProcess::GetNpart() > 1)
@@ -208,14 +207,12 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 		}
 		// os << "\tkappa\tallocent";
 		os << endl;
-		hs << os.str();
 	}
 
-	void Trace(ostream& hs)	{
+	void Trace(ostream& os)	{
 
 		UpdateOccupancyNumbers();
 
-		stringstream os;
 		os << GetSize() - 1;
 		if (chronototal.GetTime())	{
 			os << "\t" << chronototal.GetTime() / 1000;
@@ -247,7 +244,6 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 		}
 		// os << '\t' << kappa << '\t' << GetAllocEntropy();
 		os << endl;
-		hs << os.str();
 
 	}
 

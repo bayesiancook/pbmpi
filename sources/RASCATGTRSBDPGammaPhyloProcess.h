@@ -203,22 +203,19 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 		Delete();
 	}
 
-	void TraceHeader(ostream& hs)	{
-		stringstream os;
+	void TraceHeader(ostream& os)	{
 		os << "iter\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
 		if (! fixrr)	{
 			os << "\trrent\trrmean";
 		}
 		// os << "\tkappa\tallocent";
 		os << endl;
-		hs << os.str();
 	}
 
-	void Trace(ostream& hs)	{
+	void Trace(ostream& os)	{
 
 		UpdateOccupancyNumbers();
 
-		stringstream os;
 		os << GetSize() - 1;
 		if (chronototal.GetTime())	{
 			os << "\t" << chronototal.GetTime() / 1000;
@@ -243,7 +240,6 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 		}
 		// os << '\t' << kappa << '\t' << GetAllocEntropy();
 		os << endl;
-		hs << os.str();
 
 	}
 

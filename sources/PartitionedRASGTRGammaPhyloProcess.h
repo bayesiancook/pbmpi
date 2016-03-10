@@ -187,8 +187,7 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 		Delete();
 	}
 
-	void TraceHeader(ostream& hs)	{
-		stringstream os;
+	void TraceHeader(ostream& os)	{
 		os << "iter\ttime\ttopo\tloglik\tlength\talpha";
 
 		if(PartitionedDGamRateProcess::GetNpart() > 1)
@@ -204,7 +203,6 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 			os << "\trrent\trrmean";
 		}
 		os << endl;
-		hs << os.str();
 	}
 
 	void Trace(ostream& hs)	{

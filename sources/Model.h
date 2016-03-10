@@ -261,6 +261,12 @@ class Model	{
 		else if (type == "AACODONMUTSELSBDP")	{
 			process = new AACodonMutSelSBDPPhyloProcess(is,myid,nprocs);
 		}
+		else if (type == "PARTCATFINITE")	{
+			process = new PartitionedRASCATGTRFiniteGammaPhyloProcess(is,myid,nprocs);
+		}
+		else if (type == "PARTCATSBDP")	{
+			process = new PartitionedRASCATGTRSBDPGammaPhyloProcess(is,myid,nprocs);
+		}
 		else if (type == "PARTFIX")	{
 			process = new PartitionedRASGTRGammaPhyloProcess(is,myid,nprocs);
 		}
@@ -274,7 +280,8 @@ class Model	{
 		// cerr << "reset size to " << process->GetSize() << '\n';
 	}
 
-	void ToStream(ostream& os, bool header)	{
+	void ToStream(ostream& hs, bool header)	{
+		stringstream os;
 		if (header)	{
 			os << type << '\n';
 			os << every << '\t' << until << '\t' << GetSize() << '\n';
@@ -282,6 +289,7 @@ class Model	{
 			process->ToStreamHeader(os);
 		}
 		process->ToStream(os);
+		hs << os.str();
 	}
 
 	~Model()	{
@@ -334,7 +342,9 @@ class Model	{
 
 			ofstream os((name + ".treelist").c_str(), ios_base::app);
 			process->RenormalizeBranchLengths();
-			GetTree()->ToStream(os);
+			stringstream ss;
+			GetTree()->ToStream(ss);
+			os << ss.str();
 			process->DenormalizeBranchLengths();
 			os.close();
 
@@ -366,11 +376,15 @@ class Model	{
 	NewickTree* GetTree() {return process->GetLengthTree();}
 
 	void TraceHeader(ostream& os)	{
-		process->TraceHeader(os);
+		stringstream ss;
+		process->TraceHeader(ss);
+		os << ss.str();
 	}
 
 	void Trace(ostream& os)	{
-		process->Trace(os);
+		stringstream ss;
+		process->Trace(ss);
+		os << ss.str();
 	}
 
 	void ReadPB(int argc, char* argv[])	{

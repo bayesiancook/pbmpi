@@ -190,16 +190,14 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 		return logL;
 	}
 
-	void TraceHeader(ostream& hs)	{
-		stringstream os;
+	void TraceHeader(ostream& os)	{
 		os << "iter\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
 		// os << "#time\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
 		// os << "\tkappa\tallocent";
 		os << endl;
-		hs << os.str();
 	}
 
-	void Trace(ostream& hs)	{
+	void Trace(ostream& os)	{
 
 		/*
 		os << ((int) (chronototal.GetTime() / 1000));
@@ -209,7 +207,6 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 			// os << "\t" << ((int) (chronosuffstat.GetTime() / chronototal.GetTime() * 100));
 		}
 		*/
-		stringstream os;
 		os << GetSize() - 1;
 		if (chronototal.GetTime())	{
 			os << "\t" << chronototal.GetTime() / 1000;
@@ -228,7 +225,6 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 		// os << "\t" << kappa << "\t" << GetAllocEntropy();
 
 		os << endl;
-		hs << os.str();
 	}
 
 	virtual double Move(double tuning = 1.0)	{
