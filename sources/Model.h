@@ -56,7 +56,7 @@ class Model	{
 	int until;
 	int saveall;
 
-	Model(string datafile, string treefile, string schemefile, int modeltype, int nratecat, int mixturetype, int ncat, GeneticCodeType codetype, int suffstat, int fixncomp, int empmix, string mixtype, string rrtype, int iscodon, int fixtopo, int NSPR, int NNNI, int fixcodonprofile, int fixomega, int fixbl, int omegaprior, int kappaprior, int dirweightprior, double mintotweight, int dc, int inevery, int inuntil, int insaveall, string inname, int myid, int nprocs)	{
+	Model(string datafile, string treefile, string schemefile, bool inlinkgam, bool inunlinkgtr, int modeltype, int nratecat, int mixturetype, int ncat, GeneticCodeType codetype, int suffstat, int fixncomp, int empmix, string mixtype, string rrtype, int iscodon, int fixtopo, int NSPR, int NNNI, int fixcodonprofile, int fixomega, int fixbl, int omegaprior, int kappaprior, int dirweightprior, double mintotweight, int dc, int inevery, int inuntil, int insaveall, string inname, int myid, int nprocs)	{
 
 		every = inevery;
 		until = inuntil;
@@ -80,16 +80,16 @@ class Model	{
 		{
 			if (mixturetype == 1)	{
 				type = "PARTCATFINITE";
-				process = new PartitionedRASCATGTRFiniteGammaPhyloProcess(datafile,treefile,schemefile,nratecat,ncat,fixncomp,empmix,mixtype,fixtopo,NSPR,NNNI,myid,nprocs);
+				process = new PartitionedRASCATGTRFiniteGammaPhyloProcess(datafile,treefile,schemefile,inlinkgam,inunlinkgtr,nratecat,ncat,fixncomp,empmix,mixtype,fixtopo,NSPR,NNNI,myid,nprocs);
 			}
 			else if (mixturetype == 3)	{
 				type = "PARTCATSBDP";
-				process = new PartitionedRASCATGTRSBDPGammaPhyloProcess(datafile,treefile,schemefile,nratecat,iscodon,codetype,fixtopo,NSPR,NNNI,kappaprior,mintotweight,myid,nprocs);
+				process = new PartitionedRASCATGTRSBDPGammaPhyloProcess(datafile,treefile,schemefile,inlinkgam,inunlinkgtr,nratecat,iscodon,codetype,fixtopo,NSPR,NNNI,kappaprior,mintotweight,myid,nprocs);
 			}
 			else
 			{
 				type = "PARTCATFIX";
-				process = new PartitionedRASGTRGammaPhyloProcess(datafile,treefile,schemefile,nratecat,iscodon,codetype,fixtopo,NSPR,NNNI,mintotweight,myid,nprocs);
+				process = new PartitionedRASGTRGammaPhyloProcess(datafile,treefile,schemefile,inlinkgam,inunlinkgtr,nratecat,iscodon,codetype,fixtopo,NSPR,NNNI,mintotweight,myid,nprocs);
 			}
 		}
 

@@ -33,8 +33,9 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 	void SlaveUpdateParameters();
 
 
-	PartitionedRASCATGTRFiniteGammaPhyloProcess(string indatafile, string treefile, string inschemefile, int nratecat, int ncat, int infixncomp, int inempmix, string inmixtype, int infixtopo, int inNSPR, int inNNNI, int me, int np)	{
+	PartitionedRASCATGTRFiniteGammaPhyloProcess(string indatafile, string treefile, string inschemefile, bool inlinkgam,bool inunlinkgtr,int nratecat, int ncat, int infixncomp, int inempmix, string inmixtype, int infixtopo, int inNSPR, int inNNNI, int me, int np)	{
 		partoccupancy = 0;
+		occupancyNeedsUpdating = true;
 
 		myid = me;
 		nprocs = np;
@@ -76,7 +77,9 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 		}
 
 		schemefile = inschemefile;
-		vector<PartitionScheme> schemes = PartitionedDGamRateProcess::ReadSchemes(schemefile, plaindata->GetNsite());
+		linkgam = inlinkgam;
+		unlinkgtr = inunlinkgtr;
+		vector<PartitionScheme> schemes = PartitionedDGamRateProcess::ReadSchemes(schemefile, plaindata->GetNsite(), linkgam, unlinkgtr);
 
 		if(myid == 0)
 		{
@@ -99,6 +102,7 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 
 	PartitionedRASCATGTRFiniteGammaPhyloProcess(istream& is, int me, int np)	{
 		partoccupancy = 0;
+		occupancyNeedsUpdating = true;
 
 		myid = me;
 		nprocs = np;
@@ -106,6 +110,8 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 		FromStreamHeader(is);
 		is >> datafile;
 		is >> schemefile;
+		is >> linkgam;
+		is >> unlinkgtr;
 		int nratecat;
 		is >> nratecat;
 		int infixncomp;
@@ -148,7 +154,7 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 		}
 		tree->RegisterWith(taxonset,0);
 
-		vector<PartitionScheme> schemes = PartitionedDGamRateProcess::ReadSchemes(schemefile, plaindata->GetNsite());
+		vector<PartitionScheme> schemes = PartitionedDGamRateProcess::ReadSchemes(schemefile, plaindata->GetNsite(), linkgam, unlinkgtr);
 
 		Create(tree,plaindata,nratecat,1,schemes[0],schemes[2],infixncomp,inempmix,inmixtype,insitemin,insitemax);
 
@@ -165,7 +171,11 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 
 	void TraceHeader(ostream& hs)	{
 		stringstream os;
-		os << "iter\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha\tmultent\tmultalpha";
+		os << "iter\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
+
+		if(PartitionedDGamRateProcess::GetNpart() > 1)
+			os << "\tmultent\tmultalpha";
+
 		if (nfreerr > 0)
 		{
 			os << "\trrent\trrmean";
@@ -197,8 +207,13 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 		os << "\t" << GetNDisplayedComponent();
 		os << "\t" << GetStatEnt();
 		os << "\t" << GetMeanDirWeight();
-		os << "\t" << GetMultiplierEntropy();
-		os << "\t" << GetMultHyper();
+
+		if(PartitionedDGamRateProcess::GetNpart() > 1)
+		{
+			os << "\t" << GetMultiplierEntropy();
+			os << "\t" << GetMultHyper();
+		}
+
 		if (nfreerr > 0)
 		{
 			os << "\t" << GetRREntropy();
@@ -240,12 +255,15 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 		// GlobalUpdateParameters();
 		PartitionedExpoConjugateGTRFiniteProfileProcess::Move(1,1,10);
 
+		occupancyNeedsUpdating = true;
+
 		if (PartitionedGTRProfileProcess::GetNpart() == nfreerr){
 			LengthRelRateMove(1,10);
 			LengthRelRateMove(0.1,10);
 			LengthRelRateMove(0.01,10);
 		}
-		else
+
+		if(PartitionedDGamRateProcess::GetNpart() > 1)
 		{
 			LengthMultiplierMove(1,10);
 			LengthMultiplierMove(0.1,10);
@@ -276,6 +294,8 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 		PhyloProcess::ToStreamHeader(os);
 		os << datafile << '\n';
 		os << schemefile << '\n';
+		os << linkgam << '\n';
+		os << unlinkgtr << '\n';
 		os << GetNcat() << '\n';
 		os << fixncomp << '\t' << empmix << '\t' << mixtype << '\n';
 		os << fixtopo << '\n';
@@ -319,6 +339,11 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 	int NNNI;
 
 	string schemefile;
+	bool linkgam;
+	bool unlinkgtr;
+
+	double normFactor;
+	bool occupancyNeedsUpdating;
 
 	int*** partoccupancy;
 };

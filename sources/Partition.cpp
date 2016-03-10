@@ -6,7 +6,7 @@
 
 using namespace std;
 
-vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsite)
+vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsite, bool linkgam, bool unlinkgtr)
 {
 	string error = "Error: improperly formatted scheme file\n";
 
@@ -62,6 +62,19 @@ vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsi
 				if(type == "gtr")
 				{
 					type = "None";
+					if(unlinkgtr)
+					{
+						stringstream ss(type);
+						ss << rrscheme.Npart;
+						type = ss.str();
+					}
+
+					if(fixrrparts.find(type) == fixrrparts.end())
+					{
+						rrscheme.partType.push_back("None");
+						fixrrparts[type] = rrscheme.Npart++;
+					}
+
 					fixprof = false;
 				}
 				else
@@ -78,12 +91,12 @@ vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsi
 						statscheme.partType.push_back(type);
 						fixstatparts[type] = statscheme.Npart++;
 					}
-				}
 
-				if(fixrrparts.find(type) == fixrrparts.end())
-				{
-					rrscheme.partType.push_back(type);
-					fixrrparts[type] = rrscheme.Npart++;
+					if(fixrrparts.find(type) == fixrrparts.end())
+					{
+						rrscheme.partType.push_back(type);
+						fixrrparts[type] = rrscheme.Npart++;
+					}
 				}
 			}
 			else
@@ -200,6 +213,12 @@ vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsi
 
 		statscheme.Npart++;
 		dgamscheme.Npart++;
+	}
+
+	if(linkgam)
+	{
+		dgamscheme.Npart = 1;
+		std::fill(dgamscheme.sitePart.begin(), dgamscheme.sitePart.end(), 0);
 	}
 
 	rrscheme.update();

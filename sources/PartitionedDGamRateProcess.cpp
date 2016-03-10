@@ -86,25 +86,35 @@ void PartitionedDGamRateProcess::Delete() 	{
 void PartitionedDGamRateProcess::ToStream(ostream& os)	{
 	for(int i = 0; i < GetNpart(); i++)
 	{
-		os << ratemult[i] << '\n';
+		if(GetNpart() > 1)
+			os << ratemult[i] << '\n';
+
 		os << alpha[i] << '\n';
 	}
 
-	os << alphaHyper << '\n';
-	os << multHyper << '\n';
+	if(GetNpart() > 1)
+	{
+		os << alphaHyper << '\n';
+		os << multHyper << '\n';
+	}
 }
 
 void PartitionedDGamRateProcess::FromStream(istream& is)	{
 	double tmp;
 	for(int i = 0; i < GetNpart(); i++)
 	{
-		is >> ratemult[i];
+		if(GetNpart() > 1)
+			is >> ratemult[i];
+
 		is >> tmp;
 		SetAlpha(i,tmp);
 	}
 
-	is >> alphaHyper;
-	is >> multHyper;
+	if(GetNpart() > 1)
+	{
+		is >> alphaHyper;
+		is >> multHyper;
+	}
 }
 
 double PartitionedDGamRateProcess::GetMultiplierEntropy()

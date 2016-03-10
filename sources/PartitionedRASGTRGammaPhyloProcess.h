@@ -33,7 +33,7 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 	void SlaveUpdateParameters();
 
 
-	PartitionedRASGTRGammaPhyloProcess(string indatafile, string treefile, string inschemefile, int nratecat, int iniscodon, GeneticCodeType incodetype, int infixtopo, int inNSPR, int inNNNI, double inmintotweight, int me, int np)	{
+	PartitionedRASGTRGammaPhyloProcess(string indatafile, string treefile, string inschemefile,bool inlinkgam,bool inunlinkgtr,int nratecat, int iniscodon, GeneticCodeType incodetype, int infixtopo, int inNSPR, int inNNNI, double inmintotweight, int me, int np)	{
 		myid = me;
 		nprocs = np;
 
@@ -82,7 +82,9 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 		}
 
 		schemefile = inschemefile;
-		vector<PartitionScheme> schemes = PartitionedDGamRateProcess::ReadSchemes(schemefile, plaindata->GetNsite());
+		linkgam = inlinkgam;
+		unlinkgtr = inunlinkgtr;
+		vector<PartitionScheme> schemes = PartitionedDGamRateProcess::ReadSchemes(schemefile, plaindata->GetNsite(), linkgam, unlinkgtr);
 
 		if(myid == 0)
 		{
@@ -113,6 +115,8 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 		FromStreamHeader(is);
 		is >> datafile;
 		is >> schemefile;
+		is >> linkgam;
+		is >> unlinkgtr;
 		int nratecat;
 		is >> nratecat;
 		if (atof(version.substr(0,3).c_str()) > 1.3)	{
@@ -168,7 +172,7 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 		}
 		tree->RegisterWith(taxonset,0);
 
-		vector<PartitionScheme> schemes = PartitionedDGamRateProcess::ReadSchemes(schemefile, plaindata->GetNsite());
+		vector<PartitionScheme> schemes = PartitionedDGamRateProcess::ReadSchemes(schemefile, plaindata->GetNsite(), linkgam, unlinkgtr);
 
 		Create(tree,plaindata,nratecat,schemes[0],schemes[1],schemes[2],insitemin,insitemax);
 
@@ -183,21 +187,24 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 		Delete();
 	}
 
-	void TraceHeader(ostream& os)	{
-		stringstream line;
-		line << "iter\ttime\ttopo\tloglik\tlength\talpha\tmultent\tmultalpha";
+	void TraceHeader(ostream& hs)	{
+		stringstream os;
+		os << "iter\ttime\ttopo\tloglik\tlength\talpha";
+
+		if(PartitionedDGamRateProcess::GetNpart() > 1)
+			os << "\tmultent\tmultalpha";
 
 		if (nfreestat > 0)	{
-			line << "\tstatent";
+			os << "\tstatent";
 			if(nfreestat > 1)
-				line << "\tstatalpha";
+				os << "\tstatalpha";
 		}
 		if (nfreerr > 0)
 		{
-			line << "\trrent\trrmean";
+			os << "\trrent\trrmean";
 		}
-		line << endl;
-		os << line.str();
+		os << endl;
+		hs << os.str();
 	}
 
 	void Trace(ostream& hs)	{
@@ -216,8 +223,13 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 		os << "\t" << GetLogLikelihood();
 		os << "\t" << GetRenormTotalLength();
 		os << "\t" << GetAlpha();
-		os << "\t" << GetMultiplierEntropy();
-		os << "\t" << GetMultHyper();
+
+		if(PartitionedDGamRateProcess::GetNpart() > 1)
+		{
+			os << "\t" << GetMultiplierEntropy();
+			os << "\t" << GetMultHyper();
+		}
+
 		if (nfreestat > 0)
 		{
 			os << "\t" << GetStatEnt();
@@ -274,7 +286,8 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 			LengthRelRateMove(0.1,10);
 			LengthRelRateMove(0.01,10);
 		}
-		else
+
+		if(PartitionedDGamRateProcess::GetNpart() > 1)
 		{
 			LengthMultiplierMove(1,10);
 			LengthMultiplierMove(0.1,10);
@@ -305,6 +318,8 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 		PhyloProcess::ToStreamHeader(os);
 		os << datafile << '\n';
 		os << schemefile << '\n';
+		os << linkgam << '\n';
+		os << unlinkgtr << '\n';
 		os << GetNcat() << '\n';
 		os << iscodon << '\n';
 		os << codetype << '\n';
@@ -369,6 +384,8 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 	GeneticCodeType codetype;
 
 	string schemefile;
+	bool linkgam;
+	bool unlinkgtr;
 };
 
 #endif

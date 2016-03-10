@@ -84,6 +84,9 @@ int main(int argc, char* argv[])	{
 
 	double mintotweight = 0;
 
+	bool linkgam = false;
+	bool unlinkgtr = false;
+
 	try	{
 
 		if (argc == 1)	{
@@ -119,6 +122,12 @@ int main(int argc, char* argv[])	{
 			else if (s == "-p")	{
 				i++;
 				schemefile = argv[i];
+			}
+			else if (s == "-linkgam")	{
+				linkgam = true;
+			}
+			else if (s == "-unlinkgtr")	{
+				unlinkgtr = true;
 			}
 			else if (s == "-iscodon")	{
 				iscodon = 1;
@@ -604,7 +613,7 @@ int main(int argc, char* argv[])	{
 				exit(1);
 			}
 		}
-		model = new Model(datafile,treefile,schemefile,modeltype,dgam,mixturetype,ncat,type,suffstat,fixncomp,empmix,mixtype,rrtype,iscodon,fixtopo,NSPR,NNNI,fixcodonprofile,fixomega,fixbl,omegaprior,kappaprior,dirweightprior,mintotweight,dc,every,until,saveall,name,myid,nprocs);
+		model = new Model(datafile,treefile,schemefile,linkgam,unlinkgtr,modeltype,dgam,mixturetype,ncat,type,suffstat,fixncomp,empmix,mixtype,rrtype,iscodon,fixtopo,NSPR,NNNI,fixcodonprofile,fixomega,fixbl,omegaprior,kappaprior,dirweightprior,mintotweight,dc,every,until,saveall,name,myid,nprocs);
 		if (! myid)	{
 			// cerr << "create files\n";
 			cerr << '\n';

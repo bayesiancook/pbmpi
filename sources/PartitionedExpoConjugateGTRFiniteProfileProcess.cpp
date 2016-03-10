@@ -19,20 +19,27 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 void PartitionedExpoConjugateGTRFiniteProfileProcess::ToStream(ostream& os)	{
 
 	os << Ncomponent << '\n';
-	for (int j=0; j<GetDim(); j++)	{
-		os << dirweight[j] << '\t';
-	}
-	os << '\n';
+
 	for (int i=0; i<Ncomponent; i++)	{
 		for (int j=0; j<GetDim(); j++)	{
 			os << profile[i][j] << '\t';
 		}
 		os << '\n';
 	}
-	for (int i=0; i<GetNsite(); i++)	{
-		os << alloc[i] << '\t';
+
+	if(Ncomponent > 1 || !fixncomp)
+	{
+		for (int j=0; j<GetDim(); j++)	{
+			os << dirweight[j] << '\t';
+		}
+		os << '\n';
+
+		for (int i=0; i<GetNsite(); i++)	{
+			os << alloc[i] << '\t';
+		}
+		os << '\n';
 	}
-	os << '\n';
+
 	for(int p=0; p < GetNpart(); p++)
 	{
 		if(!fixrr[p])
@@ -49,18 +56,21 @@ void PartitionedExpoConjugateGTRFiniteProfileProcess::FromStream(istream& is)	{
 
 	is >> Ncomponent;
 	
-	for (int i=0; i<GetDim(); i++)	{
-		is >> dirweight[i];
-	}
-
 	for (int i=0; i<Ncomponent; i++)	{
 		for (int j=0; j<GetDim(); j++)	{
 			is >> profile[i][j];
 		}
 	}
 
-	for (int i=0; i<GetNsite(); i++)	{
-		is >> alloc[i];
+	if(Ncomponent > 1 || !fixncomp)
+	{
+		for (int i=0; i<GetDim(); i++)	{
+			is >> dirweight[i];
+		}
+
+		for (int i=0; i<GetNsite(); i++)	{
+			is >> alloc[i];
+		}
 	}
 
 	for(int p=0; p < GetNpart(); p++)

@@ -75,19 +75,25 @@ void PartitionedRASCATGTRSBDPGammaPhyloProcess::UpdatePartOccupancyNumbers()
 // Importantly, this assumes that DGam partitions are always sub-partitions of GTR partitions
 double PartitionedRASCATGTRSBDPGammaPhyloProcess::GetNormalizationFactor()
 {
-	UpdatePartOccupancyNumbers();
-	double total = 0;
-	for (int dgampart=0; dgampart<PartitionedDGamRateProcess::GetNpart(); dgampart++)
+	if(occupancyNeedsUpdating)
 	{
-		vector<int> partsites = PartitionedDGamRateProcess::GetPartSites(dgampart);
+		UpdatePartOccupancyNumbers();
 
-		size_t rrpart = PartitionedGTRProfileProcess::GetSitePart(partsites.front());
+		double total = 0;
+		for (int dgampart=0; dgampart<PartitionedDGamRateProcess::GetNpart(); dgampart++)
+		{
+			vector<int> partsites = PartitionedDGamRateProcess::GetPartSites(dgampart);
 
-		total += GetNormPartRate(dgampart, rrpart) * PartitionedDGamRateProcess::GetRateMultiplier(dgampart) * partsites.size();
+			size_t rrpart = PartitionedGTRProfileProcess::GetSitePart(partsites.front());
+
+			total += GetNormPartRate(dgampart, rrpart) * PartitionedDGamRateProcess::GetRateMultiplier(dgampart) * partsites.size();
+		}
+		normFactor = total / GetNsite();
 	}
-	total /= GetNsite();
 
-	return total;
+	occupancyNeedsUpdating = false;
+
+	return normFactor;
 }
 
 double PartitionedRASCATGTRSBDPGammaPhyloProcess::GetNormPartRate(int d, int p)

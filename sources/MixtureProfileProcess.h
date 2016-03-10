@@ -125,7 +125,7 @@ class MixtureProfileProcess: public virtual ProfileProcess	{
 	void SampleStat(int cat);
 	void SampleStat(double* stat, double statmin = 0);
 
-	void UpdateOccupancyNumbers();
+	virtual void UpdateOccupancyNumbers();
 	double ResampleEmptyProfiles();
 
 	double LogProfilePrior();
