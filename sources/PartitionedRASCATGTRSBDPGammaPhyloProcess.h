@@ -136,8 +136,6 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 			kappaprior = 0;
 			mintotweight = -1;
 		}
-		string inrrtype;
-		is >> inrrtype;
 		is >> fixtopo;
 		if (atof(version.substr(0,3).c_str()) > 1.4)	{
 			is >> NSPR;

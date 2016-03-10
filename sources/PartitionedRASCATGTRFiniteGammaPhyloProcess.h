@@ -117,9 +117,7 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 		int infixncomp;
 		int inempmix;
 		string inmixtype;
-		string inrrtype;
 		is >> infixncomp >> inempmix >> inmixtype;
-		is >> inrrtype;
 		is >> fixtopo;
 		if (atof(version.substr(0,3).c_str()) > 1.4)	{
 			is >> NSPR;

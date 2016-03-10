@@ -129,8 +129,6 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 			codetype = Universal;
 			mintotweight = -1;
 		}
-		string inrrtype;
-		is >> inrrtype;
 		is >> fixtopo;
 		if (atof(version.substr(0,3).c_str()) > 1.4)	{
 			is >> NSPR;
