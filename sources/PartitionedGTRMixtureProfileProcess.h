@@ -60,36 +60,44 @@ class PartitionedGTRMixtureProfileProcess : public virtual PartitionedGTRProfile
 	// should be called each time global parameters are modified
 	virtual void UpdateMatrices()	{
 		for (int p=0; p<GetNpart(); p++)	{
-			for (int k=0; k<GetNcomponent(); k++)	{
-				UpdateMatrix(p, k);
+			if(IsPartitionUnmasked(p))
+			{
+				for (int k=0; k<GetNcomponent(); k++)	{
+					UpdateMatrix(p, k);
+				}
 			}
 		}
 	}
 
 	virtual void CreateMatrices()	{
 		for (int p=0; p<GetNpart(); p++)	{
-			for (int k=0; k<GetNcomponent(); k++)
+			if(IsPartitionUnmasked(p))
 			{
-				if (! matrixarray[p][k])
+				for (int k=0; k<GetNcomponent(); k++)
 				{
-					CreateMatrix(p, k);
+					if (! matrixarray[p][k])
+					{
+						CreateMatrix(p, k);
+					}
 				}
-			}
-		}
-		for (int p=0; p<GetNpart(); p++)	{
-			for (int k=GetNcomponent(); k<GetNmodeMax(); k++)	{
-				if (matrixarray[p][k])	{
-					DeleteMatrix(p, k);
+
+				for (int k=GetNcomponent(); k<GetNmodeMax(); k++)	{
+					if (matrixarray[p][k])	{
+						DeleteMatrix(p, k);
+					}
+					matrixarray[p][k] = 0;
 				}
-				matrixarray[p][k] = 0;
 			}
 		}
 	}
 
 	virtual void DeleteMatrices()	{
 		for (int p=0; p<GetNpart(); p++)	{
-			for (int k=0; k<GetNcomponent(); k++)	{
-				DeleteMatrix(p, k);
+			if(IsPartitionUnmasked(p))
+			{
+				for (int k=0; k<GetNcomponent(); k++)	{
+					DeleteMatrix(p, k);
+				}
 			}
 		}
 	}

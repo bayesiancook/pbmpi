@@ -102,6 +102,8 @@ class PartitionedGTRProfileProcess : public virtual MatrixProfileProcess, public
 	virtual void Create(int indim, PartitionScheme inscheme);
 	virtual void Delete();
 
+	virtual bool IsPartitionUnmasked(int part) = 0;
+
 	// relative rates
 	virtual double LogRRPrior();
 	virtual void SampleRR();

@@ -79,17 +79,23 @@ class PartitionedGTRPartitionedProfileProcess : public virtual PartitionedGTRPro
 	// should be called each time global parameters are modified
 	virtual void UpdateMatrices()	{
 		for (int p=0; p<PartitionedGTRProfileProcess::GetNpart(); p++)	{
-			for (int k=0; k<PartitionedProfileProcess::GetNpart(); k++)	{
-				UpdateMatrix(p, k);
+			if(IsPartitionUnmasked(p))
+			{
+				for (int k=0; k<PartitionedProfileProcess::GetNpart(); k++)	{
+					UpdateMatrix(p, k);
+				}
 			}
 		}
 	}
 
 	virtual void CreateMatrices()	{
 		for (int p=0; p<PartitionedGTRProfileProcess::GetNpart(); p++)	{
-			for (int k=0; k<PartitionedProfileProcess::GetNpart(); k++)	{
-				if (! matrixarray[p][k])	{
-					CreateMatrix(p, k);
+			if(IsPartitionUnmasked(p))
+			{
+				for (int k=0; k<PartitionedProfileProcess::GetNpart(); k++)	{
+					if (! matrixarray[p][k])	{
+						CreateMatrix(p, k);
+					}
 				}
 			}
 		}
@@ -107,8 +113,11 @@ class PartitionedGTRPartitionedProfileProcess : public virtual PartitionedGTRPro
 
 	virtual void DeleteMatrices()	{
 		for (int p=0; p<PartitionedGTRProfileProcess::GetNpart(); p++)	{
-			for (int k=0; k<PartitionedProfileProcess::GetNpart(); k++)	{
-				DeleteMatrix(p, k);
+			if(IsPartitionUnmasked(p))
+			{
+				for (int k=0; k<PartitionedProfileProcess::GetNpart(); k++)	{
+					DeleteMatrix(p, k);
+				}
 			}
 		}
 	}
