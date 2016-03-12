@@ -33,7 +33,7 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 	void SlaveUpdateParameters();
 
 
-	PartitionedRASCATGTRSBDPGammaPhyloProcess(string indatafile, string treefile, string inschemefile, bool inlinkgam,bool inunlinkgtr,int nratecat, int iniscodon, GeneticCodeType incodetype, int infixtopo, int inNSPR, int inNNNI, int inkappaprior, double inmintotweight, int me, int np)	{
+	PartitionedRASCATGTRSBDPGammaPhyloProcess(string indatafile, string treefile, string inschemefile, bool inlinkgam,bool inunlinkgtr,string inrrtype,int nratecat, int iniscodon, GeneticCodeType incodetype, int infixtopo, int inNSPR, int inNNNI, int inkappaprior, double inmintotweight, int me, int np)	{
 		partoccupancy = 0;
 		occupancyNeedsUpdating = true;
 
@@ -88,20 +88,8 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 		schemefile = inschemefile;
 		linkgam = inlinkgam;
 		unlinkgtr = inunlinkgtr;
-		vector<PartitionScheme> schemes = PartitionedDGamRateProcess::ReadSchemes(schemefile, plaindata->GetNsite(), linkgam, unlinkgtr);
-
-		if(myid == 0)
-		{
-			cerr << endl;
-			cerr << "Read " << schemes[2].Npart << " partitions in scheme file '" << schemefile << "':\n";
-			for(size_t i = 0; i < schemes[0].Npart; i++)
-			{
-				string t = schemes[0].partType[i] == "None" ? "GTR" : schemes[0].partType[i];
-
-				cerr << t << "\t" << schemes[0].partSites[i].size() << " sites" << endl;
-			}
-			cerr << endl;
-		}
+		rrtype = inrrtype;
+		vector<PartitionScheme> schemes = PartitionedDGamRateProcess::ReadSchemes(schemefile, plaindata->GetNsite(), myid, linkgam, unlinkgtr, rrtype);
 
 		Create(tree,plaindata,nratecat,schemes[0],schemes[2],insitemin,insitemax);
 		if (myid == 0)	{
@@ -124,6 +112,7 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 		is >> unlinkgtr;
 		int nratecat;
 		is >> nratecat;
+		is >> rrtype;
 		if (atof(version.substr(0,3).c_str()) > 1.3)	{
 			is >> iscodon;
 			is >> codetype;
@@ -327,6 +316,7 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 		os << linkgam << '\n';
 		os << unlinkgtr << '\n';
 		os << GetNcat() << '\n';
+		os << rrtype << '\n';
 		os << iscodon << '\n';
 		os << codetype << '\n';
 		os << kappaprior << '\n';
@@ -379,6 +369,7 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 	string schemefile;
 	bool linkgam;
 	bool unlinkgtr;
+	string rrtype;
 
 	double normFactor;
 	bool occupancyNeedsUpdating;

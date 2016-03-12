@@ -78,18 +78,19 @@ class Model	{
 		// PARTITIONED
 		if (schemefile != "None")
 		{
+			string inrrtype = (modeltype == 2) ? rrtype : "";
 			if (mixturetype == 1)	{
 				type = "PARTCATFINITE";
-				process = new PartitionedRASCATGTRFiniteGammaPhyloProcess(datafile,treefile,schemefile,inlinkgam,inunlinkgtr,nratecat,ncat,fixncomp,empmix,mixtype,fixtopo,NSPR,NNNI,myid,nprocs);
+				process = new PartitionedRASCATGTRFiniteGammaPhyloProcess(datafile,treefile,schemefile,inlinkgam,inunlinkgtr,inrrtype,nratecat,ncat,fixncomp,empmix,mixtype,fixtopo,NSPR,NNNI,myid,nprocs);
 			}
 			else if (mixturetype == 3)	{
 				type = "PARTCATSBDP";
-				process = new PartitionedRASCATGTRSBDPGammaPhyloProcess(datafile,treefile,schemefile,inlinkgam,inunlinkgtr,nratecat,iscodon,codetype,fixtopo,NSPR,NNNI,kappaprior,mintotweight,myid,nprocs);
+				process = new PartitionedRASCATGTRSBDPGammaPhyloProcess(datafile,treefile,schemefile,inlinkgam,inunlinkgtr,inrrtype,nratecat,iscodon,codetype,fixtopo,NSPR,NNNI,kappaprior,mintotweight,myid,nprocs);
 			}
 			else
 			{
 				type = "PARTCATFIX";
-				process = new PartitionedRASGTRGammaPhyloProcess(datafile,treefile,schemefile,inlinkgam,inunlinkgtr,nratecat,iscodon,codetype,fixtopo,NSPR,NNNI,mintotweight,myid,nprocs);
+				process = new PartitionedRASGTRGammaPhyloProcess(datafile,treefile,schemefile,inlinkgam,inunlinkgtr,inrrtype,nratecat,iscodon,codetype,fixtopo,NSPR,NNNI,mintotweight,myid,nprocs);
 			}
 		}
 

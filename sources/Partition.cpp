@@ -6,7 +6,7 @@
 
 using namespace std;
 
-vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsite, bool linkgam, bool unlinkgtr)
+vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsite, int myid, bool linkgam, bool unlinkgtr, string rrtype)
 {
 	string error = "Error: improperly formatted scheme file\n";
 
@@ -221,6 +221,24 @@ vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsi
 		std::fill(dgamscheme.sitePart.begin(), dgamscheme.sitePart.end(), 0);
 	}
 
+	if(rrtype != "")
+	{
+		if(rrtype == "None" && unlinkgtr)
+		{
+			for(size_t p = 0; p < rrscheme.partType.size(); p++)
+			{
+				rrscheme.partType[p] = "None";
+			}
+		}
+		else
+		{
+			rrscheme.Npart = 1;
+			std::fill(rrscheme.sitePart.begin(), rrscheme.sitePart.end(), 0);
+			rrscheme.partType.clear();
+			rrscheme.partType.push_back(rrtype);
+		}
+	}
+
 	rrscheme.update();
 	statscheme.update();
 	dgamscheme.update();
@@ -230,6 +248,19 @@ vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsi
 	schemes.push_back(rrscheme);
 	schemes.push_back(statscheme);
 	schemes.push_back(dgamscheme);
+
+	if(myid == 0)
+	{
+		cerr << endl;
+		cerr << "Found " << schemes[2].Npart << " partitions in scheme file '" << schemefile << "'\n";
+		for(size_t i = 0; i < schemes[0].Npart; i++)
+		{
+			string t = schemes[0].partType[i] == "None" ? "gtr" : schemes[0].partType[i];
+
+			cerr << t << "\t" << schemes[0].partSites[i].size() << " sites" << endl;
+		}
+		cerr << endl;
+	}
 
 	return schemes;
 }

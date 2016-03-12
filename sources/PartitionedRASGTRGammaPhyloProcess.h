@@ -33,7 +33,7 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 	void SlaveUpdateParameters();
 
 
-	PartitionedRASGTRGammaPhyloProcess(string indatafile, string treefile, string inschemefile,bool inlinkgam,bool inunlinkgtr,int nratecat, int iniscodon, GeneticCodeType incodetype, int infixtopo, int inNSPR, int inNNNI, double inmintotweight, int me, int np)	{
+	PartitionedRASGTRGammaPhyloProcess(string indatafile, string treefile, string inschemefile,bool inlinkgam,bool inunlinkgtr,string inrrtype,int nratecat, int iniscodon, GeneticCodeType incodetype, int infixtopo, int inNSPR, int inNNNI, double inmintotweight, int me, int np)	{
 		myid = me;
 		nprocs = np;
 
@@ -84,20 +84,8 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 		schemefile = inschemefile;
 		linkgam = inlinkgam;
 		unlinkgtr = inunlinkgtr;
-		vector<PartitionScheme> schemes = PartitionedDGamRateProcess::ReadSchemes(schemefile, plaindata->GetNsite(), linkgam, unlinkgtr);
-
-		if(myid == 0)
-		{
-			cerr << endl;
-			cerr << "Read " << schemes[2].Npart << " partitions in scheme file '" << schemefile << "':\n";
-			for(size_t i = 0; i < schemes[0].Npart; i++)
-			{
-				string t = schemes[0].partType[i] == "None" ? "GTR" : schemes[0].partType[i];
-
-				cerr << t << "\t" << schemes[0].partSites[i].size() << " sites" << endl;
-			}
-			cerr << endl;
-		}
+		rrtype = inrrtype;
+		vector<PartitionScheme> schemes = PartitionedDGamRateProcess::ReadSchemes(schemefile, plaindata->GetNsite(), myid, linkgam, unlinkgtr, rrtype);
 
 		Create(tree,plaindata,nratecat,schemes[0],schemes[1],schemes[2],insitemin,insitemax);
 
@@ -119,6 +107,7 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 		is >> unlinkgtr;
 		int nratecat;
 		is >> nratecat;
+		is >> rrtype;
 		if (atof(version.substr(0,3).c_str()) > 1.3)	{
 			is >> iscodon;
 			is >> codetype;
@@ -317,6 +306,7 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 		os << linkgam << '\n';
 		os << unlinkgtr << '\n';
 		os << GetNcat() << '\n';
+		os << rrtype << '\n';
 		os << iscodon << '\n';
 		os << codetype << '\n';
 		os << mintotweight << '\n';
@@ -382,6 +372,7 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 	string schemefile;
 	bool linkgam;
 	bool unlinkgtr;
+	string rrtype;
 };
 
 #endif

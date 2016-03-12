@@ -75,7 +75,7 @@ public:
 
 	}
 
-	std::vector<PartitionScheme> ReadSchemes(std::string schemefile, int Nsite, bool linkgam = false, bool unlinkgtr = false);
+	std::vector<PartitionScheme> ReadSchemes(std::string schemefile, int Nsite, int myid, bool linkgam = false, bool unlinkgtr = false, std::string rrtype = "");
 
 	PartitionScheme scheme;
 };
