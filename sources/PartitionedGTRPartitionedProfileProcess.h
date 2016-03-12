@@ -81,8 +81,8 @@ class PartitionedGTRPartitionedProfileProcess : public virtual PartitionedGTRPro
 		for (int p=0; p<PartitionedGTRProfileProcess::GetNpart(); p++)	{
 			if(IsPartitionUnmasked(p))
 			{
-				for (int k=0; k<PartitionedProfileProcess::GetNpart(); k++)	{
-					UpdateMatrix(p, k);
+				for (int k=0; k< partitionMap[p].size(); k++)	{
+					UpdateMatrix(p, partitionMap[p][k]);
 				}
 			}
 		}
@@ -92,31 +92,21 @@ class PartitionedGTRPartitionedProfileProcess : public virtual PartitionedGTRPro
 		for (int p=0; p<PartitionedGTRProfileProcess::GetNpart(); p++)	{
 			if(IsPartitionUnmasked(p))
 			{
-				for (int k=0; k<PartitionedProfileProcess::GetNpart(); k++)	{
-					if (! matrixarray[p][k])	{
-						CreateMatrix(p, k);
+				for (int k=0; k< partitionMap[p].size(); k++)	{
+					if (! matrixarray[p][partitionMap[p][k]])	{
+						CreateMatrix(p, partitionMap[p][k]);
 					}
 				}
 			}
 		}
-		// check to delete unoccupied combinations
-		/*
-		for (int k=GetNcomponent(); k<GetNmodeMax(); k++)	{
-			for (int p=0; p<PartitionedProfileProcess::GetNpart(); p++)	{
-				if (matrixarray[k])	{
-					DeleteMatrix(k, p);
-				}
-				matrixarray[k] = 0;
-			}
-		}*/
 	}
 
 	virtual void DeleteMatrices()	{
 		for (int p=0; p<PartitionedGTRProfileProcess::GetNpart(); p++)	{
 			if(IsPartitionUnmasked(p))
 			{
-				for (int k=0; k<PartitionedProfileProcess::GetNpart(); k++)	{
-					DeleteMatrix(p, k);
+				for (int k=0; k< partitionMap[p].size(); k++)	{
+					DeleteMatrix(p, partitionMap[p][k]);
 				}
 			}
 		}
@@ -128,6 +118,7 @@ class PartitionedGTRPartitionedProfileProcess : public virtual PartitionedGTRPro
 	}
 
 	SubMatrix*** matrixarray;
+	std::vector<std::vector<int> > partitionMap;
 };
 
 #endif

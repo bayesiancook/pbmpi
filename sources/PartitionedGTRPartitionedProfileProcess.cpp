@@ -18,6 +18,7 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 #include "Random.h"
 #include <cassert>
 #include "Parallel.h"
+#include <algorithm>
 
 
 //-------------------------------------------------------------------------
@@ -40,13 +41,29 @@ void PartitionedGTRPartitionedProfileProcess::Create(int indim, PartitionScheme 
 		}
 		// SampleProfile();
 	}
+
+	partitionMap.clear();
+	partitionMap.resize(rrscheme.Npart);
+	for(size_t p = 0; p < rrscheme.Npart; p++)
+	{
+		std::vector<int> partsites = rrscheme.partSites[p];
+
+		for(size_t i = 0; i < partsites.size(); i++)
+		{
+			int statpart = statscheme.sitePart[partsites[i]];
+			if(std::find(partitionMap[p].begin(), partitionMap[p].end(), statpart) == partitionMap[p].end())
+			{
+				partitionMap[p].push_back(statpart);
+			}
+		}
+	}
 }
 
 void PartitionedGTRPartitionedProfileProcess::Delete() {
 	if (matrixarray)	{
 		for (int p=0; p<PartitionedGTRProfileProcess::GetNpart(); p++)	{
-			for (int k=0; k<PartitionedProfileProcess::GetNpart(); k++)	{
-				delete matrixarray[p][k];
+			for (int k=0; k< partitionMap[p].size(); k++)	{
+				delete matrixarray[p][partitionMap[p][k]];
 			}
 			delete [] matrixarray[p];
 		}
