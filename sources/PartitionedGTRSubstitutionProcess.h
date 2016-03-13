@@ -33,7 +33,7 @@ class PartitionedGTRSubstitutionProcess : public virtual MatrixSubstitutionProce
 	void Create(int indim, PartitionScheme rrscheme, int insitemin,int insitemax)	{
 		PartitionedGTRProfileProcess::Create(indim, rrscheme);
 		SubstitutionProcess::Create(rrscheme.GetNsite(),indim,insitemin,insitemax);
-		for(size_t i = 0; i < insitemax - insitemin; i++)
+		for(size_t i = insitemin; i < insitemax; i++)
 			sitemask.push_back(i);
 	}
 
