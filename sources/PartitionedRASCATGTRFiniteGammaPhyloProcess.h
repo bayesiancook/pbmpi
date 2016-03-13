@@ -142,7 +142,7 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 		}
 		tree->RegisterWith(taxonset,0);
 
-		vector<PartitionScheme> schemes = PartitionedDGamRateProcess::ReadSchemes(schemefile, plaindata->GetNsite(), linkgam, unlinkgtr);
+		vector<PartitionScheme> schemes = PartitionedDGamRateProcess::ReadSchemes(schemefile, plaindata->GetNsite(), myid, linkgam, unlinkgtr, rrtype);
 
 		Create(tree,plaindata,nratecat,1,schemes[0],schemes[2],infixncomp,inempmix,inmixtype,insitemin,insitemax);
 

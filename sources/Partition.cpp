@@ -221,7 +221,7 @@ vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsi
 		std::fill(dgamscheme.sitePart.begin(), dgamscheme.sitePart.end(), 0);
 	}
 
-	if(rrtype != "")
+	if(rrtype != "Part")
 	{
 		if(rrtype == "None" && unlinkgtr)
 		{

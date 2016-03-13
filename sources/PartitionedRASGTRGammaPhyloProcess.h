@@ -159,7 +159,7 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 		}
 		tree->RegisterWith(taxonset,0);
 
-		vector<PartitionScheme> schemes = PartitionedDGamRateProcess::ReadSchemes(schemefile, plaindata->GetNsite(), linkgam, unlinkgtr);
+		vector<PartitionScheme> schemes = PartitionedDGamRateProcess::ReadSchemes(schemefile, plaindata->GetNsite(), myid, linkgam, unlinkgtr, rrtype);
 
 		Create(tree,plaindata,nratecat,schemes[0],schemes[1],schemes[2],insitemin,insitemax);
 
@@ -308,7 +308,7 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 		os << GetNcat() << '\n';
 		os << rrtype << '\n';
 		os << iscodon << '\n';
-		os << codetype << '\n';
+		os << codetype;
 		os << mintotweight << '\n';
 		os << fixtopo << '\n';
 		os << NSPR << '\t' << NNNI << '\n';

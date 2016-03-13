@@ -78,7 +78,7 @@ class Model	{
 		// PARTITIONED
 		if (schemefile != "None")
 		{
-			string inrrtype = (modeltype == 2) ? rrtype : "";
+			string inrrtype = (modeltype == 2) ? rrtype : "Part";
 			if (mixturetype == 1)	{
 				type = "PARTCATFINITE";
 				process = new PartitionedRASCATGTRFiniteGammaPhyloProcess(datafile,treefile,schemefile,inlinkgam,inunlinkgtr,inrrtype,nratecat,ncat,fixncomp,empmix,mixtype,fixtopo,NSPR,NNNI,myid,nprocs);
