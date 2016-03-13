@@ -117,14 +117,14 @@ class SubstitutionProcess : public virtual RateProcess, public virtual ProfilePr
 	// only for the category specified for that site by double* ratealloc
 
 	// CPU : level 1
-	void Reset(double*** condl, bool condalloc = false);
-	void Multiply(double*** from, double*** to, bool condalloc = false);
-	void MultiplyByStationaries(double*** from, bool condalloc = false);
-	void Offset(double*** condl, bool condalloc = false);
+	virtual void Reset(double*** condl, bool condalloc = false);
+	virtual void Multiply(double*** from, double*** to, bool condalloc = false);
+	virtual void MultiplyByStationaries(double*** from, bool condalloc = false);
+	virtual void Offset(double*** condl, bool condalloc = false);
 	virtual void Initialize(double*** condl, const int* leafstates, bool condalloc = false);
 
 	// CPU : level 2
-	double ComputeLikelihood(double*** aux, bool condalloc = false);
+	virtual double ComputeLikelihood(double*** aux, bool condalloc = false);
 
 	// CPU : level 3
 	// implemented in GTR or POisson Substitution process

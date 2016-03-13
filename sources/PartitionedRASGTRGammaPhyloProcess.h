@@ -346,6 +346,8 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 	}
 
 	virtual void ReadPB(int argc, char* argv[]);
+	void GlobalSetTestData();
+	void SlaveSetTestData();
 	void SlaveComputeCVScore();
 	void SlaveComputeSiteLogL();
 
@@ -370,6 +372,7 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 	GeneticCodeType codetype;
 
 	string schemefile;
+	string cvschemefile;
 	bool linkgam;
 	bool unlinkgtr;
 	string rrtype;

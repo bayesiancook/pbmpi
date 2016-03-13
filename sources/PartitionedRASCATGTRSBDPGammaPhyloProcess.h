@@ -344,6 +344,8 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 	void ReadNocc(string name, int burnin, int every, int until);
 	void ReadRelRates(string name, int burnin, int every, int until);
 	void ReadSiteProfiles(string name, int burnin, int every, int until);
+	void GlobalSetTestData();
+	void SlaveSetTestData();
 	void SlaveComputeCVScore();
 	void SlaveComputeSiteLogL();
 
@@ -375,6 +377,8 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 	bool occupancyNeedsUpdating;
 
 	int*** partoccupancy;
+
+	string cvschemefile;
 };
 
 #endif

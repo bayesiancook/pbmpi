@@ -337,6 +337,7 @@ void PartitionedRASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	int rr = 0;
 	int map = 0;
 	string testdatafile = "";
+	cvschemefile = "None";
 
 	try	{
 
@@ -363,6 +364,10 @@ void PartitionedRASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 				cv = 1;
 				i++;
 				testdatafile = argv[i];
+			}
+			else if (s == "-p")	{
+				i++;
+				cvschemefile = argv[i];
 			}
 			else if (s == "-ss")	{
 				ss = 1;
@@ -626,6 +631,116 @@ void PartitionedRASCATGTRSBDPGammaPhyloProcess::ReadSiteProfiles(string name, in
 	cerr << '\n';
 }
 
+
+void PartitionedRASCATGTRSBDPGammaPhyloProcess::GlobalSetTestData()	{
+	testnsite = testdata->GetNsite();
+	int* tmp = new int[testnsite * GetNtaxa()];
+	testdata->GetDataVector(tmp);
+
+	MESSAGE signal = SETTESTDATA;
+	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(&testnsite,1,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(tmp,testnsite*GetNtaxa(),MPI_INT,0,MPI_COMM_WORLD);
+
+	if (cvschemefile == "None")	{
+		cerr << "error : partition scheme file must be specified for cv test dataset\n";
+		MPI_Finalize();
+		exit(1);
+	}
+
+	PartitionScheme datascheme,testscheme;
+
+	vector<PartitionScheme> cvschemes = PartitionedDGamRateProcess::ReadSchemes(cvschemefile, testdata->GetNsite(), myid, linkgam, unlinkgtr, rrtype);
+
+	if(!linkgam)
+	{
+		datascheme = PartitionedDGamRateProcess::scheme;
+		testscheme = cvschemes[2];
+	}
+	else
+	{
+		datascheme = PartitionedGTRProfileProcess::scheme;
+		testscheme = cvschemes[0];
+	}
+
+	if(datascheme.Npart != testscheme.Npart)
+	{
+		cerr << "error : incorrect number of partitions in cv test scheme\n";
+		MPI_Finalize();
+		exit(1);
+	}
+
+	MPI_Bcast(&(datascheme.Npart),1,MPI_INT,0,MPI_COMM_WORLD);
+	for(int p = 0; p < datascheme.Npart; p++)
+	{
+		int ndatasites = datascheme.partSites[p].size();
+		MPI_Bcast(&ndatasites,1,MPI_INT,0,MPI_COMM_WORLD);
+		MPI_Bcast(&(datascheme.partSites[p][0]),ndatasites,MPI_INT,0,MPI_COMM_WORLD);
+
+		int ntestsites = datascheme.partSites[p].size();
+		MPI_Bcast(&ntestsites,1,MPI_INT,0,MPI_COMM_WORLD);
+		MPI_Bcast(&(testscheme.partSites[p][0]),ntestsites,MPI_INT,0,MPI_COMM_WORLD);
+	}
+
+	delete[] tmp;
+}
+
+void PartitionedRASCATGTRSBDPGammaPhyloProcess::SlaveSetTestData()	{
+
+	MPI_Bcast(&testnsite,1,MPI_INT,0,MPI_COMM_WORLD);
+	int* tmp = new int[testnsite * GetNtaxa()];
+	MPI_Bcast(tmp,testnsite*GetNtaxa(),MPI_INT,0,MPI_COMM_WORLD);
+
+	int npart;
+	MPI_Bcast(&npart,1,MPI_INT,0,MPI_COMM_WORLD);
+
+	sitemask.clear();
+
+	SetTestSiteMinAndMax();
+	for(int p = 0; p < npart; p++)
+	{
+		int ndatasites,ntestsites;
+
+		MPI_Bcast(&ndatasites,1,MPI_INT,0,MPI_COMM_WORLD);
+		int* datasites = new int[ndatasites];
+		MPI_Bcast(datasites,ndatasites,MPI_INT,0,MPI_COMM_WORLD);
+
+		MPI_Bcast(&ntestsites,1,MPI_INT,0,MPI_COMM_WORLD);
+		int* testsites = new int[ntestsites];
+		MPI_Bcast(testsites,ntestsites,MPI_INT,0,MPI_COMM_WORLD);
+
+		int testpartsitemin,testpartsitemax;
+		int partsitemin;
+
+		int width = ndatasites/(nprocs-1);
+		int testwidth = ntestsites/(nprocs-1);
+
+		partsitemin = (myid-1)*width;
+		testpartsitemin = (myid-1)*testwidth;
+		testpartsitemax = 0;
+
+		if (myid == (nprocs-1)) {
+			testpartsitemax = ntestsites;
+		}
+		else {
+			testpartsitemax = myid*testwidth;
+		}
+
+		for(int i = 0; i < testpartsitemax - testpartsitemin; i++)
+		{
+			int offset 	 = datasites[partsitemin + i];
+			sitemask.push_back(offset);
+			int testsite = testsites[testpartsitemin + i];
+			data->SetTestData(testnsite,offset,testsite,testsite+1,tmp);
+		}
+
+		delete[] datasites;
+		delete[] testsites;
+	}
+
+	delete[] tmp;
+}
+
 void PartitionedRASCATGTRSBDPGammaPhyloProcess::SlaveComputeCVScore()	{
 
 	if (! SumOverRateAllocations())	{
@@ -633,36 +748,37 @@ void PartitionedRASCATGTRSBDPGammaPhyloProcess::SlaveComputeCVScore()	{
 		exit(1);
 	}
 
-	sitemax = sitemin + testsitemax - testsitemin;
+	//sitemax = sitemin + testsitemax - testsitemin;
 	double** sitelogl = new double*[GetNsite()];
-	for (int i=sitemin; i<sitemax; i++)	{
-		sitelogl[i] = new double[GetNcomponent()];
+	for(int i = 0; i < sitemask.size(); i++)
+	{
+		sitelogl[sitemask[i]] = new double[GetNcomponent()];
 	}
 	
 	// UpdateMatrices();
 
 	for (int k=0; k<GetNcomponent(); k++)	{
-		for (int i=sitemin; i<sitemax; i++)	{
-			PartitionedExpoConjugateGTRSBDPProfileProcess::alloc[i] = k;
+		for(int i = 0; i < sitemask.size(); i++)	{
+			PartitionedExpoConjugateGTRSBDPProfileProcess::alloc[sitemask[i]] = k;
 		}
 		UpdateConditionalLikelihoods();
-		for (int i=sitemin; i<sitemax; i++)	{
-			sitelogl[i][k] = sitelogL[i];
+		for(int i = 0; i < sitemask.size(); i++)	{
+			sitelogl[i][k] = sitelogL[sitemask[i]];
 		}
 	}
 
 	double total = 0;
-	for (int i=sitemin; i<sitemax; i++)	{
+	for(int i = 0; i < sitemask.size(); i++)	{
 		double max = 0;
 		for (int k=0; k<GetNcomponent(); k++)	{
-			if ((!k) || (max < sitelogl[i][k]))	{
-				max = sitelogl[i][k];
+			if ((!k) || (max < sitelogl[sitemask[i]][k]))	{
+				max = sitelogl[sitemask[i]][k];
 			}
 		}
 		double tot = 0;
 		double totweight = 0;
 		for (int k=0; k<GetNcomponent(); k++)	{
-			tot += weight[k] * exp(sitelogl[i][k] - max);
+			tot += weight[k] * exp(sitelogl[sitemask[i]][k] - max);
 			totweight += weight[k];
 		}
 		total += log(tot) + max;
@@ -670,12 +786,12 @@ void PartitionedRASCATGTRSBDPGammaPhyloProcess::SlaveComputeCVScore()	{
 
 	MPI_Send(&total,1,MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
 	
-	for (int i=sitemin; i<sitemax; i++)	{
-		delete[] sitelogl[i];
+	for(int i = 0; i < sitemask.size(); i++)	{
+		delete[] sitelogl[sitemask[i]];
 	}
 	delete[] sitelogl;
 
-	sitemax = bksitemax;
+	//sitemax = bksitemax;
 
 }
 
