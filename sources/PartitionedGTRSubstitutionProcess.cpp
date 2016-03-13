@@ -7,12 +7,12 @@
 
 // set the vector uniformly to 1
 void PartitionedGTRSubstitutionProcess::Reset(double*** t, bool condalloc)	{
-	for (int s=0; s<sitemask.size(); s++)	{
-		int i = sitemask[s];
-		for (int j=0; j<GetNrate(i); j++)	{
+	for (int i=sitemin; i<sitemax; i++)	{
+		int s = sitemask[i - sitemin];
+		for (int j=0; j<GetNrate(s); j++)	{
 			if ((! condalloc) || (ratealloc[i] == j))	{
 				double* tmp = t[i][j];
-				int nstate = GetNstate(i);
+				int nstate = GetNstate(s);
 				for (int k=0; k<nstate; k++)	{
 					(*tmp++) = 1.0;
 					// tmp[k] = 1.0;
@@ -26,16 +26,16 @@ void PartitionedGTRSubstitutionProcess::Reset(double*** t, bool condalloc)	{
 }
 
 // initialize the vector according to the data observed at a given leaf of the tree (contained in const int* state)
-// steta[i] == -1 means 'missing data'. in that case, conditional likelihoods are all 1
+// state[i] == -1 means 'missing data'. in that case, conditional likelihoods are all 1
 void PartitionedGTRSubstitutionProcess::Initialize(double*** t, const int* state, bool condalloc)	{
-	for (int s=0; s<sitemask.size(); s++)	{
-		int i = sitemask[s];
-		for (int j=0; j<GetNrate(i); j++)	{
+	for (int i=sitemin; i<sitemax; i++)	{
+		int s = sitemask[i-sitemin];
+		for (int j=0; j<GetNrate(s); j++)	{
 			if ((! condalloc) || (ratealloc[i] == j))	{
 				double* tmp = t[i][j];
-				int nstate = GetNstate(i);
+				int nstate = GetNstate(s);
 				tmp[nstate] = 0;
-				if (state[i] == -1)	{
+				if (state[s] == -1)	{
 					for (int k=0; k<nstate; k++)	{
 						(*tmp++) = 1.0;
 						// tmp[k] = 1.0;
@@ -48,7 +48,7 @@ void PartitionedGTRSubstitutionProcess::Initialize(double*** t, const int* state
 						// tmp[k] = 0;
 					}
 					tmp -= nstate;
-					tmp[state[i]] = 1.0;
+					tmp[state[s]] = 1.0;
 				}
 			}
 		}
@@ -57,13 +57,13 @@ void PartitionedGTRSubstitutionProcess::Initialize(double*** t, const int* state
 
 // multiply two conditional likelihood vectors, term by term
 void PartitionedGTRSubstitutionProcess::Multiply(double*** from, double*** to, bool condalloc)	{
-	for (int s=0; s<sitemask.size(); s++)	{
-		int i = sitemask[s];
-		for (int j=0; j<GetNrate(i); j++)	{
+	for (int i=sitemin; i<sitemax; i++)	{
+		int s = sitemask[i-sitemin];
+		for (int j=0; j<GetNrate(s); j++)	{
 			if ((! condalloc) || (ratealloc[i] == j))	{
 				double* tmpfrom = from[i][j];
 				double* tmpto = to[i][j];
-				int nstate = GetNstate(i);
+				int nstate = GetNstate(s);
 				for (int k=0; k<nstate; k++)	{
 					(*tmpto++) *= (*tmpfrom++);
 					// tmpto[k] *= tmpfrom[k];
@@ -79,13 +79,13 @@ void PartitionedGTRSubstitutionProcess::Multiply(double*** from, double*** to, b
 
 // multiply a conditional likelihood vector by the (possibly site-specific) stationary probabilities of the process
 void PartitionedGTRSubstitutionProcess::MultiplyByStationaries(double*** to, bool condalloc)	{
-	for (int s=0; s<sitemask.size(); s++)	{
-		int i = sitemask[s];
-		const double* stat = GetStationary(i);
+	for (int i=sitemin; i<sitemax; i++)	{
+		int s = sitemask[i-sitemin];
+		const double* stat = GetStationary(s);
 		for (int j=0; j<GetNrate(i); j++)	{
 			if ((! condalloc) || (ratealloc[i] == j))	{
 				double* tmpto = to[i][j];
-				int nstate = GetNstate(i);
+				int nstate = GetNstate(s);
 				for (int k=0; k<nstate; k++)	{
 					(*tmpto++) *= (*stat++);
 					// tmpto[k] *= stat[k];
@@ -101,13 +101,13 @@ void PartitionedGTRSubstitutionProcess::MultiplyByStationaries(double*** to, boo
 // are divided by the largest among them
 // and the residual is stored in the last entry of the vector
 void PartitionedGTRSubstitutionProcess::Offset(double*** t, bool condalloc)	{
-	for (int s=0; s<sitemask.size(); s++)	{
-		int i = sitemask[s];
-		for (int j=0; j<GetNrate(i); j++)	{
+	for (int i=sitemin; i<sitemax; i++)	{
+		int s = sitemask[i-sitemin];
+		for (int j=0; j<GetNrate(s); j++)	{
 			if ((! condalloc) || (ratealloc[i] == j))	{
 				double* tmp = t[i][j];
 				double max = 0;
-				for (int k=0; k<GetNstate(i); k++)	{
+				for (int k=0; k<GetNstate(s); k++)	{
 					if (tmp[k] <0)	{
 						cerr << "error in pruning: negative prob : " << tmp[k] << "\n";
 						exit(1);
@@ -124,10 +124,10 @@ void PartitionedGTRSubstitutionProcess::Offset(double*** t, bool condalloc)	{
 					exit(1);
 					*/
 				}
-				for (int k=0; k<GetNstate(i); k++)	{
+				for (int k=0; k<GetNstate(s); k++)	{
 					tmp[k] /= max;
 				}
-				tmp[GetNstate(i)] += log(max);
+				tmp[GetNstate(s)] += log(max);
 			}
 		}
 	}
@@ -140,13 +140,13 @@ void PartitionedGTRSubstitutionProcess::Offset(double*** t, bool condalloc)	{
 
 
 double PartitionedGTRSubstitutionProcess::ComputeLikelihood(double*** aux, bool condalloc)	{
-	for (int s=0; s<sitemask.size(); s++)	{
-		int i = sitemask[s];
+	for (int i=sitemin; i<sitemax; i++)	{
+		int s = sitemask[i-sitemin];
 		if (condalloc)	{
 			int j = ratealloc[i];
 			double* t = aux[i][j];
 			double tot = 0;
-			int nstate = GetNstate(i);
+			int nstate = GetNstate(s);
 			for (int k=0; k<nstate; k++)	{
 				tot += (*t++);
 				// tot += t[k];
@@ -169,10 +169,10 @@ double PartitionedGTRSubstitutionProcess::ComputeLikelihood(double*** aux, bool 
 		else	{
 			double max = 0;
 			double* logl = condsitelogL[i];
-			for (int j=0; j<GetNrate(i); j++)	{
+			for (int j=0; j<GetNrate(s); j++)	{
 				double* t = aux[i][j];
 				double tot = 0;
-				int nstate = GetNstate(i);
+				int nstate = GetNstate(s);
 				for (int k=0; k<nstate; k++)	{
 					tot += (*t++);
 					// tot += t[k];
@@ -196,16 +196,15 @@ double PartitionedGTRSubstitutionProcess::ComputeLikelihood(double*** aux, bool 
 				}
 			}
 			double total = 0;
-			for (int j=0; j<GetNrate(i); j++)	{
-				total += GetRateWeight(i,j) * exp(logl[j] - max);
+			for (int j=0; j<GetNrate(s); j++)	{
+				total += GetRateWeight(s,j) * exp(logl[j] - max);
 			}
 			sitelogL[i] = log(total) + max;
 		}
 	}
 
 	logL = 0;
-	for (int s=0; s<sitemask.size(); s++)	{
-		int i = sitemask[s];
+	for (int i=sitemin; i<sitemax; i++)	{
 	// for (int i=0; i<GetNsite(); i++)	{
 		logL += sitelogL[i];
 	}
@@ -220,13 +219,13 @@ void PartitionedGTRSubstitutionProcess::Propagate(double*** from, double*** to, 
 	const int nstate = GetMatrix(sitemin)->GetNstate();
 	// double* bigaux = new double[(sitemax - sitemin) * GetNrate(0) * nstate];
 	double* aux = new double[GetNsite() * GetNrate(0) * nstate];
-	for (int s=0; s<sitemask.size(); s++)	{
-		int i = sitemask[s];
-		SubMatrix* matrix = GetMatrix(i);
+	for (int i=sitemin; i<sitemax; i++)	{
+		int s = sitemask[i-sitemin];
+		SubMatrix* matrix = GetMatrix(s);
 		double** eigenvect = matrix->GetEigenVect();
 		double** inveigenvect = matrix->GetInvEigenVect();
 		double* eigenval = matrix->GetEigenVal();
-		for(j=0; j<GetNrate(i); j++)	{
+		for(j=0; j<GetNrate(s); j++)	{
 			if ((!condalloc) || (ratealloc[i] == j))	{
 				double* up = from[i][j];
 				double* down = to[i][j];
