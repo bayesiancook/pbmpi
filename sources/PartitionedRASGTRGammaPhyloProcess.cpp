@@ -358,7 +358,7 @@ void PartitionedRASGTRGammaPhyloProcess::GlobalSetTestData()	{
 		MPI_Bcast(&ndatasites,1,MPI_INT,0,MPI_COMM_WORLD);
 		MPI_Bcast(&(datascheme.partSites[p][0]),ndatasites,MPI_INT,0,MPI_COMM_WORLD);
 
-		int ntestsites = datascheme.partSites[p].size();
+		int ntestsites = testscheme.partSites[p].size();
 		MPI_Bcast(&ntestsites,1,MPI_INT,0,MPI_COMM_WORLD);
 		MPI_Bcast(&(testscheme.partSites[p][0]),ntestsites,MPI_INT,0,MPI_COMM_WORLD);
 	}
@@ -378,6 +378,7 @@ void PartitionedRASGTRGammaPhyloProcess::SlaveSetTestData()	{
 	sitemask.clear();
 
 	SetTestSiteMinAndMax();
+	partitionMask = std::vector<bool>(PartitionedGTRProfileProcess::GetNpart(), false);
 	for(int p = 0; p < npart; p++)
 	{
 		int ndatasites,ntestsites;
@@ -411,6 +412,8 @@ void PartitionedRASGTRGammaPhyloProcess::SlaveSetTestData()	{
 		{
 			int offset 	 = datasites[partsitemin + i];
 			sitemask.push_back(offset);
+			partitionMask[PartitionedGTRProfileProcess::GetSitePart(offset)] = true;
+
 			int testsite = testsites[testpartsitemin + i];
 			data->SetTestData(testnsite,offset,testsite,testsite+1,tmp);
 		}
