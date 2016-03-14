@@ -283,7 +283,7 @@ double PartitionedGTRPartitionedProfileProcess::MoveProfile(double tuning, int n
 		if(!fixstat[i])
 			total += MoveProfile(i,tuning,n,nrep);
 	}
-	return total / PartitionedProfileProcess::GetNpart();
+	return total / nfreestat;
 }
 
 double PartitionedGTRPartitionedProfileProcess::MoveProfile(int cat, double tuning, int n, int nrep)	{
