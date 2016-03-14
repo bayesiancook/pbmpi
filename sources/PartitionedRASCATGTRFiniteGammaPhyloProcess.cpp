@@ -574,7 +574,7 @@ void PartitionedRASCATGTRFiniteGammaPhyloProcess::SlaveSetTestData()	{
 				}
 				else
 				{
-					sitemask[site] = true;
+					sitemask[site-sitemin] = true;
 				}
 
 				i++;
@@ -596,7 +596,7 @@ void PartitionedRASCATGTRFiniteGammaPhyloProcess::SlaveComputeCVScore()	{
 	double** sitelogl = new double*[GetNsite()];
 	for(int i = sitemin; i < sitemax; i++)
 	{
-		if(!sitemask[i])
+		if(!sitemask[i-sitemin])
 		sitelogl[i] = new double[GetNcomponent()];
 	}
 	
@@ -608,14 +608,14 @@ void PartitionedRASCATGTRFiniteGammaPhyloProcess::SlaveComputeCVScore()	{
 		}
 		UpdateConditionalLikelihoods();
 		for(int i = sitemin; i < sitemax; i++)	{
-			if(!sitemask[i])
+			if(!sitemask[i-sitemin])
 			sitelogl[i][k] = sitelogL[i];
 		}
 	}
 
 	double total = 0;
 	for(int i = sitemin; i < sitemax; i++)	{
-		if(!sitemask[i])
+		if(!sitemask[i-sitemin])
 		{
 			double max = 0;
 			for (int k=0; k<GetNcomponent(); k++)	{
@@ -636,7 +636,7 @@ void PartitionedRASCATGTRFiniteGammaPhyloProcess::SlaveComputeCVScore()	{
 	MPI_Send(&total,1,MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
 	
 	for(int i = sitemin; i < sitemax; i++){
-		if(!sitemask[i])
+		if(!sitemask[i-sitemin])
 		delete[] sitelogl[i];
 	}
 	delete[] sitelogl;
