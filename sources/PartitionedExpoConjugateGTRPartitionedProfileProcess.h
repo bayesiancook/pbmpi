@@ -53,9 +53,9 @@ class PartitionedExpoConjugateGTRPartitionedProfileProcess : public virtual Part
 					GlobalUpdateSiteProfileSuffStat();
 					UpdateModeProfileSuffStat();
 					profilechrono.Start();
-					GlobalMoveProfile(1,1,100);
-					GlobalMoveProfile(1,3,100);
-					GlobalMoveProfile(0.1,3,100);
+					MoveProfile(1,1,100);
+					MoveProfile(1,3,100);
+					MoveProfile(0.1,3,100);
 					profilechrono.Stop();
 
 					if(nfreestat > 1)

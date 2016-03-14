@@ -71,10 +71,15 @@ double PartitionedProfileProcess::GetMeanDirWeight()	{
 
 double PartitionedProfileProcess::GetStatEnt()	{
 	double total = 0;
+	double n = 0;
 	for (int k=0; k<GetNpart(); k++)	{
-		total += GetPartNsite(k) * GetStatEnt(k);
+		if(!fixstat[k])
+		{
+			total += GetPartNsite(k) * GetStatEnt(k);
+			n += GetPartNsite(k);
+		}
 	}
-	return total / GetNsite();
+	return total / n;
 }
 
 double PartitionedProfileProcess::GetStatEnt(int k)	{

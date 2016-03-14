@@ -263,6 +263,7 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 		GammaBranchProcess::Move(tuning,10);
 
 		GlobalUpdateParameters();
+		PartitionedDGamRateProcess::Move(1*tuning,10);
 		PartitionedDGamRateProcess::Move(0.3*tuning,10);
 		PartitionedDGamRateProcess::Move(0.03*tuning,10);
 

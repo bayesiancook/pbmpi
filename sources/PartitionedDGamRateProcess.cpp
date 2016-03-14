@@ -276,7 +276,7 @@ void PartitionedDGamRateProcess::MoveAlphaHyper()
 	alphaHyper = rnd::GetRandom().Gamma(GetNpart() + 1.0, b + 1.0);
 }
 
-// ratemult ~ iid Gamma(multHyper + 1.0, multHyper + 1.0)
+// ratemult ~ iid Gamma(multHyper, multHyper)
 
 double PartitionedDGamRateProcess::LogMultiplierPrior()	{
 
