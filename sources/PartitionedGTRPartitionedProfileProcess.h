@@ -79,10 +79,10 @@ class PartitionedGTRPartitionedProfileProcess : public virtual PartitionedGTRPro
 	// should be called each time global parameters are modified
 	virtual void UpdateMatrices()	{
 		for (int p=0; p<PartitionedGTRProfileProcess::GetNpart(); p++)	{
-			if(IsPartitionUnmasked(p))
+			if(!IsPartitionMasked(p))
 			{
-				for (int k=0; k< partitionMap[p].size(); k++)	{
-					UpdateMatrix(p, partitionMap[p][k]);
+				for (int k=0; k< partitionmap[p].size(); k++)	{
+					UpdateMatrix(p, partitionmap[p][k]);
 				}
 			}
 		}
@@ -90,11 +90,11 @@ class PartitionedGTRPartitionedProfileProcess : public virtual PartitionedGTRPro
 
 	virtual void CreateMatrices()	{
 		for (int p=0; p<PartitionedGTRProfileProcess::GetNpart(); p++)	{
-			if(IsPartitionUnmasked(p))
+			if(!IsPartitionMasked(p))
 			{
-				for (int k=0; k< partitionMap[p].size(); k++)	{
-					if (! matrixarray[p][partitionMap[p][k]])	{
-						CreateMatrix(p, partitionMap[p][k]);
+				for (int k=0; k< partitionmap[p].size(); k++)	{
+					if (! matrixarray[p][partitionmap[p][k]])	{
+						CreateMatrix(p, partitionmap[p][k]);
 					}
 				}
 			}
@@ -103,10 +103,10 @@ class PartitionedGTRPartitionedProfileProcess : public virtual PartitionedGTRPro
 
 	virtual void DeleteMatrices()	{
 		for (int p=0; p<PartitionedGTRProfileProcess::GetNpart(); p++)	{
-			if(IsPartitionUnmasked(p))
+			if(!IsPartitionMasked(p))
 			{
-				for (int k=0; k< partitionMap[p].size(); k++)	{
-					DeleteMatrix(p, partitionMap[p][k]);
+				for (int k=0; k< partitionmap[p].size(); k++)	{
+					DeleteMatrix(p, partitionmap[p][k]);
 				}
 			}
 		}
@@ -118,7 +118,7 @@ class PartitionedGTRPartitionedProfileProcess : public virtual PartitionedGTRPro
 	}
 
 	SubMatrix*** matrixarray;
-	std::vector<std::vector<int> > partitionMap;
+	std::vector<std::vector<int> > partitionmap;
 };
 
 #endif

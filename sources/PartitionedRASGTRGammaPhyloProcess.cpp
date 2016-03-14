@@ -372,54 +372,98 @@ void PartitionedRASGTRGammaPhyloProcess::SlaveSetTestData()	{
 	int* tmp = new int[testnsite * GetNtaxa()];
 	MPI_Bcast(tmp,testnsite*GetNtaxa(),MPI_INT,0,MPI_COMM_WORLD);
 
-	int npart;
-	MPI_Bcast(&npart,1,MPI_INT,0,MPI_COMM_WORLD);
+	PartitionScheme testscheme,datascheme;
+	MPI_Bcast(&(testscheme.Npart),1,MPI_INT,0,MPI_COMM_WORLD);
+	datascheme.Npart = testscheme.Npart;
 
-	sitemask.clear();
+	datascheme.partSites.resize(datascheme.Npart);
+	testscheme.partSites.resize(testscheme.Npart);
+
+	datascheme.sitePart.resize(GetNsite());
+	testscheme.sitePart.resize(testnsite);
 
 	SetTestSiteMinAndMax();
-	partitionMask = std::vector<bool>(PartitionedGTRProfileProcess::GetNpart(), false);
-	for(int p = 0; p < npart; p++)
+	for(int p = 0; p < datascheme.Npart; p++)
 	{
-		int ndatasites,ntestsites;
+		int n;
 
-		MPI_Bcast(&ndatasites,1,MPI_INT,0,MPI_COMM_WORLD);
-		int* datasites = new int[ndatasites];
-		MPI_Bcast(datasites,ndatasites,MPI_INT,0,MPI_COMM_WORLD);
+		MPI_Bcast(&n,1,MPI_INT,0,MPI_COMM_WORLD);
+		datascheme.partSites[p].resize(n);
+		MPI_Bcast(&(datascheme.partSites[p][0]),n,MPI_INT,0,MPI_COMM_WORLD);
 
-		MPI_Bcast(&ntestsites,1,MPI_INT,0,MPI_COMM_WORLD);
-		int* testsites = new int[ntestsites];
-		MPI_Bcast(testsites,ntestsites,MPI_INT,0,MPI_COMM_WORLD);
-
-		int testpartsitemin,testpartsitemax;
-		int partsitemin;
-
-		int width = ndatasites/(nprocs-1);
-		int testwidth = ntestsites/(nprocs-1);
-
-		partsitemin = (myid-1)*width;
-		testpartsitemin = (myid-1)*testwidth;
-		testpartsitemax = 0;
-
-		if (myid == (nprocs-1)) {
-			testpartsitemax = ntestsites;
-		}
-		else {
-			testpartsitemax = myid*testwidth;
-		}
-
-		for(int i = 0; i < testpartsitemax - testpartsitemin; i++)
+		for(int i = 0; i < datascheme.partSites[p].size(); i++)
 		{
-			int offset 	 = datasites[partsitemin + i];
-			sitemask.push_back(offset);
-			partitionMask[PartitionedGTRProfileProcess::GetSitePart(offset)] = true;
-
-			int testsite = testsites[testpartsitemin + i];
-			data->SetTestData(testnsite,offset,testsite,testsite+1,tmp);
+			int site = datascheme.partSites[p][i];
+			datascheme.sitePart[site] = p;
 		}
 
-		delete[] datasites;
-		delete[] testsites;
+		MPI_Bcast(&n,1,MPI_INT,0,MPI_COMM_WORLD);
+		testscheme.partSites[p].resize(n);
+		MPI_Bcast(&(testscheme.partSites[p][0]),n,MPI_INT,0,MPI_COMM_WORLD);
+
+		for(int i = 0; i < testscheme.partSites[p].size(); i++)
+		{
+			int site = testscheme.partSites[p][i];
+			testscheme.sitePart[site] = p;
+		}
+	}
+
+	int testwidth = testnsite/(nprocs-1);
+	int width = GetNsite()/(nprocs-1);
+
+	vector<int> partcounts(datascheme.Npart, 0);
+
+	int min = 0;
+	for(int proc = 0; proc < nprocs - 1; proc++)
+	{
+		if(min == sitemin)
+			break;
+
+		for(int site = min; site < min + width; site++)
+		{
+			int datasitepart = datascheme.sitePart[site];
+
+			partcounts[datasitepart]++;
+		}
+
+		min += width;
+	}
+
+	vector<int> testcounts(datascheme.Npart, 0);
+
+	for(int site = sitemin; site < sitemax; site++)
+	{
+		int datasitepart = datascheme.sitePart[site];
+
+		testcounts[datasitepart]++;
+	}
+
+	for(int p = 0; p < partcounts.size(); p++)
+	{
+		int testmin = partcounts[p] * testwidth / width;
+		int testmax = testmin + testcounts[p] * testwidth / width;
+
+		int i = 0;
+		for(int site = sitemin; site < sitemax; site++)
+		{
+			int datasitepart = datascheme.sitePart[site];
+
+			if(datasitepart == p)
+			{
+				if(i < testmax - testmin)
+				{
+					int testsite = testscheme.partSites[p][testmin + i];
+
+					data->SetTestData(testnsite,site,testsite,testsite+1,tmp);
+				}
+				else
+				{
+					sitemask[site] = true;
+				}
+
+				i++;
+			}
+		}
 	}
 
 	delete[] tmp;
@@ -437,8 +481,9 @@ void PartitionedRASGTRGammaPhyloProcess::SlaveComputeCVScore()	{
 	UpdateConditionalLikelihoods();
 
 	double total = 0;
-	for (int i=0; i<sitemask.size(); i++)	{
-		total += sitelogL[sitemask[i]];
+	for (int i=sitemin; i<sitemax; i++)	{
+		if(!sitemask[i])
+			total += sitelogL[i];
 	}
 
 	MPI_Send(&total,1,MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);

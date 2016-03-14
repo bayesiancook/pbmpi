@@ -37,10 +37,10 @@ class PartitionedGTRPhyloProcess : public virtual PhyloProcess, public virtual P
 		PhyloProcess::Create(intree,indata,indata->GetNstate());
 		PartitionedGTRSubstitutionProcess::Create(indata->GetNstate(),rrscheme, insitemin,insitemax);
 
-		partitionMask = std::vector<bool>(GetNpart(), false);
+		partitionmask = std::vector<bool>(GetNpart(), true);
 		for(size_t i = insitemin; i < insitemax; i++)
 		{
-			partitionMask[GetSitePart(i)] = true;
+			partitionmask[GetSitePart(i)] = false;
 		}
 	}
 
@@ -53,11 +53,11 @@ class PartitionedGTRPhyloProcess : public virtual PhyloProcess, public virtual P
 	virtual void Unfold();
 	virtual void Collapse();
 
-	bool IsPartitionUnmasked(int part){ return partitionMask[part]; }
+	bool IsPartitionMasked(int part){ return partitionmask[part]; }
 
 	double LengthRelRateMove(double tuning, int nrep);
 
-	std::vector<bool> partitionMask;
+	std::vector<bool> partitionmask;
 };
 
 class PartitionedGTRGammaPhyloProcess : public virtual PartitionedGTRPhyloProcess, public virtual PartitionedDGamRateProcess	{

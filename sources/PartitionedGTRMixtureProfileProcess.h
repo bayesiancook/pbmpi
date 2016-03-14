@@ -60,7 +60,7 @@ class PartitionedGTRMixtureProfileProcess : public virtual PartitionedGTRProfile
 	// should be called each time global parameters are modified
 	virtual void UpdateMatrices()	{
 		for (int p=0; p<GetNpart(); p++)	{
-			if(IsPartitionUnmasked(p))
+			if(!IsPartitionMasked(p))
 			{
 				for (int k=0; k<GetNcomponent(); k++)	{
 					UpdateMatrix(p, k);
@@ -71,7 +71,7 @@ class PartitionedGTRMixtureProfileProcess : public virtual PartitionedGTRProfile
 
 	virtual void CreateMatrices()	{
 		for (int p=0; p<GetNpart(); p++)	{
-			if(IsPartitionUnmasked(p))
+			if(!IsPartitionMasked(p))
 			{
 				for (int k=0; k<GetNcomponent(); k++)
 				{
@@ -93,7 +93,7 @@ class PartitionedGTRMixtureProfileProcess : public virtual PartitionedGTRProfile
 
 	virtual void DeleteMatrices()	{
 		for (int p=0; p<GetNpart(); p++)	{
-			if(IsPartitionUnmasked(p))
+			if(!IsPartitionMasked(p))
 			{
 				for (int k=0; k<GetNcomponent(); k++)	{
 					DeleteMatrix(p, k);

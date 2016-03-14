@@ -42,8 +42,8 @@ void PartitionedGTRPartitionedProfileProcess::Create(int indim, PartitionScheme 
 		// SampleProfile();
 	}
 
-	partitionMap.clear();
-	partitionMap.resize(rrscheme.Npart);
+	partitionmap.clear();
+	partitionmap.resize(rrscheme.Npart);
 	for(size_t p = 0; p < rrscheme.Npart; p++)
 	{
 		std::vector<int> partsites = rrscheme.partSites[p];
@@ -51,9 +51,9 @@ void PartitionedGTRPartitionedProfileProcess::Create(int indim, PartitionScheme 
 		for(size_t i = 0; i < partsites.size(); i++)
 		{
 			int statpart = statscheme.sitePart[partsites[i]];
-			if(std::find(partitionMap[p].begin(), partitionMap[p].end(), statpart) == partitionMap[p].end())
+			if(std::find(partitionmap[p].begin(), partitionmap[p].end(), statpart) == partitionmap[p].end())
 			{
-				partitionMap[p].push_back(statpart);
+				partitionmap[p].push_back(statpart);
 			}
 		}
 	}
@@ -62,8 +62,8 @@ void PartitionedGTRPartitionedProfileProcess::Create(int indim, PartitionScheme 
 void PartitionedGTRPartitionedProfileProcess::Delete() {
 	if (matrixarray)	{
 		for (int p=0; p<PartitionedGTRProfileProcess::GetNpart(); p++)	{
-			for (int k=0; k< partitionMap[p].size(); k++)	{
-				delete matrixarray[p][partitionMap[p][k]];
+			for (int k=0; k< partitionmap[p].size(); k++)	{
+				delete matrixarray[p][partitionmap[p][k]];
 			}
 			delete [] matrixarray[p];
 		}

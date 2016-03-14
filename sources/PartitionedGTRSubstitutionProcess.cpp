@@ -8,11 +8,11 @@
 // set the vector uniformly to 1
 void PartitionedGTRSubstitutionProcess::Reset(double*** t, bool condalloc)	{
 	for (int i=sitemin; i<sitemax; i++)	{
-		int s = sitemask[i - sitemin];
-		for (int j=0; j<GetNrate(s); j++)	{
+		if(!sitemask[i])
+		for (int j=0; j<GetNrate(i); j++)	{
 			if ((! condalloc) || (ratealloc[i] == j))	{
 				double* tmp = t[i][j];
-				int nstate = GetNstate(s);
+				int nstate = GetNstate(i);
 				for (int k=0; k<nstate; k++)	{
 					(*tmp++) = 1.0;
 					// tmp[k] = 1.0;
@@ -29,13 +29,13 @@ void PartitionedGTRSubstitutionProcess::Reset(double*** t, bool condalloc)	{
 // state[i] == -1 means 'missing data'. in that case, conditional likelihoods are all 1
 void PartitionedGTRSubstitutionProcess::Initialize(double*** t, const int* state, bool condalloc)	{
 	for (int i=sitemin; i<sitemax; i++)	{
-		int s = sitemask[i-sitemin];
-		for (int j=0; j<GetNrate(s); j++)	{
+		if(!sitemask[i])
+		for (int j=0; j<GetNrate(i); j++)	{
 			if ((! condalloc) || (ratealloc[i] == j))	{
 				double* tmp = t[i][j];
-				int nstate = GetNstate(s);
+				int nstate = GetNstate(i);
 				tmp[nstate] = 0;
-				if (state[s] == -1)	{
+				if (state[i] == -1)	{
 					for (int k=0; k<nstate; k++)	{
 						(*tmp++) = 1.0;
 						// tmp[k] = 1.0;
@@ -48,7 +48,7 @@ void PartitionedGTRSubstitutionProcess::Initialize(double*** t, const int* state
 						// tmp[k] = 0;
 					}
 					tmp -= nstate;
-					tmp[state[s]] = 1.0;
+					tmp[state[i]] = 1.0;
 				}
 			}
 		}
@@ -58,12 +58,12 @@ void PartitionedGTRSubstitutionProcess::Initialize(double*** t, const int* state
 // multiply two conditional likelihood vectors, term by term
 void PartitionedGTRSubstitutionProcess::Multiply(double*** from, double*** to, bool condalloc)	{
 	for (int i=sitemin; i<sitemax; i++)	{
-		int s = sitemask[i-sitemin];
-		for (int j=0; j<GetNrate(s); j++)	{
+		if(!sitemask[i])
+		for (int j=0; j<GetNrate(i); j++)	{
 			if ((! condalloc) || (ratealloc[i] == j))	{
 				double* tmpfrom = from[i][j];
 				double* tmpto = to[i][j];
-				int nstate = GetNstate(s);
+				int nstate = GetNstate(i);
 				for (int k=0; k<nstate; k++)	{
 					(*tmpto++) *= (*tmpfrom++);
 					// tmpto[k] *= tmpfrom[k];
@@ -80,18 +80,20 @@ void PartitionedGTRSubstitutionProcess::Multiply(double*** from, double*** to, b
 // multiply a conditional likelihood vector by the (possibly site-specific) stationary probabilities of the process
 void PartitionedGTRSubstitutionProcess::MultiplyByStationaries(double*** to, bool condalloc)	{
 	for (int i=sitemin; i<sitemax; i++)	{
-		int s = sitemask[i-sitemin];
-		const double* stat = GetStationary(s);
-		for (int j=0; j<GetNrate(i); j++)	{
-			if ((! condalloc) || (ratealloc[i] == j))	{
-				double* tmpto = to[i][j];
-				int nstate = GetNstate(s);
-				for (int k=0; k<nstate; k++)	{
-					(*tmpto++) *= (*stat++);
-					// tmpto[k] *= stat[k];
+		if(!sitemask[i])
+		{
+			const double* stat = GetStationary(i);
+			for (int j=0; j<GetNrate(i); j++)	{
+				if ((! condalloc) || (ratealloc[i] == j))	{
+					double* tmpto = to[i][j];
+					int nstate = GetNstate(i);
+					for (int k=0; k<nstate; k++)	{
+						(*tmpto++) *= (*stat++);
+						// tmpto[k] *= stat[k];
+					}
+					tmpto -= nstate;
+					stat -= nstate;
 				}
-				tmpto -= nstate;
-				stat -= nstate;
 			}
 		}
 	}
@@ -102,12 +104,12 @@ void PartitionedGTRSubstitutionProcess::MultiplyByStationaries(double*** to, boo
 // and the residual is stored in the last entry of the vector
 void PartitionedGTRSubstitutionProcess::Offset(double*** t, bool condalloc)	{
 	for (int i=sitemin; i<sitemax; i++)	{
-		int s = sitemask[i-sitemin];
-		for (int j=0; j<GetNrate(s); j++)	{
+		if(!sitemask[i])
+		for (int j=0; j<GetNrate(i); j++)	{
 			if ((! condalloc) || (ratealloc[i] == j))	{
 				double* tmp = t[i][j];
 				double max = 0;
-				for (int k=0; k<GetNstate(s); k++)	{
+				for (int k=0; k<GetNstate(i); k++)	{
 					if (tmp[k] <0)	{
 						cerr << "error in pruning: negative prob : " << tmp[k] << "\n";
 						exit(1);
@@ -124,10 +126,10 @@ void PartitionedGTRSubstitutionProcess::Offset(double*** t, bool condalloc)	{
 					exit(1);
 					*/
 				}
-				for (int k=0; k<GetNstate(s); k++)	{
+				for (int k=0; k<GetNstate(i); k++)	{
 					tmp[k] /= max;
 				}
-				tmp[GetNstate(s)] += log(max);
+				tmp[GetNstate(i)] += log(max);
 			}
 		}
 	}
@@ -141,12 +143,12 @@ void PartitionedGTRSubstitutionProcess::Offset(double*** t, bool condalloc)	{
 
 double PartitionedGTRSubstitutionProcess::ComputeLikelihood(double*** aux, bool condalloc)	{
 	for (int i=sitemin; i<sitemax; i++)	{
-		int s = sitemask[i-sitemin];
+		if(!sitemask[i])
 		if (condalloc)	{
 			int j = ratealloc[i];
 			double* t = aux[i][j];
 			double tot = 0;
-			int nstate = GetNstate(s);
+			int nstate = GetNstate(i);
 			for (int k=0; k<nstate; k++)	{
 				tot += (*t++);
 				// tot += t[k];
@@ -169,10 +171,10 @@ double PartitionedGTRSubstitutionProcess::ComputeLikelihood(double*** aux, bool 
 		else	{
 			double max = 0;
 			double* logl = condsitelogL[i];
-			for (int j=0; j<GetNrate(s); j++)	{
+			for (int j=0; j<GetNrate(i); j++)	{
 				double* t = aux[i][j];
 				double tot = 0;
-				int nstate = GetNstate(s);
+				int nstate = GetNstate(i);
 				for (int k=0; k<nstate; k++)	{
 					tot += (*t++);
 					// tot += t[k];
@@ -196,8 +198,8 @@ double PartitionedGTRSubstitutionProcess::ComputeLikelihood(double*** aux, bool 
 				}
 			}
 			double total = 0;
-			for (int j=0; j<GetNrate(s); j++)	{
-				total += GetRateWeight(s,j) * exp(logl[j] - max);
+			for (int j=0; j<GetNrate(i); j++)	{
+				total += GetRateWeight(i,j) * exp(logl[j] - max);
 			}
 			sitelogL[i] = log(total) + max;
 		}
@@ -206,7 +208,8 @@ double PartitionedGTRSubstitutionProcess::ComputeLikelihood(double*** aux, bool 
 	logL = 0;
 	for (int i=sitemin; i<sitemax; i++)	{
 	// for (int i=0; i<GetNsite(); i++)	{
-		logL += sitelogL[i];
+		if(!sitemask[i])
+			logL += sitelogL[i];
 	}
 	return logL;
 }
@@ -220,138 +223,140 @@ void PartitionedGTRSubstitutionProcess::Propagate(double*** from, double*** to, 
 	// double* bigaux = new double[(sitemax - sitemin) * GetNrate(0) * nstate];
 	double* aux = new double[GetNsite() * GetNrate(0) * nstate];
 	for (int i=sitemin; i<sitemax; i++)	{
-		int s = sitemask[i-sitemin];
-		SubMatrix* matrix = GetMatrix(s);
-		double** eigenvect = matrix->GetEigenVect();
-		double** inveigenvect = matrix->GetInvEigenVect();
-		double* eigenval = matrix->GetEigenVal();
-		for(j=0; j<GetNrate(s); j++)	{
-			if ((!condalloc) || (ratealloc[i] == j))	{
-				double* up = from[i][j];
-				double* down = to[i][j];
-				//SubMatrix* matrix = GetMatrix(i);
-				length = time * GetRate(i,j);
+		if(!sitemask[i])
+		{
+			SubMatrix* matrix = GetMatrix(i);
+			double** eigenvect = matrix->GetEigenVect();
+			double** inveigenvect = matrix->GetInvEigenVect();
+			double* eigenval = matrix->GetEigenVal();
+			for(j=0; j<GetNrate(i); j++)	{
+				if ((!condalloc) || (ratealloc[i] == j))	{
+					double* up = from[i][j];
+					double* down = to[i][j];
+					//SubMatrix* matrix = GetMatrix(i);
+					length = time * GetRate(i,j);
 
-				//double** eigenvect = matrix->GetEigenVect();
-				//double** inveigenvect= matrix->GetInvEigenVect();
-				//double* eigenval = matrix->GetEigenVal();
+					//double** eigenvect = matrix->GetEigenVect();
+					//double** inveigenvect= matrix->GetInvEigenVect();
+					//double* eigenval = matrix->GetEigenVal();
 
-				// substitution matrix Q = P L P^{-1} where L is diagonal (eigenvalues) and P is the eigenvector matrix
-				// we need to compute
-				// down = exp(length * Q) . up
-				// which we express as
-				// down = P ( exp(length * L) . (P^{-1} . up) )
+					// substitution matrix Q = P L P^{-1} where L is diagonal (eigenvalues) and P is the eigenvector matrix
+					// we need to compute
+					// down = exp(length * Q) . up
+					// which we express as
+					// down = P ( exp(length * L) . (P^{-1} . up) )
 
-				// thus we successively do the following matrix.vector products
+					// thus we successively do the following matrix.vector products
 
-				// P^{-1} . up  -> aux
-				// exp(length * L) . aux  -> aux 	(where exp(length*L) is diagonal, so this is linear)
-				// P . aux -> down
+					// P^{-1} . up  -> aux
+					// exp(length * L) . aux  -> aux 	(where exp(length*L) is diagonal, so this is linear)
+					// P . aux -> down
 
-				/*
-				int nstate = GetNstate();
-				double* aux = new double[nstate];
-				*/
-				//double* aux = bigaux + nstate * (i*GetNrate(0)  + j);
-				offset = nstate*(i*GetNrate(0) + j);
-				// P^{-1} . up  -> aux
-				//double* tmpaux = aux;
-				for(k=0; k<nstate; k++)	{
-					//(*tmpaux++) = 0;
-					aux[offset+k] = 0.0;
-				}
-				//tmpaux -= nstate;
-				//double* tmpup = up;
-				for(k=0; k<nstate; k++)	{
-					//double* tmpinveigen = inveigenvect[i];
-					for(l=0; l<nstate; l++)	{
-						//(*tmpaux) += (*tmpinveigen++) * (*tmpup++);
-						aux[offset+k] += inveigenvect[k][l] * up[l];
+					/*
+					int nstate = GetNstate();
+					double* aux = new double[nstate];
+					*/
+					//double* aux = bigaux + nstate * (i*GetNrate(0)  + j);
+					offset = nstate*(i*GetNrate(0) + j);
+					// P^{-1} . up  -> aux
+					//double* tmpaux = aux;
+					for(k=0; k<nstate; k++)	{
+						//(*tmpaux++) = 0;
+						aux[offset+k] = 0.0;
 					}
-					//tmpaux++;
-					//tmpup -= nstate;
-				}
-				//tmpaux -= nstate;
-
-				// exp(length * L) . aux  -> aux
-				//double* tmpval = eigenval;
-				for(k=0; k<nstate; k++)	{
-					//(*tmpaux++) *= exp(length * (*tmpval++));
-					aux[offset+k] *= exp(length * eigenval[k]);
-				}
-				//tmpaux -= nstate;
-				//tmpval -= nstate;
-
-				// P . aux -> down
-				//double* tmpdown = down;
-				for(k=0; k<nstate; k++)	{
-					//(*tmpdown++) = 0;
-					down[k] = 0.0;
-				}
-				//tmpdown -= nstate;
-
-				for(k=0; k<nstate; k++)	{
-					//double* tmpeigen = eigenvect[i];
-					for(l=0; l<nstate; l++)	{
-						//(*tmpdown) += (*tmpeigen++) * (*tmpaux++);
-						down[k] += eigenvect[k][l] * aux[offset+l];
-					}
-					//tmpdown++;
 					//tmpaux -= nstate;
-				}
-				//tmpdown -= nstate;
-
-				// exit in case of numerical errors
-				for(k=0; k<nstate; k++)	{
-					if (isnan(down[k]))	{
-						cerr << "error in back prop\n";
+					//double* tmpup = up;
+					for(k=0; k<nstate; k++)	{
+						//double* tmpinveigen = inveigenvect[i];
 						for(l=0; l<nstate; l++)	{
-							cerr << up[l] << '\t' << down[l] << '\t' << matrix->Stationary(l) << '\n';
+							//(*tmpaux) += (*tmpinveigen++) * (*tmpup++);
+							aux[offset+k] += inveigenvect[k][l] * up[l];
 						}
-						exit(1);
+						//tmpaux++;
+						//tmpup -= nstate;
 					}
-				}
-				maxup = 0.0;
-				for(k=0; k<nstate; k++)	{
-					if (up[k] < 0.0)	{
-						cerr << "error in backward propagate: negative prob : " << up[k] << "\n";
-						exit(1);
+					//tmpaux -= nstate;
+
+					// exp(length * L) . aux  -> aux
+					//double* tmpval = eigenval;
+					for(k=0; k<nstate; k++)	{
+						//(*tmpaux++) *= exp(length * (*tmpval++));
+						aux[offset+k] *= exp(length * eigenval[k]);
 					}
-					if (maxup < up[k])	{
-						maxup = up[k];
-					}
-				}
-				max = 0.0;
-				for(k=0; k<nstate; k++)	{
-					if (down[k] < 0.0)	{
-						infprobcount++;
+					//tmpaux -= nstate;
+					//tmpval -= nstate;
+
+					// P . aux -> down
+					//double* tmpdown = down;
+					for(k=0; k<nstate; k++)	{
+						//(*tmpdown++) = 0;
 						down[k] = 0.0;
 					}
-					if (max < down[k])	{
-						max = down[k];
-					}
-				}
-				/*if (maxup == 0.0)	{
-					cerr << "error in backward propagate: null up array\n";
-					for(l=0; l<nstate; l++)	{
-						cerr << matrix->Stationary(l) << '\n';
-					}
-					cerr << time << '\t' << length << '\n';
-					exit(1);
-				}
-				if (max == 0.0)	{
-					cerr << "error in backward propagate: null array\n";
+					//tmpdown -= nstate;
+
 					for(k=0; k<nstate; k++)	{
-						cerr << up[k] << '\t' << down[k] << '\n';
+						//double* tmpeigen = eigenvect[i];
+						for(l=0; l<nstate; l++)	{
+							//(*tmpdown) += (*tmpeigen++) * (*tmpaux++);
+							down[k] += eigenvect[k][l] * aux[offset+l];
+						}
+						//tmpdown++;
+						//tmpaux -= nstate;
 					}
-					cerr << length << '\n';
-					cerr << '\n';
-					exit(1);
-				}*/
+					//tmpdown -= nstate;
+
+					// exit in case of numerical errors
+					for(k=0; k<nstate; k++)	{
+						if (isnan(down[k]))	{
+							cerr << "error in back prop\n";
+							for(l=0; l<nstate; l++)	{
+								cerr << up[l] << '\t' << down[l] << '\t' << matrix->Stationary(l) << '\n';
+							}
+							exit(1);
+						}
+					}
+					maxup = 0.0;
+					for(k=0; k<nstate; k++)	{
+						if (up[k] < 0.0)	{
+							cerr << "error in backward propagate: negative prob : " << up[k] << "\n";
+							exit(1);
+						}
+						if (maxup < up[k])	{
+							maxup = up[k];
+						}
+					}
+					max = 0.0;
+					for(k=0; k<nstate; k++)	{
+						if (down[k] < 0.0)	{
+							infprobcount++;
+							down[k] = 0.0;
+						}
+						if (max < down[k])	{
+							max = down[k];
+						}
+					}
+					/*if (maxup == 0.0)	{
+						cerr << "error in backward propagate: null up array\n";
+						for(l=0; l<nstate; l++)	{
+							cerr << matrix->Stationary(l) << '\n';
+						}
+						cerr << time << '\t' << length << '\n';
+						exit(1);
+					}
+					if (max == 0.0)	{
+						cerr << "error in backward propagate: null array\n";
+						for(k=0; k<nstate; k++)	{
+							cerr << up[k] << '\t' << down[k] << '\n';
+						}
+						cerr << length << '\n';
+						cerr << '\n';
+						exit(1);
+					}*/
 
 
-				// this is the offset (in log)
-				down[nstate] = up[nstate];
+					// this is the offset (in log)
+					down[nstate] = up[nstate];
+				}
 			}
 		}
 	}
