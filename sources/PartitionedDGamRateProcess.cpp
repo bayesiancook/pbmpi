@@ -122,13 +122,13 @@ double PartitionedDGamRateProcess::GetMultiplierEntropy()
 	double total = 0.0;
 	for(int i = 0; i < GetNpart(); i++)
 	{
-		total += ratemult[i];
+		total += ratemult[i] * GetPartNsite(i);
 	}
 
 	double ent = 0;
 	for(int i = 0; i < GetNpart(); i++)
 	{
-		double norm = (ratemult[i] / total);
+		double norm = ratemult[i] * GetPartNsite(i) / total;
 		ent -= norm * log(norm);
 	}
 
@@ -306,7 +306,7 @@ void PartitionedDGamRateProcess::MoveMultipliers()
 			b += ratesuffstatbeta[p][k]*rate[p][k];
 		}
 
-		ratemult[p] = rnd::GetRandom().Gamma(a + multHyper - 1.0, b + multHyper);
+		ratemult[p] = rnd::GetRandom().Gamma(a + multHyper, b + multHyper);
 	}
 
 }

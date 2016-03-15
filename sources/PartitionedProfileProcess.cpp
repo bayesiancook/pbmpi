@@ -66,7 +66,7 @@ double PartitionedProfileProcess::GetMeanDirWeight()	{
 	for (int k=0; k<GetDim(); k++)	{
 		total += dirweight[k];
 	}
-	return total;
+	return total / GetDim();
 }
 
 double PartitionedProfileProcess::GetStatEnt()	{
