@@ -45,6 +45,8 @@ class PartitionedProfileProcess: public virtual ProfileProcess, public Partition
 
 	void RenormalizeProfiles();
 
+	virtual double* GetEmpiricalFreq(int p) = 0;
+
 	// generic Move function
 	virtual double Move(double tuning = 1, int n = 1, int nrep = 1) = 0;
 	virtual double MoveHyper(double tuning, int nrep); // added virtual

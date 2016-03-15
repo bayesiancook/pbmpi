@@ -21,8 +21,8 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 #include <list>
 #include "TexTab.h"
 
-void PartitionedRASCATGTRSBDPGammaPhyloProcess::Create(Tree* intree, SequenceAlignment* indata, int ncat, PartitionScheme rrscheme, PartitionScheme dgamscheme, int insitemin,int insitemax)	{
-	PartitionedExpoConjugateGTRGammaPhyloProcess::Create(intree,indata,indata->GetNstate(),rrscheme,ncat,dgamscheme,insitemin,insitemax);
+void PartitionedRASCATGTRSBDPGammaPhyloProcess::Create(Tree* intree, SequenceAlignment* indata, int ncat, bool inlinkmult, PartitionScheme rrscheme, PartitionScheme dgamscheme, int insitemin,int insitemax)	{
+	PartitionedExpoConjugateGTRGammaPhyloProcess::Create(intree,indata,indata->GetNstate(),rrscheme,ncat,inlinkmult,dgamscheme,insitemin,insitemax);
 	PartitionedExpoConjugateGTRSBDPProfileProcess::Create(indata->GetNstate(),rrscheme);
 	GammaBranchProcess::Create(intree);
 

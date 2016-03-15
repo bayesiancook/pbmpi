@@ -349,6 +349,13 @@ void PartitionedProfileProcess::SetStat(int inpart, string type)	{
 				profile[p][i] = Stat[i];
 			}
 		}
+		else if(type == "Empirical")
+		{
+			double* empfreq = GetEmpiricalFreq(p);
+			for (int i=0; i<GetDim(); i++)	{
+				profile[p][i] = empfreq[i];
+			}
+		}
 		else	{
 			ifstream is(type.c_str());
 			if (!is)	{

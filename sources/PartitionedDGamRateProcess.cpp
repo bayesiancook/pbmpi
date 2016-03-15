@@ -31,7 +31,7 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 //-------------------------------------------------------------------------
 
 
-void PartitionedDGamRateProcess::Create(int inncat, PartitionScheme inscheme)	{
+void PartitionedDGamRateProcess::Create(int inncat, PartitionScheme inscheme, bool inlinkmult)	{
 	if (! rate)	{
 		RateProcess::Create(inscheme.GetNsite());
 		PartitionProcess::Create(inscheme);
@@ -44,6 +44,7 @@ void PartitionedDGamRateProcess::Create(int inncat, PartitionScheme inscheme)	{
 		ratesuffstatbeta = new double*[GetNpart()];
 
 		Ncat = inncat;
+		linkmult = inlinkmult;
 
 		for(int i = 0; i < GetNpart(); i++)
 		{
@@ -86,7 +87,7 @@ void PartitionedDGamRateProcess::Delete() 	{
 void PartitionedDGamRateProcess::ToStream(ostream& os)	{
 	for(int i = 0; i < GetNpart(); i++)
 	{
-		if(GetNpart() > 1)
+		if(GetNpart() > 1 && !linkmult)
 			os << ratemult[i] << '\n';
 
 		os << alpha[i] << '\n';
@@ -94,8 +95,9 @@ void PartitionedDGamRateProcess::ToStream(ostream& os)	{
 
 	if(GetNpart() > 1)
 	{
+		if(!linkmult)
+			os << multHyper << '\n';
 		os << alphaHyper << '\n';
-		os << multHyper << '\n';
 	}
 }
 
@@ -103,7 +105,7 @@ void PartitionedDGamRateProcess::FromStream(istream& is)	{
 	double tmp;
 	for(int i = 0; i < GetNpart(); i++)
 	{
-		if(GetNpart() > 1)
+		if(GetNpart() > 1 && !linkmult)
 			is >> ratemult[i];
 
 		is >> tmp;
@@ -112,8 +114,9 @@ void PartitionedDGamRateProcess::FromStream(istream& is)	{
 
 	if(GetNpart() > 1)
 	{
+		if(!linkmult)
+			is >> multHyper;
 		is >> alphaHyper;
-		is >> multHyper;
 	}
 }
 
@@ -182,7 +185,8 @@ double PartitionedDGamRateProcess::Move(double tuning, int nrep)	{
 
 	if(GetNpart() > 1)
 	{
-		MoveMultipliers();
+		if(!linkmult)
+			MoveMultipliers();
 		MoveHyper(tuning,nrep);
 	}
 
@@ -201,7 +205,7 @@ double PartitionedDGamRateProcess::NonMPIMove(double tuning, int nrep)	{
 		naccepted += MoveAlphas(tuning);
 	}
 
-	if(GetNpart())
+	if(GetNpart() > 1 && !linkmult)
 		MoveMultipliers();
 
 	return ((double) naccepted) / (nrep*GetNpart());
@@ -212,10 +216,15 @@ double PartitionedDGamRateProcess::MoveHyper(double tuning, int nrep)	{
 
 	MoveAlphaHyper();
 
-	int naccepted = 0;
-	for (int rep=0; rep<nrep; rep++)
+	int naccepted = nrep;
+
+	if(!linkmult)
 	{
-		naccepted += MoveMultiplierHyper(tuning);
+		naccepted = 0;
+		for (int rep=0; rep<nrep; rep++)
+		{
+			naccepted += MoveMultiplierHyper(tuning);
+		}
 	}
 
 	chronorate.Stop();

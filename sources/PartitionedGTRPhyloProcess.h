@@ -70,9 +70,9 @@ class PartitionedGTRGammaPhyloProcess : public virtual PartitionedGTRPhyloProces
 
 	protected:
 
-	virtual void Create(Tree* intree, SequenceAlignment* indata,int indim, PartitionScheme rrscheme, int ncat, PartitionScheme dgamscheme, int insitemin,int insitemax)	{
+	virtual void Create(Tree* intree, SequenceAlignment* indata,int indim, PartitionScheme rrscheme, int ncat, bool inlinkmult, PartitionScheme dgamscheme, int insitemin,int insitemax)	{
 		PartitionedGTRPhyloProcess::Create(intree,indata,indata->GetNstate(),rrscheme,insitemin,insitemax);
-		PartitionedDGamRateProcess::Create(ncat,dgamscheme);
+		PartitionedDGamRateProcess::Create(ncat,dgamscheme, inlinkmult);
 	}
 
 	void Delete() {

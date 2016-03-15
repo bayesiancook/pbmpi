@@ -6,7 +6,7 @@
 
 using namespace std;
 
-vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsite, int myid, bool linkgam, bool unlinkgtr, string rrtype)
+vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsite, int myid, bool linkgam, bool unlinkgtr, string rrtype, bool estimatestat)
 {
 	string error = "Error: improperly formatted scheme file\n";
 
@@ -173,7 +173,10 @@ vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsi
 
 		if(!fixprof)
 		{
-			statscheme.partType.push_back("None");
+			if(estimatestat)
+				statscheme.partType.push_back("None");
+			else
+				statscheme.partType.push_back("Empirical");
 			statscheme.Npart++;
 		}
 

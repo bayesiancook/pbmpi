@@ -31,9 +31,9 @@ class PartitionedExpoConjugateGTRGammaPhyloProcess : public virtual PartitionedG
 
 	protected:
 
-	virtual void Create(Tree* intree, SequenceAlignment* indata,int indim, PartitionScheme rrscheme, int ncat, PartitionScheme dgamscheme, int insitemin,int insitemax)	{
+	virtual void Create(Tree* intree, SequenceAlignment* indata,int indim, PartitionScheme rrscheme, int ncat, bool inlinkmult, PartitionScheme dgamscheme, int insitemin,int insitemax)	{
 		PartitionedExpoConjugateGTRSubstitutionProcess::Create(indata->GetNstate(), rrscheme, insitemin,insitemax);
-		PartitionedGTRGammaPhyloProcess::Create(intree,indata, indata->GetNstate(), rrscheme, ncat, dgamscheme, insitemin,insitemax);
+		PartitionedGTRGammaPhyloProcess::Create(intree,indata, indata->GetNstate(), rrscheme, ncat, inlinkmult, dgamscheme, insitemin,insitemax);
 	}
 
 	virtual void Delete()	{

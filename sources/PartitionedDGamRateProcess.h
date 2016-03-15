@@ -115,12 +115,14 @@ class PartitionedDGamRateProcess : public virtual RateProcess, public PartitionP
 		UpdateDiscreteCategories(inpart);
 	}
 
+	bool LinkedMultipliers(){ return linkmult; }
+
 	void ToStream(ostream& os);
 	void FromStream(istream& is);
 
 	protected:
 
-	void Create(int incat, PartitionScheme inscheme);
+	void Create(int incat, PartitionScheme inscheme, bool linkmult = true);
 	void Delete();
 
 	void SampleRate();
@@ -148,6 +150,8 @@ class PartitionedDGamRateProcess : public virtual RateProcess, public PartitionP
 
 	double* ratemult;
 	double multHyper;
+
+	bool linkmult;
 };
 
 #endif
