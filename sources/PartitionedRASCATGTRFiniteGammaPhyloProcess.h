@@ -169,7 +169,7 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 
 		if(PartitionedDGamRateProcess::GetNpart() > 1)
 		{
-			os << "\talphashape";
+			os << "\talphahyper";
 			if(!LinkedMultipliers())
 				os << "\tmultent\tmultalpha";
 		}

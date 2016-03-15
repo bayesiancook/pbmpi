@@ -185,7 +185,7 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 
 		if(PartitionedDGamRateProcess::GetNpart() > 1)
 		{
-			os << "\talphashape";
+			os << "\talphahyper";
 			if(!LinkedMultipliers())
 				os << "\tmultent\tmultalpha";
 		}
