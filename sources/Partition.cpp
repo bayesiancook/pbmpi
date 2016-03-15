@@ -6,7 +6,7 @@
 
 using namespace std;
 
-vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsite, int myid, bool linkgam, bool unlinkgtr, string rrtype, bool estimatestat)
+vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsite, int myid, bool linkgam, bool unlinkgtr, string rrtype)
 {
 	string error = "Error: improperly formatted scheme file\n";
 
@@ -41,6 +41,7 @@ vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsi
 
 		string type;
 		bool fixprof;
+		bool estimate = false;
 
 		for(vector<string>::iterator it = elems.begin(); it != elems.end(); it++)
 		{
@@ -79,11 +80,12 @@ vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsi
 				}
 				else
 				{
-					fixprof = ((*type.rbegin()) != 'f' || type == "dayhoff" );
+					fixprof = ((*(type.rbegin()) != 'f' && *(type.rbegin()) != 'e') || type == "dayhoff" );
+					estimate = *(type.rbegin()) == 'e';
 
 					if(!fixprof)
 					{
-						// remove 'f' character
+						// remove 'f' or 'e' character
 						if (type.size () > 0)  type.resize (type.size () - 1);
 					}
 					else if(fixstatparts.find(type) == fixstatparts.end())
@@ -173,7 +175,7 @@ vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsi
 
 		if(!fixprof)
 		{
-			if(estimatestat)
+			if(estimate)
 				statscheme.partType.push_back("None");
 			else
 				statscheme.partType.push_back("Empirical");
