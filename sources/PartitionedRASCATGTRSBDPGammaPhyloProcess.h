@@ -187,7 +187,7 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 	void TraceHeader(ostream& os)	{
 		os << "iter\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
 
-		if(PartitionedDGamRateProcess::GetNpart() > 1 && !PartitionedDGamRateProcess::LinkedMultipliers())
+		if(PartitionedDGamRateProcess::GetNpart() > 1 && !LinkedMultipliers())
 			os << "\tmultent\tmultalpha";
 
 		if (nfreerr > 0)
@@ -220,7 +220,7 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 		os << "\t" << GetStatEnt();
 		os << "\t" << GetMeanDirWeight();
 
-		if(PartitionedDGamRateProcess::GetNpart() > 1 && !PartitionedDGamRateProcess::LinkedMultipliers())
+		if(PartitionedDGamRateProcess::GetNpart() > 1 && !LinkedMultipliers())
 		{
 			os << "\t" << GetMultiplierEntropy();
 			os << "\t" << GetMultHyper();
@@ -284,7 +284,7 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 			LengthRelRateMove(0.01,10);
 		}
 
-		if(PartitionedDGamRateProcess::GetNpart() > 1)
+		if(PartitionedDGamRateProcess::GetNpart() > 1 && !LinkedMultipliers())
 		{
 			LengthMultiplierMove(1,10);
 			LengthMultiplierMove(0.1,10);
