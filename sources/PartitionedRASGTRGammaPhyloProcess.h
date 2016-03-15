@@ -177,10 +177,18 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 	}
 
 	void TraceHeader(ostream& os)	{
-		os << "iter\ttime\ttopo\tloglik\tlength\talpha";
+		os << "iter\ttime\ttopo\tloglik\tlength";
+		if(PartitionedDGamRateProcess::GetNpart() > 1)
+			os << "\tmeanalpha";
+		else
+			os << "\talpha";
 
-		if(PartitionedDGamRateProcess::GetNpart() > 1 && !LinkedMultipliers())
-			os << "\tmultent\tmultalpha";
+		if(PartitionedDGamRateProcess::GetNpart() > 1)
+		{
+			os << "\talphashape";
+			if(!LinkedMultipliers())
+				os << "\tmultent\tmultalpha";
+		}
 
 		if (nfreestat > 0)	{
 			os << "\tstatent";
@@ -211,10 +219,14 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 		os << "\t" << GetRenormTotalLength();
 		os << "\t" << GetAlpha();
 
-		if(PartitionedDGamRateProcess::GetNpart() > 1 && !LinkedMultipliers())
+		if(PartitionedDGamRateProcess::GetNpart() > 1)
 		{
-			os << "\t" << GetMultiplierEntropy();
-			os << "\t" << GetMultHyper();
+			os << "\t" << GetAlphaHyper();
+			if(!LinkedMultipliers())
+			{
+				os << "\t" << GetMultiplierEntropy();
+				os << "\t" << GetMultHyper();
+			}
 		}
 
 		if (nfreestat > 0)

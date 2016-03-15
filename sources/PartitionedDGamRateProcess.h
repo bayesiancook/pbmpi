@@ -41,6 +41,8 @@ class PartitionedDGamRateProcess : public virtual RateProcess, public PartitionP
 		return total / GetNpart();
 	}
 
+	double GetAlphaHyper(){ return alphaHyper; }
+
 	double GetMultiplierEntropy();
 
 	int GetNrate(int site)	{
