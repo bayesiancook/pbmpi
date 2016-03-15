@@ -80,8 +80,8 @@ vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsi
 				}
 				else
 				{
-					fixprof = ((*(type.rbegin()) != 'f' && *(type.rbegin()) != 'e') || type == "dayhoff" );
-					estimate = *(type.rbegin()) == 'e';
+					fixprof = ((*(type.rbegin()) != 'f' && *(type.rbegin()) != 'x') || type == "dayhoff" );
+					estimate = *(type.rbegin()) == 'x';
 
 					if(!fixprof)
 					{
