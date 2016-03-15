@@ -60,6 +60,15 @@ vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsi
 
 				std::transform(type.begin(), type.end(), type.begin(), ::tolower);
 
+				fixprof = ((*(type.rbegin()) != 'f' && *(type.rbegin()) != 'x') || type == "dayhoff" );
+				estimate = *(type.rbegin()) == 'x';
+
+				if(!fixprof)
+				{
+					// remove 'f' or 'e' character
+					if (type.size () > 0)  type.resize (type.size () - 1);
+				}
+
 				if(type == "gtr")
 				{
 					type = "None";
@@ -76,19 +85,15 @@ vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsi
 						fixrrparts[type] = rrscheme.Npart++;
 					}
 
-					fixprof = false;
+					if(fixprof)
+					{
+						fixprof = false;
+						estimate = true;
+					}
 				}
 				else
 				{
-					fixprof = ((*(type.rbegin()) != 'f' && *(type.rbegin()) != 'x') || type == "dayhoff" );
-					estimate = *(type.rbegin()) == 'x';
-
-					if(!fixprof)
-					{
-						// remove 'f' or 'e' character
-						if (type.size () > 0)  type.resize (type.size () - 1);
-					}
-					else if(fixstatparts.find(type) == fixstatparts.end())
+					if(fixstatparts.find(type) == fixstatparts.end())
 					{
 						statscheme.partType.push_back(type);
 						fixstatparts[type] = statscheme.Npart++;
