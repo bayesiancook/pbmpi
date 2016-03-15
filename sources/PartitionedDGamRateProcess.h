@@ -35,10 +35,10 @@ class PartitionedDGamRateProcess : public virtual RateProcess, public PartitionP
 		double total = 0.0;
 		for(int i = 0; i < GetNpart(); i++)
 		{
-			total += alpha[i];
+			total += alpha[i] * GetPartNsite(i);
 		}
 
-		return total / GetNpart();
+		return total / GetNsite();
 	}
 
 	double GetAlphaHyper(){ return alphaHyper; }
