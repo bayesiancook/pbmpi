@@ -50,6 +50,19 @@ void PartitionedGTRPhyloProcess::Unfold()	{
 	UpdateConditionalLikelihoods();
 }
 
+void PartitionedGTRPhyloProcess::UpdateConditionalLikelihoods()	{
+
+	PostOrderPruning(GetRoot(),condlmap[0]);
+
+	// not necessary
+	MultiplyByStationaries(condlmap[0]);
+	ComputeLikelihood(condlmap[0]);
+
+	PreOrderPruning(GetRoot(),condlmap[0]);
+
+	// CheckLikelihood();
+}
+
 void PartitionedGTRPhyloProcess::Collapse()	{
 
 	if (! condflag)	{
@@ -59,6 +72,9 @@ void PartitionedGTRPhyloProcess::Collapse()	{
 	// UpdateConditionalLikelihoods();
 	DrawAllocations();
 	SampleNodeStates();
+	if (! dataclamped)	{
+		SimulateForward();
+	}
 	DeleteCondSiteLogL();
 	DeleteConditionalLikelihoods();
 	InactivateSumOverRateAllocations(ratealloc);

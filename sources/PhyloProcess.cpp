@@ -55,6 +55,9 @@ void PhyloProcess::Collapse()	{
 	}
 	DrawAllocations();
 	SampleNodeStates();
+	if (! dataclamped)	{
+		SimulateForward();
+	}
 	DeleteCondSiteLogL();
 	DeleteConditionalLikelihoods();
 	InactivateSumOverRateAllocations(ratealloc);
@@ -331,6 +334,19 @@ void PhyloProcess::RecursiveComputeLikelihood(const Link* from, int auxindex, ve
 
 void PhyloProcess::SampleNodeStates()	{
 	SampleNodeStates(GetRoot(),condlmap[0]);
+}
+
+
+void PhyloProcess::SimulateForward()	{
+	RecursiveSimulateForward(GetRoot());
+}
+
+void PhyloProcess::RecursiveSimulateForward(const Link* from)	{
+	
+	for (const Link* link=from->Next(); link!=from; link=link->Next())	{
+		SimuPropagate(GetStates(from->GetNode()),GetStates(link->Out()->GetNode()),GetLength(link->GetBranch()));
+		RecursiveSimulateForward(link->Out());
+	}
 }
 
 
@@ -1008,6 +1024,7 @@ void PhyloProcess::GlobalUnclamp()	{
 	assert(myid == 0);
 	MESSAGE signal = UNCLAMP;
 	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+	dataclamped = 0;
 }
 
 void PhyloProcess::GlobalRestoreData()	{
@@ -1015,6 +1032,7 @@ void PhyloProcess::GlobalRestoreData()	{
 	assert(myid == 0);
 	MESSAGE signal = RESTOREDATA;
 	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+	dataclamped = 1;
 }
 
 void PhyloProcess::GlobalSetDataFromLeaves()	{
@@ -1107,10 +1125,12 @@ double PhyloProcess::GlobalGetMeanDiversity()	{
 
 void PhyloProcess::SlaveRestoreData()	{
 	GetData()->Restore();
+	dataclamped = 1;
 }
 
 void PhyloProcess::SlaveUnclamp()	{
 	GetData()->Unclamp();
+	dataclamped = 0;
 }
 
 void PhyloProcess::SlaveSetDataFromLeaves()	{
@@ -1153,6 +1173,14 @@ void PhyloProcess::SlaveGetMeanDiversity()	{
 	double div = GetData()->GetTotalDiversity(sitemin,sitemax);
 	MPI_Send(&div,1,MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
 	
+}
+
+void PhyloProcess::GlobalSimulateForward()	{
+
+	// MPI
+	assert(myid == 0);
+	MESSAGE signal = SIMULATE;
+	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 }
 
 
@@ -1508,7 +1536,7 @@ void PhyloProcess::SlaveExecute(MESSAGE signal)	{
 	case COLLAPSE:
 		Collapse();
 		break;
-	case UPDATE:
+	case 	UPDATE:
 		UpdateConditionalLikelihoods();
 		break;
 	case UPDATE_SRATE:
@@ -1547,11 +1575,20 @@ void PhyloProcess::SlaveExecute(MESSAGE signal)	{
 	case SITELOGL:
 		SlaveComputeSiteLogL();
 		break;
+	case SITERATE:
+		SlaveSendMeanSiteRate();
+		break;
 	case SETTESTDATA:
 		SlaveSetTestData();
 		break;
 	case WRITE_MAPPING:
 		SlaveWriteMappings();
+		break;
+	case COUNTMAPPING:
+		SlaveCountMapping();
+		break;
+	case SIMULATE:
+		SimulateForward();
 		break;
 	
 	default:
@@ -1916,6 +1953,35 @@ void PhyloProcess::SlaveUpdateSiteRateSuffStat()	{
 	#endif
 }
 
+void PhyloProcess::GlobalGetMeanSiteRate()	{
+
+	if (! meansiterate)	{
+		meansiterate = new double[GetNsite()];
+	}
+
+	assert(myid == 0);
+	int i,width,smin[nprocs-1],smax[nprocs-1],workload[nprocs-1];
+	MPI_Status stat;
+	MESSAGE signal = SITERATE;
+
+	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+
+	width = GetNsite()/(nprocs-1);
+	for(i=0; i<nprocs-1; ++i) {
+		smin[i] = width*i;
+		smax[i] = width*(1+i);
+		if (i == (nprocs-2)) smax[i] = GetNsite();
+	}
+	for(i=1; i<nprocs; ++i) {
+		MPI_Recv(meansiterate+smin[i-1],smax[i-1]-smin[i-1],MPI_DOUBLE,i,TAG1,MPI_COMM_WORLD,&stat);
+	}
+}
+
+void PhyloProcess::SlaveSendMeanSiteRate()	{
+	assert(myid > 0);
+	MPI_Send(meansiterate+sitemin,sitemax-sitemin,MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
+}
+
 void PhyloProcess::GlobalBroadcastTree()	{
 
 	// tree->RegisterWith(tree->GetTaxonSet());
@@ -1963,6 +2029,10 @@ void PhyloProcess::ReadPB(int argc, char* argv[])	{
 	int cv = 0;
 	int sitelogl = 0;
 	string testdatafile = "";
+	int rateprior = 0;
+	int profileprior = 0;
+	int rootprior = 0;
+
 	// 1 : plain ppred (outputs simulated data)
 	// 2 : diversity statistic
 	// 3 : compositional statistic
@@ -1982,8 +2052,53 @@ void PhyloProcess::ReadPB(int argc, char* argv[])	{
 			else if (s == "-comp")	{
 				ppred = 3;
 			}
+			else if (s == "-nsub")	{
+				ppred = 4;
+			}
 			else if (s == "-ppred")	{
 				ppred = 1;
+			}
+			else if (s == "-ppredrate")	{
+				i++;
+				string tmp = argv[i];
+				if (tmp == "prior")	{
+					rateprior = 1;
+				}
+				else if ((tmp == "posterior") || (tmp == "post"))	{
+					rateprior = 0;
+				}
+				else	{
+					cerr << "error after ppredrate: should be prior or posterior\n";
+					throw(0);
+				}
+			}
+			else if (s == "-ppredprofile")	{
+				i++;
+				string tmp = argv[i];
+				if (tmp == "prior")	{
+					profileprior = 1;
+				}
+				else if ((tmp == "posterior") || (tmp == "post"))	{
+					profileprior = 0;
+				}
+				else	{
+					cerr << "error after ppredprofile: should be prior or posterior\n";
+					throw(0);
+				}
+			}
+			else if (s == "-ppredroot")	{
+				i++;
+				string tmp = argv[i];
+				if (tmp == "prior")	{
+					rootprior = 1;
+				}
+				else if ((tmp == "posterior") || (tmp == "post"))	{
+					rootprior = 0;
+				}
+				else	{
+					cerr << "error after ppredroot: should be prior or posterior\n";
+					throw(0);
+				}
 			}
 			else if (s == "-cv")	{
 				cv = 1;
@@ -2042,7 +2157,7 @@ void PhyloProcess::ReadPB(int argc, char* argv[])	{
 	}
 
 	if (ppred)	{
-		PostPred(ppred,name,burnin,every,until);
+		PostPred(ppred,name,burnin,every,until,rateprior,profileprior,rootprior);
 	}
 	else if (cv)	{
 		ReadCV(testdatafile,name,burnin,every,until);
@@ -2109,7 +2224,7 @@ void PhyloProcess::Read(string name, int burnin, int every, int until)	{
 	cerr << '\n';
 }
 
-void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, int until)	{
+void PhyloProcess::ReadSiteRates(string name, int burnin, int every, int until)	{
 
 	ifstream is((name + ".chain").c_str());
 	if (!is)	{
@@ -2117,6 +2232,65 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 		exit(1);
 	}
 
+	cerr << "burnin : " << burnin << "\n";
+	cerr << "until : " << until << '\n';
+	int i=0;
+	while ((i < until) && (i < burnin))	{
+		FromStream(is);
+		i++;
+	}
+	int samplesize = 0;
+
+	double* meanrate = new double[GetNsite()];
+	for (int i=0; i<GetNsite(); i++)	{
+		meanrate[i] = 0;
+	}
+
+	while (i < until)	{
+		cerr << ".";
+		cerr.flush();
+		samplesize++;
+		FromStream(is);
+		i++;
+
+		QuickUpdate();
+
+		GlobalGetMeanSiteRate();
+
+		// double length = GetRenormTotalLength();
+		for (int i=0; i<GetNsite(); i++)	{
+			// meansiterate[i] *= length;
+			meanrate[i] += meansiterate[i];
+		}
+
+		int nrep = 1;
+		while ((i<until) && (nrep < every))	{
+			FromStream(is);
+			i++;
+			nrep++;
+		}
+	}
+	cerr << '\n';
+	ofstream os((name + ".meansiterates").c_str());
+	for (int i=0; i<GetNsite(); i++)	{
+		meanrate[i] /= samplesize;
+		os << i << '\t' << meanrate[i] << '\n';
+	}
+	cerr << "posterior mean site rates in " << name << ".meansiterates\n";
+
+	delete[] meanrate;
+
+}
+
+void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, int until, int rateprior, int profileprior, int rootprior)	{
+
+	ifstream is((name + ".chain").c_str());
+	if (!is)	{
+		cerr << "error: no .chain file found\n";
+		exit(1);
+	}
+
+	double* obstaxstat = new double[GetNtaxa()];
 	SequenceAlignment* datacopy  = new SequenceAlignment(GetData());
 	double obs = 0;
 	if (ppredtype == 2)	{
@@ -2124,7 +2298,7 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 		// obs = GlobalGetMeanDiversity();
 	}
 	else if (ppredtype == 3)	{
-		obs = GetObservedCompositionalHeterogeneity();
+		obs = GetObservedCompositionalHeterogeneity(obstaxstat);
 	}
 
 	cerr << "burnin: " << burnin << '\n';
@@ -2139,30 +2313,51 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 	double meanstat = 0;
 	double varstat = 0;
 	double ppstat = 0;
+	double* meantaxstat = new double[GetNtaxa()];
+	double* vartaxstat = new double[GetNtaxa()];
+	double* pptaxstat = new double[GetNtaxa()];
+	double* taxstat = new double[GetNtaxa()];
+	for (int j=0; j<GetNtaxa(); j++)	{
+		meantaxstat[j] = 0;
+		vartaxstat[j] = 0;
+		pptaxstat[j] = 0;
+	}
 	while (i < until)	{
 		cerr << ".";
 		samplesize++;
 		FromStream(is);
 		i++;
+
+		/*
+		QuickUpdate();
+		GlobalSimulateForward();
 		GlobalUnclamp();
-		// GetData()->Unclamp();
+		GlobalSetDataFromLeaves();
+		*/
+
 		MPI_Status stat;
 		MESSAGE signal = BCAST_TREE;
 		MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 		GlobalBroadcastTree();
-		
+		GlobalUpdateConditionalLikelihoods();
+		GlobalUnclamp();
 		GlobalCollapse();
 		GlobalSetDataFromLeaves();
-		
-		// Trace(cerr);
+
 		if (ppredtype > 1)	{
 			double stat = 0;
 			if (ppredtype == 2)	{
 				stat = data->GetMeanDiversity();
-				// stat = GlobalGetMeanDiversity();
 			}
 			else if (ppredtype == 3)	{
-				stat = GetCompositionalHeterogeneity();
+				stat = GetCompositionalHeterogeneity(taxstat);
+				for (int j=0; j<GetNtaxa(); j++)	{
+					meantaxstat[j] += taxstat[j];
+					vartaxstat[j] += taxstat[j] * taxstat[j];
+					if (taxstat[j] > obstaxstat[j])	{
+						pptaxstat[j] ++;
+					}
+				}
 			}
 			meanstat += stat;
 			varstat += stat * stat;
@@ -2202,18 +2397,32 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 		cerr << "datasets in " << name << "_ppred<rep>.ali\n";
 	}
 	if (ppredtype == 2)	{
-		cerr << "diversity test\n";
-		cerr << "obs div : " << obs << '\n';
-		cerr << "mean div: " << meanstat << " +/- " << sqrt(varstat) << '\n';
-		cerr << "z-score : " << (meanstat - obs) / sqrt(varstat) << '\n';
-		cerr << "pp      : " << ppstat << '\n';
+		ofstream os((name + ".div").c_str());
+		os << "diversity test\n";
+		os << "obs div : " << obs << '\n';
+		os << "mean div: " << meanstat << " +/- " << sqrt(varstat) << '\n';
+		os << "z-score : " << (meanstat - obs) / sqrt(varstat) << '\n';
+		os << "pp      : " << ppstat << '\n';
+		cerr << "result of diversity test in " << name << ".div\n";
 	}
 	else if (ppredtype == 3)	{
-		cerr << "compositional homogeneity test\n";
-		cerr << "obs comp : " << obs << '\n';
-		cerr << "mean comp: " << meanstat << " +/- " << sqrt(varstat) << '\n';
-		cerr << "z-score : " << (obs - meanstat) / sqrt(varstat) << '\n';
-		cerr << "pp      : " << (1 - ppstat) << '\n';
+		ofstream os((name + ".comp").c_str());
+		os << "compositional homogeneity test\n";
+		os << "obs comp : " << obs << '\n';
+		os << "mean comp: " << meanstat << " +/- " << sqrt(varstat) << '\n';
+		os << "z-score : " << (obs - meanstat) / sqrt(varstat) << '\n';
+		os << "pp      : " << (1 - ppstat) << '\n';
+
+		os << '\n';
+		os << "taxonname\tobs\tmean pred\tz-score\tpp\n";
+		for (int j=0; j<GetNtaxa(); j++)	{
+			meantaxstat[j] /= samplesize;
+			vartaxstat[j] /= samplesize;
+			pptaxstat[j] /= samplesize;
+			vartaxstat[j] -= meantaxstat[j] * meantaxstat[j];
+			os << GetTaxonSet()->GetTaxon(j) << '\t' << obstaxstat[j] << '\t' << meantaxstat[j] << '\t' << meantaxstat[j]/sqrt(vartaxstat[j]) << '\t' << pptaxstat[j] << '\n';
+		}
+		cerr << "result of compositional homogeneity test in " << name << ".comp\n";
 	}
 	cerr << '\n';
 }
@@ -2264,11 +2473,11 @@ void PhyloProcess::ReadCV(string testdatafile, string name, int burnin, int ever
 	cerr << "every " << every << " points until " << until << '\n';
 	int i=0;
 	while ((i < until) && (i < burnin))	{
-		//cout << "before FromStream...\n";
-		//cout.flush();
+		cout << "before FromStream...\n";
+		cout.flush();
 		FromStream(is);
-		//cout << "after FromStream...\n";
-		//cout.flush();
+		cout << "after FromStream...\n";
+		cout.flush();
 		i++;
 	}
 	int samplesize = 0;
@@ -2360,7 +2569,6 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until)	{
 		if (maxwidth < (smax[i] - smin[i]))	{
 			maxwidth = smax[i] - smin[i];
 		}
-		//cerr << i+1 << '\t' << smin[i] << '\t' << smax[i] << '\n';
 	}
 
 	while (i < until)	{
@@ -2454,6 +2662,9 @@ void PhyloProcess::ReadMap(string name, int burnin, int every, int until){
 		i++;
 	}
 	int samplesize = 0;
+	double meandiff = 0;
+	double vardiff = 0;
+	double meanobs = 0;
 	for(int i = 0; i < GetNsite(); i++){
 		stringstream osfmap;
 		osfmap << name << '_' << i << ".map";
@@ -2462,6 +2673,8 @@ void PhyloProcess::ReadMap(string name, int burnin, int every, int until){
 	}
 	while (i < until)	{
 		cerr << ".";
+		// cerr << i << '\t' << rnd::GetRandom().Uniform() << '\n';
+
 		cerr.flush();
 		samplesize++;
 		FromStream(is);
@@ -2472,10 +2685,12 @@ void PhyloProcess::ReadMap(string name, int burnin, int every, int until){
 		s << name << "_" << samplesize << ".nodestates";
 		ofstream sos(s.str().c_str());
 
+		// quick update and mapping on the fly
 		MPI_Status stat;
 		MESSAGE signal = BCAST_TREE;
 		MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 		GlobalBroadcastTree();
+		GlobalUpdateConditionalLikelihoods();
 		GlobalCollapse();
 
 		// write posterior mappings
@@ -2486,11 +2701,13 @@ void PhyloProcess::ReadMap(string name, int burnin, int every, int until){
 		WriteNodeStates(sos,GetRoot());
 		sos << '\n';
 
-		GlobalUnfold();
+		double obs = GlobalCountMapping();
 
-		//Posterior Prededictive Mappings
+		//Posterior Predictive Mappings
+		GlobalUnfold();
 		GlobalUnclamp();
 		GlobalCollapse();
+
 		GlobalSetDataFromLeaves();
 
 		// write posterior predictive mappings
@@ -2499,6 +2716,15 @@ void PhyloProcess::ReadMap(string name, int burnin, int every, int until){
 		// write posterior predictive ancestral node states
 		GlobalSetNodeStates();
 		WriteNodeStates(sos,GetRoot());
+
+		double pred = GlobalCountMapping();
+
+		obs /= GetNsite();
+		pred /= GetNsite();
+
+		meandiff += obs - pred;
+		vardiff += (obs-pred)*(obs-pred);
+		meanobs += obs;
 
 		GlobalRestoreData();
 		GlobalUnfold();
@@ -2519,6 +2745,12 @@ void PhyloProcess::ReadMap(string name, int burnin, int every, int until){
 		}
 	}
 	cerr << '\n';
+	meandiff /= samplesize;
+	vardiff /= samplesize;
+	vardiff -= meandiff*meandiff;
+	meanobs /= samplesize;
+	cerr << "mean obs : " << meanobs << '\n';
+	cerr << meandiff << '\t' << sqrt(vardiff) << '\n';
 }
 
 void PhyloProcess::GlobalWriteMappings(string name){
@@ -2609,3 +2841,38 @@ void PhyloProcess::WriteNodeStates(ostream& os, const Link* from)	{
 	}
 }
 
+int PhyloProcess::CountMapping()	{
+
+	int total = 0;	
+	for(int i = sitemin; i < sitemax; i++){
+		total += CountMapping(i);
+	}
+	return total;
+}
+
+int PhyloProcess::CountMapping(int i)	{
+	return 0;
+}
+
+int PhyloProcess::GlobalCountMapping()	{
+
+	assert(myid==0);
+	MESSAGE signal = COUNTMAPPING;
+	MPI_Status stat;
+	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+
+	int i, count, totalcount=0;
+	for (i=1; i<nprocs; ++i)	{
+		MPI_Recv(&count,1,MPI_INT,MPI_ANY_SOURCE,TAG1,MPI_COMM_WORLD, &stat);
+		totalcount += count;
+	}
+	return totalcount;
+
+}
+
+void PhyloProcess::SlaveCountMapping()	{
+
+	int count = CountMapping();
+	MPI_Send(&count,1,MPI_INT,0,TAG1,MPI_COMM_WORLD);
+
+}

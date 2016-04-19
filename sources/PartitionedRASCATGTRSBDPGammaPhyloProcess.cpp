@@ -315,6 +315,7 @@ void PartitionedRASCATGTRSBDPGammaPhyloProcess::SlaveUpdateParameters()	{
 	MPI_Bcast(V,GetNcomponent(),MPI_DOUBLE,0,MPI_COMM_WORLD);
 	MPI_Bcast(weight,GetNcomponent(),MPI_DOUBLE,0,MPI_COMM_WORLD);
 	// some upate here ?
+	UpdateMatrices();
 }
 
 
@@ -335,8 +336,15 @@ void PartitionedRASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	int cv = 0;
 	int sitelogl = 0;
 	int rr = 0;
+	int rates = 0;
 	int map = 0;
 	string testdatafile = "";
+	int rateprior = 0;
+	int profileprior = 0;
+	int rootprior = 0;
+
+	double tuning = 1;
+
 	cvschemefile = "None";
 
 	try	{
@@ -357,6 +365,52 @@ void PartitionedRASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 			else if (s == "-ppred")	{
 				ppred = 1;
 			}
+			else if (s == "-p")	{
+				i++;
+				cvschemefile = argv[i];
+			}
+			else if (s == "-ppredrate")	{
+				i++;
+				string tmp = argv[i];
+				if (tmp == "prior")	{
+					rateprior = 1;
+				}
+				else if ((tmp == "posterior") || (tmp == "post"))	{
+					rateprior = 0;
+				}
+				else	{
+					cerr << "error after ppredrate: should be prior or posterior\n";
+					throw(0);
+				}
+			}
+			else if (s == "-ppredprofile")	{
+				i++;
+				string tmp = argv[i];
+				if (tmp == "prior")	{
+					profileprior = 1;
+				}
+				else if ((tmp == "posterior") || (tmp == "post"))	{
+					profileprior = 0;
+				}
+				else	{
+					cerr << "error after ppredprofile: should be prior or posterior\n";
+					throw(0);
+				}
+			}
+			else if (s == "-ppredroot")	{
+				i++;
+				string tmp = argv[i];
+				if (tmp == "prior")	{
+					rootprior = 1;
+				}
+				else if ((tmp == "posterior") || (tmp == "post"))	{
+					rootprior = 0;
+				}
+				else	{
+					cerr << "error after ppredroot: should be prior or posterior\n";
+					throw(0);
+				}
+			}
 			else if (s == "-sitelogl")	{
 				sitelogl = 1;
 			}
@@ -365,15 +419,14 @@ void PartitionedRASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 				i++;
 				testdatafile = argv[i];
 			}
-			else if (s == "-p")	{
-				i++;
-				cvschemefile = argv[i];
-			}
 			else if (s == "-ss")	{
 				ss = 1;
 			}
 			else if (s == "-rr")	{
 				rr = 1;
+			}
+			else if (s == "-r")	{
+				rates = 1;
 			}
 			else if (s == "-map")	{
 				map = 1;
@@ -438,6 +491,9 @@ void PartitionedRASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	else if (cv)	{
 		ReadCV(testdatafile,name,burnin,every,until);
 	}
+	else if (rates)	{
+		ReadSiteRates(name,burnin,every,until);
+	}
 	else if (sitelogl)	{
 		ReadSiteLogL(name,burnin,every,until);
 	}
@@ -448,7 +504,7 @@ void PartitionedRASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 		ReadRelRates(name,burnin,every,until);
 	}
 	else if (ppred)	{
-		PostPred(ppred,name,burnin,every,until);
+		PostPred(ppred,name,burnin,every,until,rateprior,profileprior,rootprior);
 	}
 	else if (map)	{
 		ReadMap(name,burnin,every,until);

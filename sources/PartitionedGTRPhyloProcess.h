@@ -53,6 +53,8 @@ class PartitionedGTRPhyloProcess : public virtual PhyloProcess, public virtual P
 	virtual void Unfold();
 	virtual void Collapse();
 
+	virtual void UpdateConditionalLikelihoods();
+
 	bool IsPartitionMasked(int part){ return partitionmask[part]; }
 
 	double LengthRelRateMove(double tuning, int nrep);

@@ -25,7 +25,7 @@ class MultiGeneGTRSBDPMixture : public virtual ExpoConjugateGTRSBDPProfileProces
 
 	public:
 
-	MultiGeneGTRSBDPMixture(string indatafile, string treefile, string inname, int innratecat, string inrrtype, int fixtopo, int kappaprior, double gibbsfactor, int dc, int me, int np);
+	MultiGeneGTRSBDPMixture(string indatafile, string treefile, string inname, int innratecat, int fixtopo, int kappaprior, double gibbsfactor, int dc, int me, int np);
 	MultiGeneGTRSBDPMixture(istream& is, int me, int np);
 
 	void Trace(ostream& os) {
@@ -123,7 +123,7 @@ class MultiGeneGTRSBDPMixture : public virtual ExpoConjugateGTRSBDPProfileProces
 	double LengthRelRateMove(double tuning, int nrep);
 	void SlaveLengthFactorMove();
 
-	void Create(int inNsite, int Nstate, int nratecat, int dc, string rrtype);
+	void Create(int inNsite, int Nstate, int nratecat, int dc);
 	void CreateSuffStat();
 	void DeleteSuffStat();
 

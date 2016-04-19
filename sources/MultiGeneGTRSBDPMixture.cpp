@@ -20,13 +20,12 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 
 #include "MultiGeneGTRSBDPMixture.h"
 
-MultiGeneGTRSBDPMixture::MultiGeneGTRSBDPMixture(string indatafile, string treefile, string inname, int innratecat, string inrrtype, int infixtopo, int inkappaprior, double ingibbsfactor, int indc, int me, int np)	{
+MultiGeneGTRSBDPMixture::MultiGeneGTRSBDPMixture(string indatafile, string treefile, string inname, int innratecat, int infixtopo, int inkappaprior, double ingibbsfactor, int indc, int me, int np)	{
 	myid = me;
 	nprocs = np;
 	name = inname;
 	fixtopo = infixtopo;
 	dc = indc;
-	mrrtype = inrrtype;
 	kappaprior = inkappaprior;
 	Nstate = 0;
 	datafile = indatafile;
@@ -34,7 +33,7 @@ MultiGeneGTRSBDPMixture::MultiGeneGTRSBDPMixture(string indatafile, string treef
 	gibbsfactor = ingibbsfactor;
 	AllocateAlignments(datafile,treefile,dc);
 	
-	Create(GetGlobalNsite(0),Nstate,nratecat,indc,mrrtype);
+	Create(GetGlobalNsite(0),Nstate,nratecat,indc);
 	if (! myid)	{
 		GlobalUpdateParameters();
 		GlobalSample();
@@ -53,7 +52,7 @@ MultiGeneGTRSBDPMixture::MultiGeneGTRSBDPMixture(istream& is, int me, int np)	{
 	Nstate = 0;
 	AllocateAlignments(datafile,"None",dc);
 	
-	Create(GetGlobalNsite(0),Nstate,nratecat,dc,mrrtype);
+	Create(GetGlobalNsite(0),Nstate,nratecat,dc);
 	if (! myid)	{
 		FromStream(is);
 		GlobalUpdateParameters();
@@ -61,7 +60,7 @@ MultiGeneGTRSBDPMixture::MultiGeneGTRSBDPMixture(istream& is, int me, int np)	{
 	}
 }
 
-void MultiGeneGTRSBDPMixture::Create(int inNsite, int Nstate, int nratecat, int dc, string inrrtype)	{
+void MultiGeneGTRSBDPMixture::Create(int inNsite, int Nstate, int nratecat, int dc)	{
 
 	// create Nsite Nstate
 	ExpoConjugateGTRSBDPProfileProcess::Create(inNsite,Nstate);
@@ -77,7 +76,7 @@ void MultiGeneGTRSBDPMixture::Create(int inNsite, int Nstate, int nratecat, int 
 		int offset = 0;
 		for (int gene=0; gene<Ngene; gene++)	{
 			if (genealloc[gene] == myid)	{
-				process[gene] = new ExpoConjugateGTRGeneGammaPhyloProcess(genename[gene], treename[gene], nratecat, inrrtype, fixtopo, dc, this, offset);
+				process[gene] = new ExpoConjugateGTRGeneGammaPhyloProcess(genename[gene], treename[gene], nratecat, fixtopo, dc, this, offset);
 				process[gene]->SetGibbsFactor(gibbsfactor);
 			}
 			else	{

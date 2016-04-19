@@ -1291,15 +1291,15 @@ class Simulator : public NewickTree {
 		ifstream is(filename.c_str());
 		int nsite, nstate;
 		is >> nsite >> nstate;
-		if (nsite < Nsite/3)	{
-			cerr << "error: too small\n";
-			exit(1);
-		}
 		if (nstate != Naa)	{
 			cerr << "error when reading " << filename << '\n';
 			exit(1);
 		}
-		for (int codpos=0; codpos<Nsite/3; codpos++)	{
+		double** protalpha = new double*[nsite];
+		for (int codpos=0; codpos<nsite; codpos++)	{
+			protalpha[codpos] = new double[nstate];
+		}
+		for (int codpos=0; codpos<nsite; codpos++)	{
 			double tot = 0;
 			for (int a=0; a<Naa; a++)	{
 				double tmp;
@@ -1309,13 +1309,25 @@ class Simulator : public NewickTree {
 					cerr << "error: negative fitness\n";
 					exit(1);
 				}
-				alpha[codpos][a] = log(tmp);
+				protalpha[codpos][a] = log(tmp);
 			}
 			if (fabs(tot - 1) > 1e-4)	{
 				cerr << "error: profile does not sum to one : " << tot << '\n';
 				exit(1);
 			}
 		}
+
+		for (int codpos=0; codpos<Nsite/3; codpos++)	{
+			int site = (int) (nsite * rnd::GetRandom().Uniform());
+			for (int a=0; a<Naa; a++)	{
+				alpha[codpos][a] = protalpha[site][a];
+			}
+		}
+
+		for (int codpos=0; codpos<nsite; codpos++)	{
+			delete[] protalpha[codpos];
+		}
+		delete[] protalpha;
 	}
 
 	void CalculateNucStat()	{

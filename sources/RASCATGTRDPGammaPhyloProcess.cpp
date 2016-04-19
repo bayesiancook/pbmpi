@@ -171,5 +171,5 @@ void RASCATGTRDPGammaPhyloProcess::SlaveUpdateParameters()	{
 	delete[] dvector;
 	delete[] ivector;
 
-	// some upate here ?
+	UpdateMatrices();
 }

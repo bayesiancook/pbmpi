@@ -189,6 +189,8 @@ void PartitionedRASGTRGammaPhyloProcess::SlaveUpdateParameters()	{
 		index++;
 	}
 	delete[] dvector;
+
+	UpdateMatrices();
 }
 
 
@@ -206,8 +208,16 @@ void PartitionedRASGTRGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 
 	int cv = 0;
 	int sitelogl = 0;
+	int rr = 0;
+	int rates = 0;
 	int map = 0;
 	string testdatafile = "";
+	int rateprior = 0;
+	int profileprior = 0;
+	int rootprior = 0;
+
+	double tuning = 1;
+
 	cvschemefile = "None";
 
 	try	{
@@ -228,6 +238,38 @@ void PartitionedRASGTRGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 			else if (s == "-ppred")	{
 				ppred = 1;
 			}
+			else if (s == "-p")	{
+				i++;
+				cvschemefile = argv[i];
+			}
+			else if (s == "-ppredrate")	{
+				i++;
+				string tmp = argv[i];
+				if (tmp == "prior")	{
+					rateprior = 1;
+				}
+				else if ((tmp == "posterior") || (tmp == "post"))	{
+					rateprior = 0;
+				}
+				else	{
+					cerr << "error after ppredrate: should be prior or posterior\n";
+					throw(0);
+				}
+			}
+			else if (s == "-ppredroot")	{
+				i++;
+				string tmp = argv[i];
+				if (tmp == "prior")	{
+					rootprior = 1;
+				}
+				else if ((tmp == "posterior") || (tmp == "post"))	{
+					rootprior = 0;
+				}
+				else	{
+					cerr << "error after ppredroot: should be prior or posterior\n";
+					throw(0);
+				}
+			}
 			else if (s == "-sitelogl")	{
 				sitelogl = 1;
 			}
@@ -236,9 +278,11 @@ void PartitionedRASGTRGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 				i++;
 				testdatafile = argv[i];
 			}
-			else if (s == "-p")	{
-				i++;
-				cvschemefile = argv[i];
+			else if (s == "-rr")	{
+				rr = 1;
+			}
+			else if (s == "-r")	{
+				rates = 1;
 			}
 			else if (s == "-map")	{
 				map = 1;
@@ -297,11 +341,17 @@ void PartitionedRASGTRGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	if (cv)	{
 		ReadCV(testdatafile,name,burnin,every,until);
 	}
+	else if (rates)	{
+		ReadSiteRates(name,burnin,every,until);
+	}
 	else if (sitelogl)	{
 		ReadSiteLogL(name,burnin,every,until);
 	}
+	else if (rr)	{
+		ReadRelRates(name,burnin,every,until);
+	}
 	else if (ppred)	{
-		PostPred(ppred,name,burnin,every,until);
+		PostPred(ppred,name,burnin,every,until,rateprior,profileprior,rootprior);
 	}
 	else if (map)	{
 		ReadMap(name,burnin,every,until);
@@ -311,6 +361,71 @@ void PartitionedRASGTRGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	}
 }
 
+void PartitionedRASGTRGammaPhyloProcess::ReadRelRates(string name, int burnin, int every, int until)	{
+
+	ifstream is((name + ".chain").c_str());
+	if (!is)	{
+		cerr << "error: no .chain file found\n";
+		exit(1);
+	}
+
+	cerr << "burnin : " << burnin << "\n";
+	cerr << "until : " << until << '\n';
+	int i=0;
+	while ((i < until) && (i < burnin))	{
+		FromStream(is);
+		i++;
+	}
+	int samplesize = 0;
+
+	double* meanrr = new double[GetNrr()];
+	for (int k=0; k<GetNrr(); k++)	{
+		meanrr[k] = 0;
+	}
+
+	while (i < until)	{
+		cerr << ".";
+		cerr.flush();
+		samplesize++;
+		FromStream(is);
+		i++;
+
+		for (int k=0; k<GetNrr(); k++)
+		{
+			double meank = 0.0;
+			for (int p=0; p<PartitionedGTRProfileProcess::GetNpart(); p++)
+			{
+				meank += rr[p][k] * PartitionedGTRProfileProcess::GetPartNsite(p);
+			}
+
+			meanrr[k] += meank / GetNsite();
+		}
+
+		int nrep = 1;
+		while ((i<until) && (nrep < every))	{
+			FromStream(is);
+			i++;
+			nrep++;
+		}
+	}
+	cerr << '\n';
+	for (int k=0; k<GetNrr(); k++)	{
+		meanrr[k] /= samplesize;
+	}
+	ofstream os((name + ".meanrr").c_str());
+	for (int k=0; k<GetDim(); k++)	{
+		os << GetStateSpace()->GetState(k) << ' ';
+	}
+	os << '\n';
+	os << '\n';
+	for (int i=0; i<GetDim(); i++)	{
+		for (int j=i+1; j<GetDim(); j++)	{
+			os << GetStateSpace()->GetState(i) << '\t' << GetStateSpace()->GetState(j) << '\t' << meanrr[rrindex(i,j,GetDim())] << '\n';
+		}
+	}
+	cerr << "mean relative exchangeabilities in " << name << ".meanrr\n";
+
+}
 
 
 void PartitionedRASGTRGammaPhyloProcess::GlobalSetTestData()	{

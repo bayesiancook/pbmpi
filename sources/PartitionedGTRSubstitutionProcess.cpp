@@ -364,3 +364,53 @@ void PartitionedGTRSubstitutionProcess::Propagate(double*** from, double*** to, 
 	delete[] aux;
 	// propchrono.Stop();
 }
+
+void PartitionedGTRSubstitutionProcess::SimuPropagate(int* stateup, int* statedown, double time)	{
+
+	const int nstate = GetMatrix(sitemin)->GetNstate();
+	double cumul[nstate];
+	double expdiag[nstate];
+	for(int i=sitemin; i<sitemax; i++)	{
+		if(!sitemask[i-sitemin])
+		{
+			int up = stateup[i];
+
+			SubMatrix* matrix = GetMatrix(i);
+			double** eigenvect = matrix->GetEigenVect();
+			double** inveigenvect = matrix->GetInvEigenVect();
+			double* eigenval = matrix->GetEigenVal();
+
+			int j = ratealloc[i];
+			double length = time * GetRate(i,j);
+			for (int k=0; k<nstate; k++)	{
+				expdiag[k] = exp(length * eigenval[k]);
+			}
+
+			double totprob = 0;
+			for (int k=0; k<nstate; k++)	{
+				double tot = 0;
+				for (int l=0; l<nstate; l++)	{
+					tot += eigenvect[up][l] * expdiag[l] * inveigenvect[l][k];
+				}
+				totprob += tot;
+				cumul[k] = totprob;
+			}
+			if (fabs(totprob - 1) > 1e-6)	{
+				cerr << "error in MatrixSubstitutionProcess::SimuPropagate: tot prob is not 1\n";
+				cerr << totprob << '\n';
+				exit(1);
+			}
+
+			double u = rnd::GetRandom().Uniform();
+			int k = 0;
+			while ((k<nstate) && (u>cumul[k]))	{
+				k++;
+			}
+			if (k == nstate)	{
+				cerr << "error in MatrixSubstitutionProcess::SimuPropagate: overflow\n";
+				exit(1);
+			}
+			statedown[i] = k;
+		}
+	}
+}

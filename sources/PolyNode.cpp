@@ -15,8 +15,6 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 
 #include "phylo.h"
 
-#include <vector>
-
 inline double approx(double f)	{
 	return ((double) ((int) (100 * f))) / 100;
 }
@@ -430,7 +428,7 @@ string PolyNode::SortLeavesAlphabetical()	{
 			node = node->next;
 			degree++;
 		}	while(node!=down);
-		vector<string> retval(degree,"");
+		string retval[degree];
 		PolyNode* nodelist[degree];
 		int k = 0;
 		do	{

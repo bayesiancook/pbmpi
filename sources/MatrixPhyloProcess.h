@@ -35,6 +35,8 @@ class MatrixPhyloProcess : public virtual PhyloProcess, public virtual MatrixSub
 	virtual void Unfold();
 	virtual void Collapse();
 
+	virtual void UpdateConditionalLikelihoods();
+
 	// virtual void UpdateSubstitutionProcess();
 
 };

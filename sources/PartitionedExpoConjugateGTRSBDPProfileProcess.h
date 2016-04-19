@@ -67,6 +67,10 @@ class PartitionedExpoConjugateGTRSBDPProfileProcess : public virtual Partitioned
 
 	protected:
 
+	virtual double LogProxy(int site, int cat)	{
+		return PoissonDiffLogSampling(cat,site);
+	}
+
 	virtual void SwapComponents(int cat1, int cat2)	{
 		PartitionedGTRSBDPProfileProcess::SwapComponents(cat1,cat2);
 	}

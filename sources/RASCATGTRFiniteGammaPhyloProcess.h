@@ -192,39 +192,39 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 	void SlaveUpdateParameters();
 
 	void TraceHeader(ostream& os)	{
-		os << "iter\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
+		os << "#iter\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
 		if (! fixrr)	{
 			os << "\trrent\trrmean";
 		}
-		os << endl;
+		os << '\n'; 
 	}
 
 	void Trace(ostream& os)	{
 
-		os << GetSize() - 1;
+		os << GetSize();
 		if (chronototal.GetTime())	{
-			os << "\t" << chronototal.GetTime() / 1000;
-			os << "\t" << ((int) (propchrono.GetTime() / chronototal.GetTime() * 100));
+			os << '\t' << chronototal.GetTime() / 1000;
+			os << '\t' << ((int) (propchrono.GetTime() / chronototal.GetTime() * 100));
 			chronototal.Reset();
 			propchrono.Reset();
 		}
 		else	{
-			os << "\t" << 0;
-			os << "\t" << 0;
+			os << '\t' << 0;
+			os << '\t' << 0;
 		}
 
-		os << "\t" << GetLogLikelihood();
-		os << "\t" << GetRenormTotalLength();
-		os << "\t" << GetAlpha();
-		os << "\t" << GetNDisplayedComponent();
-		os << "\t" << GetStatEnt();
-		os << "\t" << GetMeanDirWeight();
+		os << '\t' << GetLogLikelihood();
+		os << '\t' << GetRenormTotalLength();
+		os << '\t' << GetAlpha();
+		os << '\t' << GetNDisplayedComponent();
+		os << '\t' << GetStatEnt();
+		os << '\t' << GetMeanDirWeight();
 		if (! fixrr)	{
-			os << "\t" << GetRREntropy();
-			os << "\t" << GetRRMean();
+			os << '\t' << GetRREntropy();
+			os << '\t' << GetRRMean();
 		}
 
-		os << endl;
+		os << '\n';
 	}
 
 	double Move(double tuning = 1.0)	{
@@ -312,12 +312,15 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 		GammaBranchProcess::FromStream(is);
 		DGamRateProcess::FromStream(is);
 		ExpoConjugateGTRFiniteProfileProcess::FromStream(is);
-		// GlobalUpdateParameters(); ?
+		GlobalUpdateParameters();
 	}
 
 	virtual void ReadPB(int argc, char* argv[]);
 	void SlaveComputeCVScore();
 	void SlaveComputeSiteLogL();
+
+	void ReadRelRates(string name, int burnin, int every, int until);
+	void ReadSiteProfiles(string name, int burnin, int every, int until);
 
 	protected:
 

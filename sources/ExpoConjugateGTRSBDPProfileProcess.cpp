@@ -66,5 +66,4 @@ void ExpoConjugateGTRSBDPProfileProcess::FromStream(istream& is)	{
 	}
 
 	ResampleWeights();
-	// CHECK some update here ?
 }

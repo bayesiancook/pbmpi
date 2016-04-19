@@ -165,11 +165,10 @@ void GTRProfileProcess::SetRR(string type)	{
 			RR = CG60RR;
 		}
 
-
 		if(RR != 0){
 			if (Nrr != 190)	{
 				if (! GetMyid())	{
-					cerr << "error : wag only applies to amino acid recoded data\n";
+					cerr << "error : matrix only applies to amino acid recoded data\n";
 					cerr << '\n';
 				}
 				MPI_Finalize();
@@ -184,6 +183,7 @@ void GTRProfileProcess::SetRR(string type)	{
 				rr[i] /= total / Nrr;
 			}
 		}
+
 		else	{
 			ifstream is(type.c_str());
 			if (!is)	{

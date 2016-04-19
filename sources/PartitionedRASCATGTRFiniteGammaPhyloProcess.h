@@ -315,7 +315,7 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 		GammaBranchProcess::FromStream(is);
 		PartitionedDGamRateProcess::FromStream(is);
 		PartitionedExpoConjugateGTRFiniteProfileProcess::FromStream(is);
-		//GlobalUpdateParameters();
+		GlobalUpdateParameters();
 	}
 
 	virtual void ReadPB(int argc, char* argv[]);
@@ -323,6 +323,8 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 	void SlaveSetTestData();
 	void SlaveComputeCVScore();
 	void SlaveComputeSiteLogL();
+	void ReadRelRates(string name, int burnin, int every, int until);
+	void ReadSiteProfiles(string name, int burnin, int every, int until);
 
 	protected:
 

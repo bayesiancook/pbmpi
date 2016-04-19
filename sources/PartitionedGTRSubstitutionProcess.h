@@ -58,6 +58,7 @@ class PartitionedGTRSubstitutionProcess : public virtual MatrixSubstitutionProce
 	// implemented in GTR or POisson Substitution process
 	void Propagate(double*** from, double*** to, double time, bool condalloc = false);
 
+	void SimuPropagate(int* stateup, int* statedown, double time);
 	/*
 	double* GetStationary(int site)	{
 		return GetProfile(site);

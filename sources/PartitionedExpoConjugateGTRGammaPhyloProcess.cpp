@@ -380,3 +380,30 @@ void PartitionedExpoConjugateGTRGammaPhyloProcess::SlaveUpdateRRSuffStat()	{
 	#endif
 }
 
+int PartitionedExpoConjugateGTRGammaPhyloProcess::GlobalCountMapping()	{
+
+	GlobalUpdateSiteProfileSuffStat();
+	return PhyloProcess::GlobalCountMapping();
+}
+
+int PartitionedExpoConjugateGTRGammaPhyloProcess::CountMapping()	{
+
+	int total = 0;
+	for(int i = sitemin; i < sitemax; i++){
+		total += CountMapping(i);
+	}
+	return total;
+}
+
+int PartitionedExpoConjugateGTRGammaPhyloProcess::CountMapping(int i)	{
+
+	const int* tmp = GetSiteProfileSuffStatCount(i);
+	int total = 0;
+	for (int k=0; k<GetNstate(i); k++)	{
+		total += tmp[k];
+	}
+	total--;
+	return total;
+}
+
+

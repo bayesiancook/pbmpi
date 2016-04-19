@@ -65,6 +65,8 @@ class PartitionedExpoConjugateGTRMixtureProfileProcess : public virtual Partitio
 	int** profilesuffstatcount;
 	double** profilesuffstatbeta;
 
+	double PoissonDiffLogSampling(int cat, int site);
+
 };
 
 #endif

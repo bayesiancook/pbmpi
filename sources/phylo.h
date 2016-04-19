@@ -28,8 +28,8 @@ typedef int Boolean;
 
 	const char AAset[] = {'A','C','D','E','F','G','H','I','K','L','M','N','P','Q','R','S','T','V','W','Y','a','c','d','e','f','g','h','i','k','l','m','n','p','q','r','s','t','v','w','y','-','?','$','.','B','Z','*','X','x'};
 	const int AAN = 49;
-	const int DNAN = 38;
-	const int RNAN = 38;
+	const int DNAN = 37;
+	const int RNAN = 37;
 	const char DNAset[] = {'A','C','G','T','a','c','g','t','B','D','H','K','M','N','R','S','V','W','Y','b','d','h','k','m','n','r','s','v','w','y','-','?','$','.','*','X','x'};
 	const char RNAset[] = {'A','C','G','U','a','c','g','u','B','D','H','K','M','N','R','S','V','W','Y','b','d','h','k','m','n','r','s','v','w','y','-','?','$','.','*','X','x'};
 

@@ -39,6 +39,9 @@ class PoissonSubstitutionProcess : public virtual SubstitutionProcess, public vi
 	BranchSitePath** SamplePaths(int* stateup, int* statedown, double time);
 	BranchSitePath** SampleRootPaths(int* rootstate);
 
+	void SimuPropagate(int* stateup, int* statedown, double time);
+	void SimuPropagateZip(int* stateup, int* statedown, double time);
+
 	// CPU Level 1: gathering sufficient statistics from substitution mappings
 	void AddSiteRateSuffStat(int* siteratesuffstatcount, BranchSitePath** patharray);
 	void AddBranchLengthSuffStat(int& count, BranchSitePath** patharray);
@@ -63,6 +66,7 @@ class PoissonSubstitutionProcess : public virtual SubstitutionProcess, public vi
 	virtual bool InOrbit(int site, int state) = 0;
 
 	void ChooseTrueStates(BranchSitePath** patharray, int* nodestateup, int* nodestatedown, bool root);
+	void ChooseRootTrueStates(int* nodestate);
 
 	private:
 

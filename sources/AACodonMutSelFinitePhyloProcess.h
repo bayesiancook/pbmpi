@@ -278,7 +278,7 @@ class AACodonMutSelFinitePhyloProcess : public virtual AACodonMutSelFiniteSubsti
 	}
 
 	virtual void ReadPB(int argc, char* argv[]);
-	//void Read(string name, int burnin, int every, int until);
+	void Read(string name, int burnin, int every, int until);
 	// primary scheduler
 
 	double Move(double tuning = 1.0)	{

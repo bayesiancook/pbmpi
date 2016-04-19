@@ -59,6 +59,10 @@ void DPProfileProcess::SampleAlloc()	{
 }
 */
 
+double DPProfileProcess::LogProxy(int site, int cat)	{
+	return 0;
+}
+
 void DPProfileProcess::SampleAlloc()	{
 
 	CreateComponent(0);
@@ -68,12 +72,23 @@ void DPProfileProcess::SampleAlloc()	{
 	for (int i=0; i<GetNsite(); i++)	{
 		double* p = new double[Ncomponent+1];
 		double total = 0;
+		double max = 0;
 		for (int k=0; k<Ncomponent; k++)	{
-			total += occupancy[k];
+			double tmp = log(occupancy[k]) * LogProxy(i,k);
+			if ((!k) || (max < tmp))	{
+				max = tmp;
+			}
+			p[k] = tmp;
+		}
+		p[Ncomponent] = log(kappa) + LogProxy(i,Ncomponent);
+		if (max < p[Ncomponent])	{
+			max = p[Ncomponent];
+		}
+		for (int k=0; k<=Ncomponent; k++)	{
+			double tmp = exp(p[k] - max);
+			total += tmp;
 			p[k] = total;
 		}
-		total += kappa;
-		p[Ncomponent] = total;
 		double q = total * rnd::GetRandom().Uniform();
 		int k = 0;
 		while ((k<=Ncomponent) && (q > p[k])) k++;

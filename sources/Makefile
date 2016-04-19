@@ -50,7 +50,7 @@ ALL_SRCS=$(wildcard *.cpp)
 ALL_OBJS=$(patsubst %.cpp,%.o,$(ALL_SRCS))
 
 PROGSDIR=../data
-ALL= simucodon pb_mpi readpb_mpi tracecomp bpcomp bpcomp2
+ALL= pb_mpi readpb_mpi tracecomp bpcomp 
 PROGS=$(addprefix $(PROGSDIR)/, $(ALL))
 
 .PHONY: all clean
@@ -66,7 +66,7 @@ all: $(PROGS)
 
 # Rules to create .o files from .cpp files
 %.o: %.cpp %.d
-	$(CC) $(CPPFLAGS) $*.cpp
+	$(CC) -c $(CPPFLAGS) $*.cpp
 
 # Include the dependencies unless the request was to clean eveything up
 ifneq ($(MAKECMDGOALS),clean)
@@ -74,6 +74,12 @@ ifneq ($(MAKECMDGOALS),clean)
 endif
 
 # Targets
+
+$(PROGSDIR)/missfrac: MissingFractionPerGene.o $(OBJS)
+	$(CC) MissingFractionPerGene.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@
+
+$(PROGSDIR)/jackknife: JackKnife.o $(OBJS)
+	$(CC) JackKnife.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@
 
 $(PROGSDIR)/simucodon: SimuCodon.o $(OBJS)
 	$(CC) SimuCodon.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@

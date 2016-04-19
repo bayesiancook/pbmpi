@@ -64,9 +64,11 @@ class RASCATSBDPGammaPhyloProcess : public virtual RASCATGammaPhyloProcess, publ
 
 	public:
 
-	RASCATSBDPGammaPhyloProcess(string indatafile, string treefile, int nratecat, int iniscodon, GeneticCodeType incodetype, int infixtopo, int inNSPR, int inNNNI, int inkappaprior, double inmintotweight, int indc, int me, int np)	{
+	RASCATSBDPGammaPhyloProcess(string indatafile, string treefile, int nratecat, int iniscodon, GeneticCodeType incodetype, int infixtopo, int inNSPR, int inNNNI, int inkappaprior, double inmintotweight, int indc, int ininc, int me, int np)	{
 		myid = me;
 		nprocs = np;
+
+		InitIncremental = ininc;
 
 		fixtopo = infixtopo;
 		NSPR = inNSPR;

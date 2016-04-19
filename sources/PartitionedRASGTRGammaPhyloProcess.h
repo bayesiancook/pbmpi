@@ -365,6 +365,8 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 	void SlaveSetTestData();
 	void SlaveComputeCVScore();
 	void SlaveComputeSiteLogL();
+	void ReadRelRates(string name, int burnin, int every, int until);
+	void ReadSiteProfiles(string name, int burnin, int every, int until);
 
 	double* GetEmpiricalFreq(int p)
 	{

@@ -66,6 +66,10 @@ class PartitionedExpoConjugateGTRGammaPhyloProcess : public virtual PartitionedG
 	void UpdateRRSuffStat();
 	void UpdateSiteProfileSuffStat();
 
+	int GlobalCountMapping();
+	int CountMapping();
+	int CountMapping(int site);
+
 	int** siteprofilesuffstatcount;
 	double** siteprofilesuffstatbeta;
 

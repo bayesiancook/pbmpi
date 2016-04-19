@@ -496,7 +496,7 @@ class SequenceAlignment	{
 		return GetTotalDiversity(0,GetNsite()) / GetNsite();
 	}
 
-	double CompositionalHeterogeneity(ostream* os)	{
+	double CompositionalHeterogeneity(double* taxstat, ostream* os)	{
 
 		int Nstate = GetNstate();
 		double** taxfreq = new double*[Ntaxa];
@@ -558,6 +558,7 @@ class SequenceAlignment	{
 				double tmp = (taxfreq[j][k] - globalfreq[k]);
 				dist += tmp * tmp;
 			}
+			taxstat[j] = dist;
 			if (maxdist < dist)	{
 				maxdist = dist;
 			}

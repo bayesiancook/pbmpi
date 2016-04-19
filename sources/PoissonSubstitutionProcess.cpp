@@ -64,6 +64,61 @@ void PoissonSubstitutionProcess::Propagate(double*** from, double*** to, double 
 	}
 }
 
+/*
+// version directly unzipped
+void PoissonSubstitutionProcess::SimuPropagate(int* stateup, int* statedown, double time)	{
+
+	for (int i=sitemin; i<sitemax; i++)	{
+		const double* stat = GetProfile(i);
+		int j = ratealloc[i];
+		double expo = exp(-GetRate(i,j) * time);
+		if (rnd::GetRandom().Uniform() < expo)	{
+			statedown[i] = stateup[i];
+		}
+		else	{
+			double u = rnd::GetRandom().Uniform();
+			int k = 0;
+			double cumul = stat[k];
+			while ((k < GetDim()) && (u > cumul))	{
+				k++;
+				if (k == GetDim())	{
+					cerr << "error in PoissonSubstitutionProcess::SimuPropagate: overflow\n";
+					exit(1);
+				}
+				cumul += stat[k];
+			}
+			statedown[i] = k;
+		}
+	}
+}
+*/
+
+void PoissonSubstitutionProcess::SimuPropagate(int* stateup, int* statedown, double time)	{
+
+	for (int i=sitemin; i<sitemax; i++)	{
+		const double* stat = GetStationary(i);
+		int nstate = GetNstate(i);
+		int j = ratealloc[i];
+		double expo = exp(-GetRate(i,j) * time);
+		if (rnd::GetRandom().Uniform() < expo)	{
+			statedown[i] = stateup[i];
+		}
+		else	{
+			double u = rnd::GetRandom().Uniform();
+			int k = 0;
+			double cumul = stat[k];
+			while ((k < nstate) && (u > cumul))	{
+				k++;
+				if (k == GetDim())	{
+					cerr << "error in PoissonSubstitutionProcess::SimuPropagate: overflow\n";
+					exit(1);
+				}
+				cumul += stat[k];
+			}
+			statedown[i] = k;
+		}
+	}
+}
 
 //-------------------------------------------------------------------------
 //	* sample substitution mappings conditional on states at nodes 
@@ -164,6 +219,14 @@ void PoissonSubstitutionProcess::ChooseTrueStates(BranchSitePath** patharray, in
 		}
 		//cerr  << ' '<< i  << ' '<< patharray[i]->GetNsub() << ' '<< tmp  << '\n';
 		nodestatedown[i] = tmp;
+	}
+}
+
+void PoissonSubstitutionProcess::ChooseRootTrueStates(int* nodestate)	{
+
+	for (int i=sitemin; i<sitemax; i++)	{
+		int tmp = GetRandomStateFromZip(i,nodestate[i]);
+		nodestate[i] = tmp;
 	}
 }
 

@@ -50,6 +50,20 @@ void MatrixPhyloProcess::Unfold()	{
 	UpdateConditionalLikelihoods();
 }
 
+void MatrixPhyloProcess::UpdateConditionalLikelihoods()	{
+
+	PostOrderPruning(GetRoot(),condlmap[0]);
+
+	// not necessary
+	MultiplyByStationaries(condlmap[0]);
+	ComputeLikelihood(condlmap[0]);
+
+	PreOrderPruning(GetRoot(),condlmap[0]);
+
+	// CheckLikelihood();
+}
+
+
 void MatrixPhyloProcess::Collapse()	{
 
 	if (! condflag)	{
@@ -59,6 +73,9 @@ void MatrixPhyloProcess::Collapse()	{
 	// UpdateConditionalLikelihoods();
 	DrawAllocations();
 	SampleNodeStates();
+	if (! dataclamped)	{
+		SimulateForward();
+	}
 	DeleteCondSiteLogL();
 	DeleteConditionalLikelihoods();
 	InactivateSumOverRateAllocations(ratealloc);

@@ -80,7 +80,6 @@ class MultiGeneMixture : public virtual SBDPProfileProcess	{
 		os << nratecat << '\n';
 		os << fixtopo << '\n';
 		os << dc << '\n';
-		os << mrrtype << '\n';
 		os << kappaprior << '\n';
 		os << gibbsfactor << '\n';
 	}
@@ -100,7 +99,6 @@ class MultiGeneMixture : public virtual SBDPProfileProcess	{
 		is >> nratecat;
 		is >> fixtopo;
 		is >> dc;
-		is >> mrrtype;
 		is >> kappaprior;
 		is >> gibbsfactor;
 	}
@@ -138,7 +136,7 @@ class MultiGeneMixture : public virtual SBDPProfileProcess	{
 	void SlaveGeneMove();
 
 	void AllocateAlignments(string datafile, string treefile, int dc);
-	virtual void Create(int inNsite, int Nstate, int nratecat, int dc, string rrtype) = 0;
+	virtual void Create(int inNsite, int Nstate, int nratecat, int dc) = 0;
 	virtual void CreateSuffStat() = 0;
 	virtual void DeleteSuffStat() = 0;
 
@@ -203,7 +201,6 @@ class MultiGeneMixture : public virtual SBDPProfileProcess	{
 	int dc;
 
 	string name;
-	string mrrtype;
 
 	Chrono propchrono;
 	Chrono chronototal;

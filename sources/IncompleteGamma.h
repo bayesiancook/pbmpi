@@ -25,6 +25,8 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 # include <ctime>
 # include <cstring>
 
+//yan modify 12.Dec.2004 (from Mr.Bayes)
+
 inline double  PointNormal (double prob)
 
 {
@@ -41,8 +43,6 @@ inline double  PointNormal (double prob)
 	return (p<0.5 ? -z : z);
 
 }
-
-//yan modify 12.Dec.2004 (from Mr.Bayes)
 
 //------------------------------------------------------------------------------
 //

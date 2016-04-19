@@ -56,14 +56,18 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 
 	public:
 
+	using MixtureProfileProcess::LogStatPrior;
+
         virtual void SlaveExecute(MESSAGE);
 	void GlobalUpdateParameters();
 	void SlaveUpdateParameters();
 
 
-	RASCATGTRSBDPGammaPhyloProcess(string indatafile, string treefile, int nratecat, int iniscodon, GeneticCodeType incodetype, string inrrtype, int infixtopo, int inNSPR, int inNNNI, int inkappaprior, double inmintotweight, int indc, int me, int np)	{
+	RASCATGTRSBDPGammaPhyloProcess(string indatafile, string treefile, int nratecat, int iniscodon, GeneticCodeType incodetype, string inrrtype, int infixtopo, int inNSPR, int inNNNI, int inkappaprior, double inmintotweight, int indc, int incinit, int me, int np)	{
 		myid = me;
 		nprocs = np;
+
+		InitIncremental = incinit;
 
 		fixtopo = infixtopo;
 		NSPR = inNSPR;
@@ -204,42 +208,42 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 	}
 
 	void TraceHeader(ostream& os)	{
-		os << "iter\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
+		os << "#iter\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
 		if (! fixrr)	{
 			os << "\trrent\trrmean";
 		}
 		// os << "\tkappa\tallocent";
-		os << endl;
+		os << '\n'; 
 	}
 
 	void Trace(ostream& os)	{
 
 		UpdateOccupancyNumbers();
 
-		os << GetSize() - 1;
+		os << GetSize();
 		if (chronototal.GetTime())	{
-			os << "\t" << chronototal.GetTime() / 1000;
-			os << "\t" << ((int) (propchrono.GetTime() / chronototal.GetTime() * 100));
+			os << '\t' << chronototal.GetTime() / 1000;
+			os << '\t' << ((int) (propchrono.GetTime() / chronototal.GetTime() * 100));
 			chronototal.Reset();
 			propchrono.Reset();
 		}
 		else	{
-			os << "\t" << 0;
-			os << "\t" << 0;
+			os << '\t' << 0;
+			os << '\t' << 0;
 		}
 
-		os << "\t" << GetLogLikelihood();
-		os << "\t" << GetRenormTotalLength();
-		os << "\t" << GetAlpha();
-		os << "\t" << GetNDisplayedComponent();
-		os << "\t" << GetStatEnt();
-		os << "\t" << GetMeanDirWeight();
+		os << '\t' << GetLogLikelihood();
+		os << '\t' << GetRenormTotalLength();
+		os << '\t' << GetAlpha();
+		os << '\t' << GetNDisplayedComponent();
+		os << '\t' << GetStatEnt();
+		os << '\t' << GetMeanDirWeight();
 		if (! fixrr)	{
-			os << "\t" << GetRREntropy();
-			os << "\t" << GetRRMean();
+			os << '\t' << GetRREntropy();
+			os << '\t' << GetRRMean();
 		}
 		// os << '\t' << kappa << '\t' << GetAllocEntropy();
-		os << endl;
+		os << '\n';
 
 	}
 
@@ -297,6 +301,7 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 		// cerr << "profile move\n";
 		// is called inside ExpoConjugateGTRSBDPProfileProcess::Move(1,1,10);
 		// GlobalUpdateParameters();
+		GlobalUpdateParameters();
 		ExpoConjugateGTRSBDPProfileProcess::Move(1,1,10);
 		if (iscodon){
 			ExpoConjugateGTRSBDPProfileProcess::Move(0.1,1,15);
@@ -353,12 +358,25 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 		GlobalUpdateParameters();
 	}
 
+	int isObserved(int site, int k)	{
+		int obs = 0;
+		for (int j=0; j<GetNtaxa(); j++)	{
+			if (GetData()->GetState(j,site) == k)	{
+				obs = 1;
+			}
+		}
+		return obs;
+	}
+
 	virtual void ReadPB(int argc, char* argv[]);
 	void ReadNocc(string name, int burnin, int every, int until);
 	void ReadRelRates(string name, int burnin, int every, int until);
 	void ReadSiteProfiles(string name, int burnin, int every, int until);
 	void SlaveComputeCVScore();
 	void SlaveComputeSiteLogL();
+
+	double ProfileProposal(double* profile, int cat, double tuning);
+	void ReadTestProfile(string name, int nrep, double tuning, int burnin, int every, int until);
 
 	protected:
 

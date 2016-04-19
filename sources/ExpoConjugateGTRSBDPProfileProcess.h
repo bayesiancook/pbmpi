@@ -24,7 +24,7 @@ class ExpoConjugateGTRSBDPProfileProcess : public virtual MatrixSBDPProfileProce
 
 	public:
 
-	ExpoConjugateGTRSBDPProfileProcess() {}
+	ExpoConjugateGTRSBDPProfileProcess() : InitIncremental(0) {}
 	virtual ~ExpoConjugateGTRSBDPProfileProcess() {}
 
 	virtual double Move(double tuning = 1, int n = 1, int nrep = 1)	{
@@ -45,6 +45,14 @@ class ExpoConjugateGTRSBDPProfileProcess : public virtual MatrixSBDPProfileProce
 			GlobalUpdateParameters();
 			GlobalUpdateSiteProfileSuffStat();
 			UpdateModeProfileSuffStat();
+
+			if ((!rep) && InitIncremental)	{
+				cerr << "init incremental\n";
+				InitIncremental--;
+				IncrementalSampleAlloc();
+				UpdateModeProfileSuffStat();
+			}
+
 			GlobalMixMove(5,1,0.001,40);
 			// MixMove(5,1,0.001,40);
 			MoveOccupiedCompAlloc(5);
@@ -99,7 +107,39 @@ class ExpoConjugateGTRSBDPProfileProcess : public virtual MatrixSBDPProfileProce
 	void ToStream(ostream& os);
 	void FromStream(istream& is);
 
+	virtual int isObserved(int site, int k) = 0;
+
+	double GetMinStat(int site)	{
+
+		int cat = alloc[site];
+		double min = 1;
+		for (int k=0; k<GetDim(); k++)	{
+			if (isObserved(site,k))	{
+				if (min > profile[cat][k])	{
+					min = profile[cat][k];
+				}
+			}
+		}
+		return min;
+	}
+
+	double GetMinMinStat()	{
+		double min = 1;
+		for (int i=0; i<GetNsite(); i++)	{
+			double tmp = GetMinStat(i);
+			if (min > tmp)	{
+				min = tmp;
+			}
+		}
+		return min;
+	}
+
 	protected:
+
+	virtual double LogProxy(int site, int cat)	{
+		return PoissonDiffLogSampling(cat,site);
+	}
+
 
 	virtual void SwapComponents(int cat1, int cat2)	{
 		MatrixSBDPProfileProcess::SwapComponents(cat1,cat2);
@@ -118,6 +158,8 @@ class ExpoConjugateGTRSBDPProfileProcess : public virtual MatrixSBDPProfileProce
 	Chrono totchrono;
 	Chrono profilechrono;
 	Chrono incchrono;
+
+	int InitIncremental;
 };
 
 #endif

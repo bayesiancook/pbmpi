@@ -67,7 +67,7 @@ class SubstitutionProcess : public virtual RateProcess, public virtual ProfilePr
 
 	public:
 
-	SubstitutionProcess() : condsitelogL(0), sitelogL(0), ratealloc(0), infprobcount(0), suboverflowcount(0) {}
+	SubstitutionProcess() : condsitelogL(0), sitelogL(0), meansiterate(0), ratealloc(0), infprobcount(0), suboverflowcount(0) {}
 	virtual ~SubstitutionProcess() {}
 
 	// basic accessors, needed to perform elementary likelihood computations and substitution mappings
@@ -130,10 +130,13 @@ class SubstitutionProcess : public virtual RateProcess, public virtual ProfilePr
 	// implemented in GTR or POisson Substitution process
 	virtual void Propagate(double*** from, double*** to, double time, bool condalloc = false) = 0;
 
+	virtual void SimuPropagate(int* stateup, int* statedown, double time) = 0;
+
 	// CPU : level 1
 	// implemented in GTR or POisson Substitution process
 	// here, assumes that each site is under the rate category defined by double* ratealloc
 	virtual void ChooseStates(double*** aux, int* states);
+	virtual void SetCondToStates(double*** aux, int* states);
 	
 	// CPU : level 3
 	// implemented in GTR or POisson Substitution process
@@ -154,6 +157,7 @@ class SubstitutionProcess : public virtual RateProcess, public virtual ProfilePr
 	int sitemax;
 	double** condsitelogL;
 	double* sitelogL;
+	double* meansiterate;
 	double logL;
 	int* ratealloc;
 
