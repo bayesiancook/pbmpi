@@ -23,6 +23,54 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 using namespace std;
 
 
+void MatrixSubstitutionProcess::SimuPropagate(int* stateup, int* statedown, double time)	{
+
+	const int nstate = GetMatrix(sitemin)->GetNstate();
+	double cumul[nstate];
+	double expdiag[nstate];
+	for(int i=sitemin; i<sitemax; i++)	{
+
+		int up = stateup[i];
+
+		SubMatrix* matrix = GetMatrix(i);
+		double** eigenvect = matrix->GetEigenVect();
+		double** inveigenvect = matrix->GetInvEigenVect();
+		double* eigenval = matrix->GetEigenVal();
+
+		int j = ratealloc[i];
+		double length = time * GetRate(i,j);
+		for (int k=0; k<nstate; k++)	{
+			expdiag[k] = exp(length * eigenval[k]);
+		}
+
+		double totprob = 0;
+		for (int k=0; k<nstate; k++)	{
+			double tot = 0;
+			for (int l=0; l<nstate; l++)	{
+				tot += eigenvect[up][l] * expdiag[l] * inveigenvect[l][k];
+			}
+			totprob += tot;
+			cumul[k] = totprob;
+		}
+		if (fabs(totprob - 1) > 1e-6)	{
+			cerr << "error in MatrixSubstitutionProcess::SimuPropagate: tot prob is not 1\n";
+			cerr << totprob << '\n';
+			exit(1);
+		}
+
+		double u = rnd::GetRandom().Uniform();
+		int k = 0;
+		while ((k<nstate) && (u>cumul[k]))	{
+			k++;
+		}
+		if (k == nstate)	{
+			cerr << "error in MatrixSubstitutionProcess::SimuPropagate: overflow\n";
+			exit(1);
+		}
+		statedown[i] = k;
+	}
+}
+
 //-------------------------------------------------------------------------
 //	(CPU level 3)
 //
@@ -152,10 +200,12 @@ void MatrixSubstitutionProcess::Propagate(double*** from, double*** to, double t
 				}
 				if (maxup == 0.0)	{
 					cerr << "error in backward propagate: null up array\n";
+					cerr << "site : " << i << '\n';
 					for(l=0; l<nstate; l++)	{
 						cerr << matrix->Stationary(l) << '\n';
 					}
 					cerr << time << '\t' << length << '\n';
+					cerr << GetDim() << '\n';
 					exit(1);
 				}
 				if (max == 0.0)	{

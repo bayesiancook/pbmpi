@@ -46,6 +46,7 @@ class DPProfileProcess: public virtual MixtureProfileProcess	{
 	*/
 
 	// multinomial 
+	virtual double LogProxy(int site, int cat);
 	virtual void SampleAlloc();
 	void SampleHyper();
 

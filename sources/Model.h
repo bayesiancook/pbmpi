@@ -52,13 +52,15 @@ class Model	{
 	int every;
 	int until;
 	int saveall;
+	int incinit;
 
-	Model(string datafile, string treefile, int modeltype, int nratecat, int mixturetype, int ncat, GeneticCodeType codetype, int suffstat, int fixncomp, int empmix, string mixtype, string rrtype, int iscodon, int fixtopo, int NSPR, int NNNI, int fixcodonprofile, int fixomega, int fixbl, int omegaprior, int kappaprior, int dirweightprior, double mintotweight, int dc, int inevery, int inuntil, int insaveall, string inname, int myid, int nprocs)	{
+	Model(string datafile, string treefile, int modeltype, int nratecat, int mixturetype, int ncat, GeneticCodeType codetype, int suffstat, int fixncomp, int empmix, string mixtype, string rrtype, int iscodon, int fixtopo, int NSPR, int NNNI, int fixcodonprofile, int fixomega, int fixbl, int omegaprior, int kappaprior, int dirweightprior, double mintotweight, int dc, int inevery, int inuntil, int insaveall, int inincinit, string inname, int myid, int nprocs)	{
 
 		every = inevery;
 		until = inuntil;
 		name = inname;
 		saveall = insaveall;
+		incinit = inincinit;
 
 		// 1 : CAT
 		// 2 : CATGTR
@@ -83,7 +85,7 @@ class Model	{
 			}
 			else	{
 				type = "CATSBDP";
-				process = new RASCATSBDPGammaPhyloProcess(datafile,treefile,nratecat,iscodon,codetype,fixtopo,NSPR,NNNI,kappaprior,mintotweight,dc,myid,nprocs); 
+				process = new RASCATSBDPGammaPhyloProcess(datafile,treefile,nratecat,iscodon,codetype,fixtopo,NSPR,NNNI,kappaprior,mintotweight,dc,incinit,myid,nprocs); 
 			}
 		}
 
@@ -109,7 +111,7 @@ class Model	{
 			else if (mixturetype == 3)	{
 				if (suffstat)	{
 					type = "CATGTRSBDP";
-					process = new RASCATGTRSBDPGammaPhyloProcess(datafile,treefile,nratecat,iscodon,codetype,rrtype,fixtopo,NSPR,NNNI,kappaprior,mintotweight,dc,myid,nprocs); 
+					process = new RASCATGTRSBDPGammaPhyloProcess(datafile,treefile,nratecat,iscodon,codetype,rrtype,fixtopo,NSPR,NNNI,kappaprior,mintotweight,dc,incinit,myid,nprocs); 
 				}
 				else	{
 					cerr << "gpss deprecated\n";
@@ -309,6 +311,7 @@ class Model	{
 			process->IncSize();
 
 			ofstream os((name + ".treelist").c_str(), ios_base::app);
+			process->SetNamesFromLengths();
 			process->RenormalizeBranchLengths();
 			GetTree()->ToStream(os);
 			process->DenormalizeBranchLengths();

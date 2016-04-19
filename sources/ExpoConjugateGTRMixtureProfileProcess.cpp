@@ -120,3 +120,32 @@ double ExpoConjugateGTRMixtureProfileProcess::LogStatProb(int site, int cat)	{
 	}
 	return total;
 }
+
+
+
+double ExpoConjugateGTRMixtureProfileProcess::PoissonDiffLogSampling(int cat, int site)	{
+
+	const int* nsub = GetSiteProfileSuffStatCount(site);
+	int* catnsub = profilesuffstatcount[cat];
+	int totalsub = 0;
+	double priorweight = 0;
+	int grandtotal = 0;
+	for (int k=0; k<GetDim(); k++)	{
+		totalsub += nsub[k];
+		priorweight += dirweight[k];
+		grandtotal += catnsub[k];
+	}
+	
+	double total = 0;
+	for (int j=0; j< totalsub; j++)	{
+		total -= log(priorweight + grandtotal + j);
+	}
+	for (int k=0; k<GetDim(); k++)	{
+		for (int j=0; j< nsub[k]; j++)	{
+			total += log(dirweight[k] + catnsub[k] + j);
+		}
+	}
+	return total;
+}
+
+

@@ -58,7 +58,7 @@ class PoissonMixtureProfileProcess: public virtual PoissonProfileProcess, public
 	// difference between:
 	// suffstat lnL of all sites allocated to component cat when site <site> is among them, and
 	// suffstat lnL of all sites allocated to component cat when site <site> is not among them
-	double DiffLogSampling(int site, int cat);
+	double DiffLogSampling(int cat, int site);
 	virtual double LogStatProb(int site, int cat);
 	double LogStatIntPrior(int cat);
 	double LogStatIntPrior();

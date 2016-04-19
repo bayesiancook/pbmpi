@@ -173,6 +173,9 @@ void AACodonMutSelSBDPPhyloProcess::SlaveExecute(MESSAGE signal)	{
 	case MIX_MOVE:
 		SlaveMixMove();
 		break;
+	case NONSYNMAPPING:
+		SlaveNonSynMapping();
+		break;
 	default:
 		PhyloProcess::SlaveExecute(signal);
 	}
@@ -392,7 +395,11 @@ void AACodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
 	int cv = 0;
 	int sel = 0;
 	int map = 0;
+	int mapstats = 0;
 	string testdatafile = "";
+	int rateprior = 0;
+	int profileprior = 0;
+	int rootprior = 0;
 
 	try	{
 
@@ -409,6 +416,9 @@ void AACodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
 			else if (s == "-map")	{
 				map = 1;
 			}
+			else if (s == "-mapstats")	{
+				mapstats = 1;
+			}
 			else if (s == "-cv")	{
 				cv = 1;
 				i++;
@@ -416,6 +426,48 @@ void AACodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
 			}
 			else if (s == "-ppred")	{
 				ppred = 1;
+			}
+			else if (s == "-ppredrate")	{
+				i++;
+				string tmp = argv[i];
+				if (tmp == "prior")	{
+					rateprior = 1;
+				}
+				else if ((tmp == "posterior") || (tmp == "post"))	{
+					rateprior = 0;
+				}
+				else	{
+					cerr << "error after ppredrate: should be prior or posterior\n";
+					throw(0);
+				}
+			}
+			else if (s == "-ppredprofile")	{
+				i++;
+				string tmp = argv[i];
+				if (tmp == "prior")	{
+					profileprior = 1;
+				}
+				else if ((tmp == "posterior") || (tmp == "post"))	{
+					profileprior = 0;
+				}
+				else	{
+					cerr << "error after ppredprofile: should be prior or posterior\n";
+					throw(0);
+				}
+			}
+			else if (s == "-ppredroot")	{
+				i++;
+				string tmp = argv[i];
+				if (tmp == "prior")	{
+					rootprior = 1;
+				}
+				else if ((tmp == "posterior") || (tmp == "post"))	{
+					rootprior = 0;
+				}
+				else	{
+					cerr << "error after ppredroot: should be prior or posterior\n";
+					throw(0);
+				}
 			}
 			else if (s == "-div")	{
 				ppred = 2;
@@ -465,78 +517,24 @@ void AACodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
 	if (map)	{
 		ReadMap(name,burnin,every,until);
 	}
-	/*
-	else if (nonsynreadmap)	{
-		NonSynReadMap(name,burnin,every,until);
-	}
-	*/
 	else if (cv)	{
 		ReadCV(testdatafile,name,burnin,every,until,1,codetype);
 	}
 	//if (sel)	{
 	//	ReadSDistributions(name,burnin,every,until);
 	//}
+	else if (mapstats)	{
+		ReadMapStats(name,burnin,every,until);
+	}
 	else if (ppred)	{
-		PostPred(ppred,name,burnin,every,until);
+		PostPred(ppred,name,burnin,every,until,rateprior,profileprior,rootprior);
 	}
 	else	{
 		Read(name,burnin,every,until);
 	}
 }
 
-/*
-double AACodonMutSelSBDPPhyloProcess::GlobalGetNonSynNumber()	{
-
-	// send signal
-	MPI_Status stat;
-	MESSAGE signal = GETNONSYN;
-	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
-
-	// collect
-
-	double total = 0;
-	for(int i=0; i<GetNprocs()-1; ++i) {
-		double tmp = 0;
-		MPI_Recv(&tmp,1,MPI_DOUBLE,i+1,TAG1,MPI_COMM_WORLD,&stat);
-		total += tmp;
-	}
-	cerr << total << '\n';
-	return total/GetNsite();
-}
-
-void AACodonMutSelSBDPPhyloProcess::SlaveGetNonSynNumber()	{
-
-	// sum over sites
-	double nnonsyn = 0;
-	for (int i=0; i<GetNsite(); i++)	{
-		nnonsyn += GetNonSynNumber(GetRoot());
-	}
-
-	// send
-	MPI_Send(nnonsyn,1,MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
-}
-
-double AACodonMutSelPhyloProcess::GetNonSynNumber(const Link* from, int site){
-
-	int finalstate = 0;
-	if(from->isRoot()){
-		
-	}
-	else{
-		BranchSitePath* mybsp = submap[GetBranchIndex(from->GetBranch())][i];
-		double l = GetLength(from->GetBranch());
-		os << '_' << GetStateSpace()->GetState(mybsp->Last()->GetState());
-		for(Plink* plink = mybsp->Last(); plink ; plink = plink->Prev()){
-			os << ':' << plink->GetRelativeTime() * l << ':' << GetStateSpace()->GetState(plink->GetState());
-		}
-	}
-
-	for (const Link* link=from->Next(); link!=from; link=link->Next()){
-		total += GetNonSynNumber(link->Out(),site);
-	}
-}
-
-void AACodonMutSelSBDPPhyloProcess::NonSynReadMap(string name, int burnin, int every, int until){
+void AACodonMutSelSBDPPhyloProcess::ReadMapStats(string name, int burnin, int every, int until){
   	ifstream is((name + ".chain").c_str());
 	if (!is)	{
 		cerr << "error: no .chain file found\n";
@@ -549,16 +547,15 @@ void AACodonMutSelSBDPPhyloProcess::NonSynReadMap(string name, int burnin, int e
 		FromStream(is);
 		i++;
 	}
+
+	
+	ofstream ospost((name + ".nonsynpost").c_str());
+	ofstream ospred((name + ".nonsynpred").c_str());
+	ofstream ospvalue((name + ".nonsynpvalue").c_str());
+
 	int samplesize = 0;
-
-	double mean = 0;
-	double var = 0;
-	double meanpost = 0;
-	double varpost = 0;
-	double meanppred = 0;
-	double varppred = 0;
-	double pp = 0;
-
+	int pvalue=0;
+	int obs, pred;
 	while (i < until)	{
 		cerr << ".";
 		cerr.flush();
@@ -566,47 +563,34 @@ void AACodonMutSelSBDPPhyloProcess::NonSynReadMap(string name, int burnin, int e
 		FromStream(is);
 		i++;
 
-		// prepare file for ancestral node states
-		ostringstream s;
-		// s << name << "_" << samplesize << ".nodestates";
-		ofstream sos(s.str().c_str());
-
 		MPI_Status stat;
 		MESSAGE signal = BCAST_TREE;
 		MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 		GlobalBroadcastTree();
+		GlobalUpdateConditionalLikelihoods();
 		GlobalCollapse();
 
-		// write posterior mappings
-		// GlobalWriteMappings(name);
-		double post = GlobalGetNonSynNumber();
+		GlobalUpdateSiteProfileSuffStat();
 
-		// write posterior ancestral node states
+		// write posterior
+		obs = GlobalNonSynMapping();
+		ospost << (double) (obs) / AACodonMutSelProfileProcess::GetNsite() << "\n";
+		cerr << (double) (obs) / AACodonMutSelProfileProcess::GetNsite() << "\t";
 
 		GlobalUnfold();
 
 		//Posterior Prededictive Mappings
 		GlobalUnclamp();
 		GlobalCollapse();
+		GlobalUpdateSiteProfileSuffStat();
 		GlobalSetDataFromLeaves();
 
-		// write posterior predictive mappings
-		// GlobalWriteMappings(name);
-		double ppred = GlobalGetNonSynNumber();
-
-		sos << post << '\t' << ppred << '\n';
-		if (post > ppred)	{
-			pp++;
-		}
-		double tmp = post-ppred;
-		mean += tmp;
-		var += tmp*tmp;
-		meanpost += post;
-		varpost += post*post;
-		meanppred += ppred;
-		varppred += ppred*ppred;
-
-		// write posterior predictive ancestral node states
+		// write posterior predictive
+		pred = GlobalNonSynMapping();
+		ospred << (double) (pred) / AACodonMutSelProfileProcess::GetNsite() << "\n";
+		cerr << (double) (pred) / AACodonMutSelProfileProcess::GetNsite() << "\n";
+	
+		if (pred > obs) pvalue++;
 
 		GlobalRestoreData();
 		GlobalUnfold();
@@ -618,28 +602,11 @@ void AACodonMutSelSBDPPhyloProcess::NonSynReadMap(string name, int burnin, int e
 			nrep++;
 		}
 	}
-	cerr << '\n';
 
-	// normalize statistics
-	mean /= samplesize;
-	var /= samplesize;
-	var -= mean * mean;
-	meanpost /= samplesize;
-	varpost /= samplesize;
-	varpost -= meanpost * meanpost;
-	meanppred /= samplesize;
-	varppred /= samplesize;
-	varppred -= meanppred * meanppred;
-	pp /= samplesize;
-
-	cerr << '\n';
-	cerr << "mean post : " << meanpost << " +/- " sqrt(varpost) << '\n';
-	cerr << "mean post : " << meanpost << " +/- " sqrt(varpost) << '\n';
-	cerr << "mean post : " << meanpost << " +/- " sqrt(varpost) << '\n';
-	cerr << "post pred pvalue : << pp << '\n';
+	ospvalue << (double) (pvalue) / samplesize << "\n";
 	cerr << '\n';
 }
-*/
+
 
 void AACodonMutSelSBDPPhyloProcess::Read(string name, int burnin, int every, int until)	{
 
@@ -1205,3 +1172,70 @@ void AACodonMutSelSBDPPhyloProcess::Read(string name, int burnin, int every, int
 	delete[] meanCodonProfile;
 }
 
+
+int AACodonMutSelSBDPPhyloProcess::CountNonSynMapping()	{
+
+	int total = 0;	
+	for(int i = sitemin; i < sitemax; i++){
+		//total += CountNonSynMapping(GetRoot(), i);
+		total += CountNonSynMapping(i);
+	}
+	return total;
+}
+
+/*
+int AACodonMutSelSBDPPhyloProcess::CountNonSynMapping(const Link* from, int i)	{
+	int count = 0;
+	if(!from->isLeaf()){
+		for (const Link* link=from->Next(); link!=from; link=link->Next()){
+			count += CountNonSynMapping(link->Out(), i);
+		}
+	}
+	if(!from->isRoot()){
+		BranchSitePath* mybsp = PhyloProcess::submap[GetBranchIndex(from->GetBranch())][i];
+		Plink* plink = mybsp->Init();
+		while (plink != mybsp->Last())	{
+			if (! AACodonMutSelProfileProcess::statespace->Synonymous(plink->GetState(), plink->Next()->GetState()) )	{
+				count++;
+			}
+			plink = plink->Next();
+		}
+	}
+	return count;
+}
+*/
+
+int AACodonMutSelSBDPPhyloProcess::CountNonSynMapping(int i)	{
+	int count = 0;
+	for(int k=0; k<GetNstate(); ++k) {
+		for(int l=0; l<GetNstate(); ++l) {
+		// 	if (!AACodonMutSelProfileProcess::statespace->Synonymous(k, l)) {
+				count+=sitepaircount[i][pair<int,int>(k,l)];
+		//	}
+		}
+	}
+	return count;
+}
+
+int AACodonMutSelSBDPPhyloProcess::GlobalNonSynMapping()	{
+
+	assert(myid==0);
+	MESSAGE signal = NONSYNMAPPING;
+	MPI_Status stat;
+	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+
+	int i, count, totalcount=0;
+	for (i=1; i<nprocs; ++i)	{
+		MPI_Recv(&count,1,MPI_INT,MPI_ANY_SOURCE,TAG1,MPI_COMM_WORLD, &stat);
+		totalcount += count;
+	}
+	return totalcount;
+
+}
+
+void AACodonMutSelSBDPPhyloProcess::SlaveNonSynMapping()	{
+
+	int nonsyn = CountNonSynMapping();
+	MPI_Send(&nonsyn,1,MPI_INT,0,TAG1,MPI_COMM_WORLD);
+
+}

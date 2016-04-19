@@ -161,7 +161,7 @@ void RASCATFiniteGammaPhyloProcess::SlaveUpdateParameters()	{
 	delete[] dvector;
 	delete[] ivector;
 
-	// some upate here ?
+	UpdateZip();
 }
 
 void RASCATFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
@@ -178,7 +178,11 @@ void RASCATFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	int cv = 0;
 	int sitelogl = 0;
 	int map = 0;
+	int rates = 0;
 	string testdatafile = "";
+	int rateprior = 0;
+	int profileprior = 0;
+	int rootprior = 0;
 
 	try	{
 
@@ -198,8 +202,53 @@ void RASCATFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 			else if (s == "-ppred")	{
 				ppred = 1;
 			}
+			else if (s == "-ppredrate")	{
+				i++;
+				string tmp = argv[i];
+				if (tmp == "prior")	{
+					rateprior = 1;
+				}
+				else if ((tmp == "posterior") || (tmp == "post"))	{
+					rateprior = 0;
+				}
+				else	{
+					cerr << "error after ppredrate: should be prior or posterior\n";
+					throw(0);
+				}
+			}
+			else if (s == "-ppredprofile")	{
+				i++;
+				string tmp = argv[i];
+				if (tmp == "prior")	{
+					profileprior = 1;
+				}
+				else if ((tmp == "posterior") || (tmp == "post"))	{
+					profileprior = 0;
+				}
+				else	{
+					cerr << "error after ppredprofile: should be prior or posterior\n";
+					throw(0);
+				}
+			}
+			else if (s == "-ppredroot")	{
+				i++;
+				string tmp = argv[i];
+				if (tmp == "prior")	{
+					rootprior = 1;
+				}
+				else if ((tmp == "posterior") || (tmp == "post"))	{
+					rootprior = 0;
+				}
+				else	{
+					cerr << "error after ppredroot: should be prior or posterior\n";
+					throw(0);
+				}
+			}
 			else if (s == "-sitelogl")	{
 				sitelogl = 1;
+			}
+			else if (s == "-r")	{
+				rates = 1;
 			}
 			else if (s == "-map")	{
 				map = 1;
@@ -266,8 +315,11 @@ void RASCATFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	else if (sitelogl)	{
 		ReadSiteLogL(name,burnin,every,until);
 	}
+	else if (rates)	{
+		ReadSiteRates(name,burnin,every,until);
+	}
 	else if (ppred)	{
-		PostPred(ppred,name,burnin,every,until);
+		PostPred(ppred,name,burnin,every,until,rateprior,profileprior,rootprior);
 	}
 	else if (map)	{
 		ReadMap(name,burnin,every,until);

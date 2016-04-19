@@ -64,5 +64,4 @@ void ExpoConjugateGTRFiniteProfileProcess::FromStream(istream& is)	{
 	}
 
 	ResampleWeights();
-	// CHECK some update here ?
 }

@@ -312,12 +312,15 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 		GammaBranchProcess::FromStream(is);
 		DGamRateProcess::FromStream(is);
 		ExpoConjugateGTRFiniteProfileProcess::FromStream(is);
-		// GlobalUpdateParameters(); ?
+		GlobalUpdateParameters();
 	}
 
 	virtual void ReadPB(int argc, char* argv[]);
 	void SlaveComputeCVScore();
 	void SlaveComputeSiteLogL();
+
+	void ReadRelRates(string name, int burnin, int every, int until);
+	void ReadSiteProfiles(string name, int burnin, int every, int until);
 
 	protected:
 

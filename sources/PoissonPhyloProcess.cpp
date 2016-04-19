@@ -81,6 +81,19 @@ void PoissonPhyloProcess::DeleteSuffStat()	{
 	PhyloProcess::DeleteSuffStat();
 }
 
+/*
+void PoissonPhyloProcess::RecursiveSimulateForward(const Link* from)	{
+	
+	if (from->isRoot())	{
+		ChooseRootTrueStates(GetStates(from->GetNode()));
+	}
+	for (const Link* link=from->Next(); link!=from; link=link->Next())	{
+		SimuPropagate(GetStates(from->GetNode()),GetStates(link->Out()->GetNode()),GetLength(link->GetBranch()));
+		RecursiveSimulateForward(link->Out());
+	}
+}
+*/
+
 void PoissonPhyloProcess::UpdateBranchLengthSuffStat()	{
 	if (! GetMyid())	{
 		cerr << "error in update branch length suff stat: master\n";

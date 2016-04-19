@@ -43,6 +43,7 @@ class MatrixSubstitutionProcess : public virtual SubstitutionProcess, public vir
 	BranchSitePath* ResampleAcceptReject(int maxtrial, int stateup, int statedown, double rate, double totaltime, SubMatrix* matrix);
 	BranchSitePath* ResampleUniformized(int stateup, int statedown, double rate, double totaltime, SubMatrix* matrix);
 
+	void SimuPropagate(int* stateup, int* statedown, double time);
 };
 
 #endif

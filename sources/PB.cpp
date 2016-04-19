@@ -75,6 +75,7 @@ int main(int argc, char* argv[])	{
 	int suffstat = 1;
 
 	int saveall = 1;
+	int incinit = 0;
 
 	int burnin = 0;
 
@@ -158,6 +159,14 @@ int main(int argc, char* argv[])	{
 			}
 			else if (s == "-S")	{
 				saveall = 0;
+			}
+			else if (s == "-priorinit")	{
+				incinit = 0;
+			}
+			else if (s == "-incinit")	{
+				i++;
+				incinit = atoi(argv[i]);
+				// incinit = 0;
 			}
 			else if ((s == "-poisson") || (s == "-f81"))	{
 				modeltype = 1;
@@ -544,7 +553,7 @@ int main(int argc, char* argv[])	{
 				exit(1);
 			}
 		}
-		model = new Model(datafile,treefile,modeltype,dgam,mixturetype,ncat,type,suffstat,fixncomp,empmix,mixtype,rrtype,iscodon,fixtopo,NSPR,NNNI,fixcodonprofile,fixomega,fixbl,omegaprior,kappaprior,dirweightprior,mintotweight,dc,every,until,saveall,name,myid,nprocs);
+		model = new Model(datafile,treefile,modeltype,dgam,mixturetype,ncat,type,suffstat,fixncomp,empmix,mixtype,rrtype,iscodon,fixtopo,NSPR,NNNI,fixcodonprofile,fixomega,fixbl,omegaprior,kappaprior,dirweightprior,mintotweight,dc,every,until,saveall,incinit,name,myid,nprocs);
 		if (! myid)	{
 			// cerr << "create files\n";
 			cerr << '\n';

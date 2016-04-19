@@ -25,6 +25,8 @@ const int refnmodemax = 5000;
 // general superclass for all finite process mixtures on site-specific profiles
 class SBDPProfileProcess: public virtual DPProfileProcess	{
 
+	using MixtureProfileProcess::LogStatPrior;
+
 	public:
 
 	SBDPProfileProcess() : DPProfileProcess(), nmodemax(refnmodemax), V(0), maxweighterror(0) {}
@@ -95,6 +97,8 @@ class SBDPProfileProcess: public virtual DPProfileProcess	{
 
 	// redefined
 	void SampleAlloc();
+
+	void IncrementalSampleAlloc();
 
 	void SampleWeights();
 	void ResampleWeights();

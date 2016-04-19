@@ -53,7 +53,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	// virtual void SlaveUpdate();
 
 	// default constructor: pointers set to nil
-	PhyloProcess() :  siteratesuffstatcount(0), siteratesuffstatbeta(0), branchlengthsuffstatcount(0), branchlengthsuffstatbeta(0), condflag(false), data(0), myid(-1), nprocs(0), size(0), version("1.6"), totaltime(0)  {} // smin(0), smax(0) {}
+	PhyloProcess() :  siteratesuffstatcount(0), siteratesuffstatbeta(0), branchlengthsuffstatcount(0), branchlengthsuffstatbeta(0), condflag(false), data(0), myid(-1), nprocs(0), size(0), version("1.6"), totaltime(0), dataclamped(1) {} // smin(0), smax(0) {}
 	virtual ~PhyloProcess() {}
 
 	string GetVersion() {return version;}
@@ -201,16 +201,21 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 
 	public: 
 
-	void QuickUpdate()	{
+	virtual void QuickUpdate()	{
 
 		MPI_Status stat;
 		MESSAGE signal = BCAST_TREE;
 		MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 		GlobalBroadcastTree();
 		
+		GlobalUpdateConditionalLikelihoods();
 		GlobalCollapse();
 		GlobalUnfold();
 	}
+
+	void GlobalSimulateForward();
+	void SimulateForward();
+	virtual void RecursiveSimulateForward(const Link* from);
 
 	virtual void SetDataFromLeaves()	{
 		for (int i=sitemin; i<sitemax; i++)	{
@@ -246,7 +251,9 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	virtual void Read(string name, int burnin, int every, int until);
 	virtual void ReadSiteLogL(string name, int burnin, int every, int until);
 	virtual void ReadCV(string testdatafile, string name, int burnin, int every, int until, int iscodon = 0, GeneticCodeType codetype = Universal);
-	virtual void PostPred(int ppredtype, string name, int burnin, int every, int until);
+	virtual void PostPred(int ppredtype, string name, int burnin, int every, int until, int rateprior, int profileprior, int rootprior);
+
+	void ReadSiteRates(string name, int burnin, int every, int until);
 
 	// The following methids are here to write the mappings.
 	void ReadMap(string name, int burnin, int every, int until);
@@ -404,7 +411,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 
 	void CreateConditionalLikelihoods();
 	void DeleteConditionalLikelihoods();
-	void UpdateConditionalLikelihoods();
+	virtual void UpdateConditionalLikelihoods();
 
 	double*** GetConditionalLikelihoodVector(const Link* link)	{
 		return condlmap[GetLinkIndex(link)];
@@ -434,12 +441,21 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	void SlaveUpdateSiteRateSuffStat();
 	void SlaveUpdateBranchLengthSuffStat();
 
-	virtual double GetObservedCompositionalHeterogeneity()	{
-		return data->CompositionalHeterogeneity(0);
+	void GlobalGetMeanSiteRate();
+	void SlaveSendMeanSiteRate();
+
+	virtual int CountMapping();
+	virtual int CountMapping(int site);
+	virtual int GlobalCountMapping();
+	void SlaveCountMapping();
+
+
+	virtual double GetObservedCompositionalHeterogeneity(double* taxstat)	{
+		return data->CompositionalHeterogeneity(taxstat,0);
 	}
 
-	virtual double GetCompositionalHeterogeneity()	{
-		return data->CompositionalHeterogeneity(0);
+	virtual double GetCompositionalHeterogeneity(double* taxstat)	{
+		return data->CompositionalHeterogeneity(taxstat,0);
 	}
 
 	virtual int GetNprocs() {
@@ -497,6 +513,8 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	int testsitemin;
 	int testsitemax;
 	int bksitemax;
+
+	int dataclamped;
 };
 
 

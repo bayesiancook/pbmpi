@@ -65,6 +65,7 @@ class ExpoConjugateGTRMixtureProfileProcess : public virtual GTRMixtureProfilePr
 	int** profilesuffstatcount;
 	double** profilesuffstatbeta;
 
+	double PoissonDiffLogSampling(int cat, int site);
 };
 
 #endif

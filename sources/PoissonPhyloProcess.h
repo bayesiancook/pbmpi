@@ -70,10 +70,12 @@ class PoissonPhyloProcess : public virtual PhyloProcess, public virtual PoissonS
 		PhyloProcess::SetDataFromLeaves();
 	}
 
+	// virtual void RecursiveSimulateForward(const Link* from);
+
 	void SampleTrueNodeStates(const Link* from);
 
-	virtual double GetObservedCompositionalHeterogeneity()	{
-		return truedata->CompositionalHeterogeneity(0);
+	virtual double GetObservedCompositionalHeterogeneity(double* taxstat)	{
+		return truedata->CompositionalHeterogeneity(taxstat,0);
 	}
 
 	void RecursiveUnzipBranchSitePath(const Link* from);

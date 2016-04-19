@@ -186,7 +186,8 @@ void RASCATGTRSBDPGammaPhyloProcess::SlaveUpdateParameters()	{
 
 	MPI_Bcast(V,GetNcomponent(),MPI_DOUBLE,0,MPI_COMM_WORLD);
 	MPI_Bcast(weight,GetNcomponent(),MPI_DOUBLE,0,MPI_COMM_WORLD);
-	// some upate here ?
+
+	UpdateMatrices();
 }
 
 
@@ -207,8 +208,15 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	int cv = 0;
 	int sitelogl = 0;
 	int rr = 0;
+	int rates = 0;
 	int map = 0;
 	string testdatafile = "";
+	int rateprior = 0;
+	int profileprior = 0;
+	int rootprior = 0;
+
+	int testprofile = 0;
+	double tuning = 1;
 
 	try	{
 
@@ -228,6 +236,48 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 			else if (s == "-ppred")	{
 				ppred = 1;
 			}
+			else if (s == "-ppredrate")	{
+				i++;
+				string tmp = argv[i];
+				if (tmp == "prior")	{
+					rateprior = 1;
+				}
+				else if ((tmp == "posterior") || (tmp == "post"))	{
+					rateprior = 0;
+				}
+				else	{
+					cerr << "error after ppredrate: should be prior or posterior\n";
+					throw(0);
+				}
+			}
+			else if (s == "-ppredprofile")	{
+				i++;
+				string tmp = argv[i];
+				if (tmp == "prior")	{
+					profileprior = 1;
+				}
+				else if ((tmp == "posterior") || (tmp == "post"))	{
+					profileprior = 0;
+				}
+				else	{
+					cerr << "error after ppredprofile: should be prior or posterior\n";
+					throw(0);
+				}
+			}
+			else if (s == "-ppredroot")	{
+				i++;
+				string tmp = argv[i];
+				if (tmp == "prior")	{
+					rootprior = 1;
+				}
+				else if ((tmp == "posterior") || (tmp == "post"))	{
+					rootprior = 0;
+				}
+				else	{
+					cerr << "error after ppredroot: should be prior or posterior\n";
+					throw(0);
+				}
+			}
 			else if (s == "-sitelogl")	{
 				sitelogl = 1;
 			}
@@ -236,11 +286,20 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 				i++;
 				testdatafile = argv[i];
 			}
+			else if (s == "-testprofile")	{
+				i++;
+				testprofile = atoi(argv[i]);
+				i++;
+				tuning = atof(argv[i]);
+			}
 			else if (s == "-ss")	{
 				ss = 1;
 			}
 			else if (s == "-rr")	{
 				rr = 1;
+			}
+			else if (s == "-r")	{
+				rates = 1;
 			}
 			else if (s == "-map")	{
 				map = 1;
@@ -302,8 +361,14 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	if (nocc)	{
 		ReadNocc(name,burnin,every,until);
 	}
+	else if (testprofile)	{
+		ReadTestProfile(name,testprofile,tuning,burnin,every,until);
+	}
 	else if (cv)	{
 		ReadCV(testdatafile,name,burnin,every,until);
+	}
+	else if (rates)	{
+		ReadSiteRates(name,burnin,every,until);
 	}
 	else if (sitelogl)	{
 		ReadSiteLogL(name,burnin,every,until);
@@ -315,7 +380,7 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 		ReadRelRates(name,burnin,every,until);
 	}
 	else if (ppred)	{
-		PostPred(ppred,name,burnin,every,until);
+		PostPred(ppred,name,burnin,every,until,rateprior,profileprior,rootprior);
 	}
 	else if (map)	{
 		ReadMap(name,burnin,every,until);
@@ -323,6 +388,152 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	else	{
 		Read(name,burnin,every,until);
 	}
+}
+
+
+double RASCATGTRSBDPGammaPhyloProcess::ProfileProposal(double* profile, int cat, double tuning)	{
+
+	double statmin = stateps;
+
+	double alpha[GetDim()];
+	double targetweight = 0;
+	/*
+	if (rnd::GetRandom().Uniform() > tuning)	{
+		for (int k=0; k<GetDim(); k++)	{
+			alpha[k] = dirweight[k];
+			targetweight += alpha[k];
+		}
+	}
+	else	{
+	*/
+		double totweight = 0;
+		double totalpha = 0;
+		for (int k=0; k<GetDim(); k++)	{
+			double tmp =  (tuning + profilesuffstatcount[cat][k] + dirweight[k]);
+			totweight += tmp;
+			tmp /= (tuning + profilesuffstatbeta[cat][k]);
+			alpha[k] = tmp;
+			totalpha += tmp;
+		}
+		for (int k=0; k<GetDim(); k++)	{
+			alpha[k] *= totweight / totalpha;
+			targetweight += alpha[k];
+		}
+	// }
+
+	double logHastings = 0;
+	for (int k=0; k<GetDim(); k++)	{
+		logHastings += (alpha[k] - 1) * log(profile[k]);
+	}
+
+
+	double total = 0;
+	for (int k=0; k<GetDim(); k++)	{
+		profile[k] = rnd::GetRandom().sGamma(alpha[k]);
+		if (profile[k] < statmin)	{
+			profile[k] = statmin;
+		}
+		total += profile[k];
+	}
+
+	for (int k=0; k<GetDim(); k++)	{
+		profile[k] /= total;
+		logHastings -= (alpha[k] - 1) * log(profile[k]);
+		// logHastings -= (alpha[k] - 1) * log(profile[k]) - rnd::GetRandom().logGamma(alpha[k]);
+	}
+
+	return logHastings;
+
+}
+
+void RASCATGTRSBDPGammaPhyloProcess::ReadTestProfile(string name, int nrep, double tuning, int burnin, int every, int until)	{
+
+	ifstream is((name + ".chain").c_str());
+	if (!is)	{
+		cerr << "error: no .chain file found\n";
+		exit(1);
+	}
+
+	cerr << "burnin : " << burnin << "\n";
+	cerr << "until : " << until << '\n';
+	int i=0;
+	while ((i < until) && (i < burnin))	{
+		FromStream(is);
+		i++;
+	}
+	int samplesize = 0;
+
+	double min = 1.0;
+	double mean = 0;
+	double tot = 0;
+
+	ofstream os((name + ".testprofile").c_str());
+
+	while (i < until)	{
+		cerr << ".";
+		cerr.flush();
+		samplesize++;
+		FromStream(is);
+		i++;
+
+		QuickUpdate();
+		GlobalCollapse();
+
+		// collect suff stats
+		GlobalUpdateSiteProfileSuffStat();
+		UpdateModeProfileSuffStat();
+		UpdateOccupancyNumbers();
+
+		// for each component
+		// propose try new profiles
+		// calculate the acceptance probability
+		// as if in a gibbs
+		// average over nrep replicates
+		for (int k=0; k<Ncomponent; k++)	{
+			if (occupancy[k])	{
+			double bkprofile[GetDim()];
+			for (int j=0; j<GetDim(); j++)	{
+				bkprofile[j] = profile[k][j];
+			}
+			double a = 0;
+			for (int rep=0; rep<nrep; rep++)	{
+				double logratio = - ProfileSuffStatLogProb(k) - LogStatPrior(k);
+				double logh = ProfileProposal(profile[k],k,tuning);
+				logratio += ProfileSuffStatLogProb(k) + LogStatPrior(k);
+				logratio += logh;
+				if (logratio < 0)	{
+					a += exp(logratio);
+				}
+			}
+			a /= nrep;
+			os << occupancy[k] << '\t' << a << '\n';
+			mean += occupancy[k] * a;
+			tot += occupancy[k];
+			if (min > a)	{
+				min = a;
+			}
+			for (int j=0; j<GetDim(); j++)	{
+				profile[k][j] = bkprofile[j];
+			}
+			}
+		}
+
+		int nrep = 1;
+		while ((i<until) && (nrep < every))	{
+			FromStream(is);
+			i++;
+			nrep++;
+		}
+
+		GlobalUnfold();
+	}
+	cerr << '\n';
+	cerr << "average acceptance rate : " << mean / tot << '\n';
+	cerr << "minimum acceptance rate : " << min << '\n';
+	cerr << '\n';
+
+	// delete arrays
+
 }
 
 void RASCATGTRSBDPGammaPhyloProcess::ReadRelRates(string name, int burnin, int every, int until)	{
@@ -354,8 +565,14 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadRelRates(string name, int burnin, int e
 		FromStream(is);
 		i++;
 
+		double total = 0;
 		for (int k=0; k<GetNrr(); k++)	{
-			meanrr[k] += rr[k];
+			total += rr[k];
+		}
+		total /= GetNrr();
+
+		for (int k=0; k<GetNrr(); k++)	{
+			meanrr[k] += rr[k] / total;
 		}
 
 		int nrep = 1;

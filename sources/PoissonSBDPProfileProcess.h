@@ -24,7 +24,7 @@ class PoissonSBDPProfileProcess: public virtual PoissonDPProfileProcess, public 
 
 	public:
 
-	PoissonSBDPProfileProcess() {}
+	PoissonSBDPProfileProcess() : InitIncremental(0) {}
 	virtual ~PoissonSBDPProfileProcess() {}
 
 	virtual double Move(double tuning = 1, int n = 1, int nrep = 1)	{
@@ -36,6 +36,12 @@ class PoissonSBDPProfileProcess: public virtual PoissonDPProfileProcess, public 
 			GlobalUpdateParameters();
 			GlobalUpdateSiteProfileSuffStat();
 			UpdateModeProfileSuffStat();
+			if ((!rep) && InitIncremental)	{
+				cerr << "init incremental\n";
+				InitIncremental--;
+				IncrementalSampleAlloc();
+				UpdateModeProfileSuffStat();
+			}
 			GlobalMixMove(5,1,0.001);
 			MoveOccupiedCompAlloc(5);
 			MoveAdjacentCompAlloc(5);
@@ -46,6 +52,10 @@ class PoissonSBDPProfileProcess: public virtual PoissonDPProfileProcess, public 
 		}
 		// totchrono.Stop();
 		return 1;
+	}
+
+	virtual double LogProxy(int site, int cat)	{
+		return DiffLogSampling(cat,site);
 	}
 
 	protected:
@@ -83,6 +93,8 @@ class PoissonSBDPProfileProcess: public virtual PoissonDPProfileProcess, public 
 		PoissonDPProfileProcess::FromStream(is);
 		ResampleWeights();
 	}
+
+	int InitIncremental;
 
 };
 

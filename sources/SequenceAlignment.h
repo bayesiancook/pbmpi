@@ -18,6 +18,7 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 
 #include "StateSpace.h"
 #include "TaxonSet.h"
+#include "Random.h"
 
 // this class works like an interface
 // it does not do any job
@@ -65,6 +66,122 @@ class SequenceAlignment	{
 		BKData = 0;
 	}
 	
+	SequenceAlignment(SequenceAlignment* from, int N, int Ngene, int* genesize, int* exclude)	{
+
+		Ntaxa = from->Ntaxa;
+
+		int* include = new int[Ngene];
+		int nex = 0;
+		for (int i=0; i<Ngene; i++)	{
+			nex += exclude[i];
+			include[i] = exclude[i];
+		}
+
+		int Nleft = Ngene - nex;
+		for (int i=0; i<N; i++)	{
+			int gene = (int) (Nleft * rnd::GetRandom().Uniform());
+			int k = 0;
+			while (gene)	{
+				if (!include[k])	{
+					gene--;
+				}
+				k++;
+			}
+			if (include[k])	{
+				k++;
+			}
+
+			if (k >= Ngene)	{
+				cerr << "error : Ngene overflow\n";
+				exit(1);
+			}
+
+			include[k] = 1;
+			Nleft--;
+		}
+
+		int Ncheck = 0;
+		int totsize = 0;
+		for (int i=0; i<Ngene; i++)	{
+			include[i] -= exclude[i];
+			if (include[i])	{
+				Ncheck++;
+				totsize += genesize[i];
+			}
+		}
+
+		Nsite = totsize;
+
+		taxset = from->taxset;
+		statespace = from->statespace;
+
+		Data = new int*[Ntaxa];
+		for (int i=0; i<Ntaxa; i++)	{
+			Data[i] = new int[Nsite];
+		}
+
+		int kfrom = 0;
+		int kto = 0;
+		for (int i=0; i<Ngene; i++)	{
+			if (include[i])	{
+				for (int k=0; k<genesize[i]; k++)	{
+					for (int j=0; j<Ntaxa; j++)	{
+						Data[j][kto+k] = from->Data[j][kfrom+k];
+					}
+				}
+				kto += genesize[i];
+			}
+			kfrom += genesize[i];
+		}
+
+		delete[] include;
+
+		BKData = 0;
+	}
+
+	SequenceAlignment(SequenceAlignment* from, int Ngene, int* genesize, int* exclude, double* frac, double minfrac)	{
+
+		cerr << "sub alignment, missing frac per gene less than " << minfrac << '\n';
+
+		Ntaxa = from->Ntaxa;
+
+		int Ninclude = 0;
+		int totsize = 0;
+		for (int i=0; i<Ngene; i++)	{
+			if ((! exclude[i]) && (frac[i] <= minfrac))	{
+				Ninclude++;
+				totsize += genesize[i];
+			}
+		}
+
+		cerr << "alignment size : " << totsize << '\n';
+
+		Nsite = totsize;
+		taxset = from->taxset;
+		statespace = from->statespace;
+
+		Data = new int*[Ntaxa];
+		for (int i=0; i<Ntaxa; i++)	{
+			Data[i] = new int[Nsite];
+		}
+
+		int kfrom = 0;
+		int kto = 0;
+		for (int i=0; i<Ngene; i++)	{
+			if ((! exclude[i]) && (frac[i] <= minfrac))	{
+				for (int k=0; k<genesize[i]; k++)	{
+					for (int j=0; j<Ntaxa; j++)	{
+						Data[j][kto+k] = from->Data[j][kfrom+k];
+					}
+				}
+				kto += genesize[i];
+			}
+			kfrom += genesize[i];
+		}
+
+		BKData = 0;
+	}
+
 	SequenceAlignment(SequenceAlignment* from, const TaxonSet* subset)	{
 
 		Ntaxa = subset->GetNtaxa();
@@ -107,6 +224,28 @@ class SequenceAlignment	{
 			for (int j=0; j<Nsite; j++)	{
 				Data[mapi][j] = inData[i][j];
 			}
+		}
+	}
+
+	void MissingFractionPerGene(int Ngene, int* genesize, int* exclude, double* frac)	{
+
+		int offset = 0;
+
+		for (int gene=0; gene<Ngene; gene++)	{
+			
+
+			int tot = 0;
+			int mis = 0;
+			for (int j=0; j<taxset->GetNtaxa(); j++)	{
+				for (int i=0; i<genesize[gene]; i++)	{
+					if (Data[j][offset+i] == unknown)	{
+						mis++;
+					}
+					tot++;
+				}
+			}
+			frac[gene] = ((double) mis) / tot;
+			offset += genesize[gene];
 		}
 	}
 
@@ -357,7 +496,7 @@ class SequenceAlignment	{
 		return GetTotalDiversity(0,GetNsite()) / GetNsite();
 	}
 
-	double CompositionalHeterogeneity(ostream* os)	{
+	double CompositionalHeterogeneity(double* taxstat, ostream* os)	{
 
 		int Nstate = GetNstate();
 		double** taxfreq = new double*[Ntaxa];
@@ -419,6 +558,7 @@ class SequenceAlignment	{
 				double tmp = (taxfreq[j][k] - globalfreq[k]);
 				dist += tmp * tmp;
 			}
+			taxstat[j] = dist;
 			if (maxdist < dist)	{
 				maxdist = dist;
 			}
@@ -459,6 +599,7 @@ class FileSequenceAlignment : public SequenceAlignment	{
 	void 			ReadPhylipSequential(string filename);
 	int 			TestPhylip(string filename, int repeattaxa);
 	void 			ReadPhylip(string filename, int repeattaxa);
+	int			ReadSpecial(string filename);
 
 	string* SpeciesNames;
 };

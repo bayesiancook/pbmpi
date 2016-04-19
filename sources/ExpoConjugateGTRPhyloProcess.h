@@ -68,6 +68,10 @@ class ExpoConjugateGTRPhyloProcess : public virtual GTRPhyloProcess, public virt
 	void UpdateRRSuffStat();
 	void UpdateSiteProfileSuffStat();
 
+	int GlobalCountMapping();
+	int CountMapping();
+	int CountMapping(int site);
+
 	int** siteprofilesuffstatcount;
 	double** siteprofilesuffstatbeta;
 

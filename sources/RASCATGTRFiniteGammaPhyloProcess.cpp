@@ -171,9 +171,10 @@ void RASCATGTRFiniteGammaPhyloProcess::SlaveUpdateParameters()	{
 	for(i=0; i<GetNsite(); ++i) {
 		FiniteProfileProcess::alloc[i] = ivector[1+i];
 	}
-	// cerr << "after update params: " << GetTotalLength() << '\n';
 	delete[] dvector;
 	delete[] ivector;
+
+	UpdateMatrices();
 }
 
 void RASCATGTRFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
@@ -191,7 +192,14 @@ void RASCATGTRFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	int cv = 0;
 	int sitelogl = 0;
 	int map = 0;
+	int rates = 0;
 	string testdatafile = "";
+	int rateprior = 0;
+	int profileprior = 0;
+	int rootprior = 0;
+
+	int rr = 0;
+	int ss = 0;
 
 	try	{
 
@@ -211,8 +219,59 @@ void RASCATGTRFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 			else if (s == "-ppred")	{
 				ppred = 1;
 			}
+			else if (s == "-ppredrate")	{
+				i++;
+				string tmp = argv[i];
+				if (tmp == "prior")	{
+					rateprior = 1;
+				}
+				else if ((tmp == "posterior") || (tmp == "post"))	{
+					rateprior = 0;
+				}
+				else	{
+					cerr << "error after ppredrate: should be prior or posterior\n";
+					throw(0);
+				}
+			}
+			else if (s == "-ppredprofile")	{
+				i++;
+				string tmp = argv[i];
+				if (tmp == "prior")	{
+					profileprior = 1;
+				}
+				else if ((tmp == "posterior") || (tmp == "post"))	{
+					profileprior = 0;
+				}
+				else	{
+					cerr << "error after ppredprofile: should be prior or posterior\n";
+					throw(0);
+				}
+			}
+			else if (s == "-ppredroot")	{
+				i++;
+				string tmp = argv[i];
+				if (tmp == "prior")	{
+					rootprior = 1;
+				}
+				else if ((tmp == "posterior") || (tmp == "post"))	{
+					rootprior = 0;
+				}
+				else	{
+					cerr << "error after ppredroot: should be prior or posterior\n";
+					throw(0);
+				}
+			}
+			else if (s == "-ss")	{
+				ss = 1;
+			}
+			else if (s == "-rr")	{
+				rr = 1;
+			}
 			else if (s == "-sitelogl")	{
 				sitelogl = 1;
+			}
+			else if (s == "-r")	{
+				rates = 1;
 			}
 			else if (s == "-map")	{
 				map = 1;
@@ -279,8 +338,17 @@ void RASCATGTRFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	else if (sitelogl)	{
 		ReadSiteLogL(name,burnin,every,until);
 	}
+	else if (ss)	{
+		ReadSiteProfiles(name,burnin,every,until);
+	}
+	else if (rr)	{
+		ReadRelRates(name,burnin,every,until);
+	}
+	else if (rates)	{
+		ReadSiteRates(name,burnin,every,until);
+	}
 	else if (ppred)	{
-		PostPred(ppred,name,burnin,every,until);
+		PostPred(ppred,name,burnin,every,until,rateprior,profileprior,rootprior);
 	}
 	else if (map)	{
 		ReadMap(name,burnin,every,until);
@@ -396,3 +464,132 @@ void RASCATGTRFiniteGammaPhyloProcess::SlaveComputeSiteLogL()	{
 	delete[] meansitelogl;
 }
 
+
+void RASCATGTRFiniteGammaPhyloProcess::ReadRelRates(string name, int burnin, int every, int until)	{
+
+	ifstream is((name + ".chain").c_str());
+	if (!is)	{
+		cerr << "error: no .chain file found\n";
+		exit(1);
+	}
+
+	cerr << "burnin : " << burnin << "\n";
+	cerr << "until : " << until << '\n';
+	int i=0;
+	while ((i < until) && (i < burnin))	{
+		FromStream(is);
+		i++;
+	}
+	int samplesize = 0;
+
+	double* meanrr = new double[GetNrr()];
+	for (int k=0; k<GetNrr(); k++)	{
+		meanrr[k] = 0;
+	}
+
+	while (i < until)	{
+		cerr << ".";
+		cerr.flush();
+		samplesize++;
+		FromStream(is);
+		i++;
+
+		double total = 0;
+		for (int k=0; k<GetNrr(); k++)	{
+			total += rr[k];
+		}
+		total /= GetNrr();
+
+		for (int k=0; k<GetNrr(); k++)	{
+			meanrr[k] += rr[k] / total;
+		}
+
+		int nrep = 1;
+		while ((i<until) && (nrep < every))	{
+			FromStream(is);
+			i++;
+			nrep++;
+		}
+	}
+	cerr << '\n';
+	for (int k=0; k<GetNrr(); k++)	{
+		meanrr[k] /= samplesize;
+	}
+	ofstream os((name + ".meanrr").c_str());
+	for (int k=0; k<GetDim(); k++)	{
+		os << GetStateSpace()->GetState(k) << ' ';
+	}
+	os << '\n';
+	os << '\n';
+	for (int i=0; i<GetDim(); i++)	{
+		for (int j=i+1; j<GetDim(); j++)	{
+			os << GetStateSpace()->GetState(i) << '\t' << GetStateSpace()->GetState(j) << '\t' << meanrr[rrindex(i,j,GetDim())] << '\n';
+		}
+	}
+	cerr << "mean relative exchangeabilities in " << name << ".meanrr\n";
+
+}
+
+void RASCATGTRFiniteGammaPhyloProcess::ReadSiteProfiles(string name, int burnin, int every, int until)	{
+
+	double** sitestat = new double*[GetNsite()];
+	for (int i=0; i<GetNsite(); i++)	{
+		sitestat[i] = new double[GetDim()];
+		for (int k=0; k<GetDim(); k++)	{
+			sitestat[i][k] = 0;
+		}
+	}
+	ifstream is((name + ".chain").c_str());
+	if (!is)	{
+		cerr << "error: no .chain file found\n";
+		exit(1);
+	}
+
+	cerr << "burnin : " << burnin << "\n";
+	cerr << "until : " << until << '\n';
+	int i=0;
+	while ((i < until) && (i < burnin))	{
+		FromStream(is);
+		i++;
+	}
+	int samplesize = 0;
+
+	while (i < until)	{
+		cerr << ".";
+		cerr.flush();
+		samplesize++;
+		FromStream(is);
+		i++;
+
+		for (int i=0; i<GetNsite(); i++)	{
+			double* p = GetProfile(i);
+			for (int k=0; k<GetDim(); k++)	{
+				sitestat[i][k] += p[k];
+			}
+		}
+		int nrep = 1;
+		while ((i<until) && (nrep < every))	{
+			FromStream(is);
+			i++;
+			nrep++;
+		}
+	}
+	cerr << '\n';
+	
+	ofstream os((name + ".siteprofiles").c_str());
+	for (int k=0; k<GetDim(); k++)	{
+		os << GetStateSpace()->GetState(k) << ' ';
+	}
+	os << '\n';
+	os << '\n';
+	for (int i=0; i<GetNsite(); i++)	{
+		os << i+1;
+		for (int k=0; k<GetDim(); k++)	{
+			sitestat[i][k] /= samplesize;
+			os << '\t' << sitestat[i][k];
+		}
+		os << '\n';
+	}
+	cerr << "mean site-specific profiles in " << name << ".siteprofiles\n";
+	cerr << '\n';
+}

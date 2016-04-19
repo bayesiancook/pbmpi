@@ -141,7 +141,9 @@ double FiniteProfileProcess::LogHyperPrior()	{
 
 double FiniteProfileProcess::MoveHyper(double tuning, int nrep)	{
 	double total = 0;
-	total += MoveDirWeights(tuning,nrep);
+	if ((Ncomponent > 1) || (! fixncomp))	{
+		total += MoveDirWeights(tuning,nrep);
+	}
 	return total;
 }
 
