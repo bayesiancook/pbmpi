@@ -56,6 +56,8 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 
 	public:
 
+	using MixtureProfileProcess::LogStatPrior;
+
         virtual void SlaveExecute(MESSAGE);
 	void GlobalUpdateParameters();
 	void SlaveUpdateParameters();
