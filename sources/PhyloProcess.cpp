@@ -2420,7 +2420,7 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 			vartaxstat[j] /= samplesize;
 			pptaxstat[j] /= samplesize;
 			vartaxstat[j] -= meantaxstat[j] * meantaxstat[j];
-			os << GetTaxonSet()->GetTaxon(j) << '\t' << obstaxstat[j] << '\t' << meantaxstat[j] << '\t' << meantaxstat[j]/sqrt(vartaxstat[j]) << '\t' << pptaxstat[j] << '\n';
+			os << GetTaxonSet()->GetTaxon(j) << '\t' << obstaxstat[j] << '\t' << meantaxstat[j] << '\t' << (obstaxstat[j] - meantaxstat[j])/sqrt(vartaxstat[j]) << '\t' << pptaxstat[j] << '\n';
 		}
 		cerr << "result of compositional homogeneity test in " << name << ".comp\n";
 	}
