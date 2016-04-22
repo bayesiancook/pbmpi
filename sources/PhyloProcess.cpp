@@ -2325,12 +2325,13 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 	double* obstaxstat = new double[GetNtaxa()];
 	SequenceAlignment* datacopy  = new SequenceAlignment(GetData());
 	double obs = 0;
+	double obs2 = 0;
 	if (ppredtype == 2)	{
 		obs = data->GetMeanDiversity();
 		// obs = GlobalGetMeanDiversity();
 	}
 	else if (ppredtype == 3)	{
-		obs = GetObservedCompositionalHeterogeneity(obstaxstat);
+		obs = GetObservedCompositionalHeterogeneity(obstaxstat,obs2);
 	}
 
 	cerr << "burnin: " << burnin << '\n';
@@ -2345,6 +2346,9 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 	double meanstat = 0;
 	double varstat = 0;
 	double ppstat = 0;
+	double meanstat2 = 0;
+	double varstat2 = 0;
+	double ppstat2 = 0;
 	double* meantaxstat = new double[GetNtaxa()];
 	double* vartaxstat = new double[GetNtaxa()];
 	double* pptaxstat = new double[GetNtaxa()];
@@ -2381,11 +2385,12 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 
 		if (ppredtype > 1)	{
 			double stat = 0;
+			double stat2 = 0;
 			if (ppredtype == 2)	{
 				stat = data->GetMeanDiversity();
 			}
 			else if (ppredtype == 3)	{
-				stat = GetCompositionalHeterogeneity(taxstat);
+				stat = GetCompositionalHeterogeneity(taxstat,stat2);
 				for (int j=0; j<GetNtaxa(); j++)	{
 					meantaxstat[j] += taxstat[j];
 					vartaxstat[j] += taxstat[j] * taxstat[j];
@@ -2398,6 +2403,11 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 			varstat += stat * stat;
 			if (stat < obs)	{
 				ppstat++;
+			}
+			meanstat2 += stat2;
+			varstat2 += stat2 * stat2;
+			if (stat2 < obs2)	{
+				ppstat2++;
 			}
 		}
 		else	{
@@ -2426,6 +2436,11 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 		varstat /= samplesize;
 		varstat -= meanstat * meanstat;
 		ppstat /= samplesize;
+
+		meanstat2 /= samplesize;
+		varstat2 /= samplesize;
+		varstat2 -= meanstat2 * meanstat2;
+		ppstat2 /= samplesize;
 	}
 
 	if (ppredtype == 1)	{
@@ -2443,10 +2458,20 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 	else if (ppredtype == 3)	{
 		ofstream os((name + ".comp").c_str());
 		os << "compositional homogeneity test\n";
+
+		os << '\n';
+		os << "max heterogeneity across taxa\n";
 		os << "obs comp : " << obs << '\n';
 		os << "mean comp: " << meanstat << " +/- " << sqrt(varstat) << '\n';
 		os << "z-score : " << (obs - meanstat) / sqrt(varstat) << '\n';
 		os << "pp      : " << (1 - ppstat) << '\n';
+
+		os << '\n';
+		os << "mean squared heterogeneity across taxa\n";
+		os << "obs comp : " << obs2 << '\n';
+		os << "mean comp: " << meanstat2 << " +/- " << sqrt(varstat2) << '\n';
+		os << "z-score : " << (obs2 - meanstat2) / sqrt(varstat2) << '\n';
+		os << "pp      : " << (1 - ppstat2) << '\n';
 
 		os << '\n';
 		os << "taxonname\tobs\tmean pred\tz-score\tpp\n";
