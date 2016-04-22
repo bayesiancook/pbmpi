@@ -33,12 +33,10 @@ extern MPI_Datatype Propagate_arg;
 //-------------------------------------------------------------------------
 
 void PhyloProcess::Unfold()	{
-	//cout << "Local UNFOLD " << condflag << endl;
 	if (condflag)	{
 		cerr << "error in PhyloProcess::Unfold\n";
 		exit(1);
 	}
-	//cout << "Local UNFOLD called with " << myid << "  " << sitemin << "  " << sitemax << endl;
 	DeleteSuffStat();
 	DeleteMappings();
 	ActivateSumOverRateAllocations();
@@ -56,6 +54,12 @@ void PhyloProcess::Collapse()	{
 	DrawAllocations();
 	SampleNodeStates();
 	if (! dataclamped)	{
+		if (rateprior)	{
+			DrawAllocationsFromPrior();
+		}
+		if (profileprior)	{
+			DrawProfileFromPrior();
+		}
 		SimulateForward();
 	}
 	DeleteCondSiteLogL();
@@ -63,10 +67,6 @@ void PhyloProcess::Collapse()	{
 	InactivateSumOverRateAllocations(ratealloc);
 	SampleSubstitutionMappings(GetRoot());
 	CreateSuffStat();
-
-	// MPI
-	// something about gathering all sufficient stats across all slaves
-	// but in current version, this will not be useful anyway
 }
 
 void PhyloProcess::CreateMappings()	{
@@ -133,16 +133,7 @@ void PhyloProcess::CreateConditionalLikelihoods()	{
 	// do not create for leaves
 	if (! condflag)	{
 		for (int j=0; j<GetNlink(); j++)	{
-			// if ! leaf else condlamp[j] = 0 ?
 			condlmap[j] =  CreateConditionalLikelihoodVector();
-			/*
-			if (j && GetLink(j)->isLeaf())	{
-				condlmap[j] =  CreateConditionalLikelihoodVector();
-			}
-			else	{
-				condlmap[j] = 0;
-			}
-			*/
 		}
 	}
 	condflag = true;
@@ -152,9 +143,7 @@ void PhyloProcess::DeleteConditionalLikelihoods()	{
 
 	if (condflag)	{
 		for (int j=0; j<GetNlink(); j++)	{
-			// if (condlmap[j])	{
-				DeleteConditionalLikelihoodVector(condlmap[j]);
-			// }
+			DeleteConditionalLikelihoodVector(condlmap[j]);
 		}
 	}
 	condflag = false;
@@ -168,8 +157,6 @@ void PhyloProcess::UpdateConditionalLikelihoods()	{
 	ComputeLikelihood(condlmap[0]);
 
 	PreOrderPruning(GetRoot(),condlmap[0]);
-
-	// CheckLikelihood();
 }
 
 void PhyloProcess::GlobalCheckLikelihood()	{
@@ -196,7 +183,6 @@ void PhyloProcess::GlobalCheckLikelihood()	{
 
 void PhyloProcess::CheckLikelihood()	{
 
-	// cerr << "check\t";
 	vector<double> logl;
 	RecursiveComputeLikelihood(GetRoot(),0,logl);
 	double max = 0;
@@ -215,9 +201,6 @@ void PhyloProcess::CheckLikelihood()	{
 		}
 		exit(1);
 	}
-
-
-	// cerr << '\n';
 }
 
 double PhyloProcess::ComputeNodeLikelihood(const Link* from, int auxindex)	{
@@ -372,15 +355,6 @@ void PhyloProcess::SampleNodeStates(const Link* from, double*** aux)	{
 	// let substitution process choose states based on this vector
 	// this should collapse the vector into 1s and 0s
 	ChooseStates(aux,GetStates(from->GetNode()));
-
-	/*
-	// if not root
-	// the finite time transition prob between the state of the previous node and the state just chosen at this node (s)
-	// is the corresponding entry of the conditional likelihood vector
-	if (! from->isRoot())	{
-		StoreFiniteTimeTransitionProbs(GetConditionalLikelihoodVector(from),GetStates(from->GetNode()),GetFiniteTimeTransitionProb(from));
-	}
-	*/
 
 	for (const Link* link=from->Next(); link!=from; link=link->Next())	{
 		// propagate forward

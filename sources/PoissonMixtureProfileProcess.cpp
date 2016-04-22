@@ -198,6 +198,7 @@ void PoissonMixtureProfileProcess::RemoveSite(int site, int cat)	{
 void PoissonMixtureProfileProcess::AddSite(int site, int cat)	{
 	alloc[site] = cat;
 	occupancy[cat] ++;
+	UpdateZip(site);
 	if (activesuffstat)	{
 		const int* nsub = GetSiteProfileSuffStatCount(site);
 		int* catnsub = profilesuffstatcount[cat];

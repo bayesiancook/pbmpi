@@ -67,6 +67,20 @@ void SBDPProfileProcess::SampleAlloc()	{
 	}
 }
 
+void SBDPProfileProcess::DrawProfileFromPrior()	{
+
+	if (! GetMyid())	{
+		cerr << "error: in master DrawProfileFromPrior\n";
+		exit(1);
+	}
+
+	for (int i=GetSiteMin(); i<GetSiteMax(); i++)	{
+		RemoveSite(i,alloc[i]);
+		int choose = rnd::GetRandom().FiniteDiscrete(GetNcomponent(),weight);
+		AddSite(i,choose);
+	}
+}
+
 /*
 void SBDPProfileProcess::IncrementalSampleAlloc()	{
 

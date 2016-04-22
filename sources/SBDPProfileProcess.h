@@ -34,6 +34,8 @@ class SBDPProfileProcess: public virtual DPProfileProcess	{
 
 	protected:
 
+	virtual void DrawProfileFromPrior();
+
 	double GetMaxWeightError() {return maxweighterror;}
 	void ResetMaxWeightError() {maxweighterror = 0;}
 

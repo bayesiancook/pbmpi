@@ -111,6 +111,7 @@ class SubstitutionProcess : public virtual RateProcess, public virtual ProfilePr
 	// CPU : level 1
 	// if aux==0, assumes likelihoods have been computed
 	void DrawAllocations(double*** aux = 0);
+	void DrawAllocationsFromPrior();
 
 	// in the following
 	// bool condalloc = true means that we want to make the computation, for each site,

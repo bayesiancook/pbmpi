@@ -376,6 +376,14 @@ void SubstitutionProcess::DrawAllocations(double*** aux)	{
 	}
 }
 
+void SubstitutionProcess::DrawAllocationsFromPrior()	{
+
+	for (int i=sitemin; i<sitemax; i++)	{
+		int k = (int) (GetNrate(i) * rnd::GetRandom().Uniform());
+		ratealloc[i] = k;
+	}
+}
+
 //-------------------------------------------------------------------------
 //	* sample states for each site, based on vectors of posterior probability stored in double*** t
 //	this is assumed to be conditional on rate allocations 

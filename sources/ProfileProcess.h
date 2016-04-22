@@ -95,6 +95,11 @@ class ProfileProcess {
 
 	protected:
 
+	virtual void DrawProfileFromPrior() {
+		cerr << "error: in ProfileProcess::DrawProfileFromPrior\n";
+		exit(1);
+	}
+
 	virtual double GetNormalizationFactor()	{cerr << "should not be here\n"; exit(1); return 1;}
 
 	// called at the beginning of the run only
