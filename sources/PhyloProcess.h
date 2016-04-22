@@ -53,7 +53,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	// virtual void SlaveUpdate();
 
 	// default constructor: pointers set to nil
-	PhyloProcess() :  siteratesuffstatcount(0), siteratesuffstatbeta(0), branchlengthsuffstatcount(0), branchlengthsuffstatbeta(0), condflag(false), data(0), myid(-1), nprocs(0), size(0), version("1.6"), totaltime(0), dataclamped(1) {} // smin(0), smax(0) {}
+	PhyloProcess() :  siteratesuffstatcount(0), siteratesuffstatbeta(0), branchlengthsuffstatcount(0), branchlengthsuffstatbeta(0), condflag(false), data(0), myid(-1), nprocs(0), size(0), version("1.6"), totaltime(0), dataclamped(1), rateprior(0), profileprior(0), rootprior(0) {}
 	virtual ~PhyloProcess() {}
 
 	string GetVersion() {return version;}
@@ -187,6 +187,16 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	virtual void Delete();
 
 	public :
+
+	void GlobalSetRatePrior(int inrateprior);
+	void SlaveSetRatePrior();
+	
+	void GlobalSetProfilePrior(int inprofileprior);
+	void SlaveSetProfilePrior();
+	
+	void GlobalSetRootPrior(int inrootprior);
+	void SlaveSetRootPrior();
+	
 
 	virtual void Unfold();
 	virtual void Collapse();
@@ -515,6 +525,9 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	int bksitemax;
 
 	int dataclamped;
+	int rateprior;
+	int profileprior;
+	int rootprior;
 };
 
 

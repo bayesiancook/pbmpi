@@ -136,6 +136,7 @@ class SubstitutionProcess : public virtual RateProcess, public virtual ProfilePr
 	// implemented in GTR or POisson Substitution process
 	// here, assumes that each site is under the rate category defined by double* ratealloc
 	virtual void ChooseStates(double*** aux, int* states);
+	void ChooseStatesAtEquilibrium(int* states);
 	virtual void SetCondToStates(double*** aux, int* states);
 	
 	// CPU : level 3

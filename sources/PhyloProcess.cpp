@@ -338,6 +338,9 @@ void PhyloProcess::SampleNodeStates()	{
 
 
 void PhyloProcess::SimulateForward()	{
+	if (rootprior)	{
+		ChooseStatesAtEquilibrium(GetStates(GetRoot()->GetNode()));
+	}
 	RecursiveSimulateForward(GetRoot());
 }
 
@@ -1123,6 +1126,48 @@ double PhyloProcess::GlobalGetMeanDiversity()	{
 	return total / GetNsite();
 }
 
+void PhyloProcess::GlobalSetRatePrior(int inrateprior)	{
+
+	assert(myid == 0);
+	rateprior = inrateprior;
+	MESSAGE signal = SETRATEPRIOR;
+	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(&rateprior,1,MPI_INT,0,MPI_COMM_WORLD);
+}
+
+void PhyloProcess::SlaveSetRatePrior()	{
+
+	MPI_Bcast(&rateprior,1,MPI_INT,0,MPI_COMM_WORLD);
+}
+
+void PhyloProcess::GlobalSetProfilePrior(int inprofileprior)	{
+
+	assert(myid == 0);
+	profileprior = inprofileprior;
+	MESSAGE signal = SETPROFILEPRIOR;
+	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(&profileprior,1,MPI_INT,0,MPI_COMM_WORLD);
+}
+
+void PhyloProcess::SlaveSetProfilePrior()	{
+
+	MPI_Bcast(&profileprior,1,MPI_INT,0,MPI_COMM_WORLD);
+}
+
+void PhyloProcess::GlobalSetRootPrior(int inrootprior)	{
+
+	assert(myid == 0);
+	rootprior = inrootprior;
+	MESSAGE signal = SETROOTPRIOR;
+	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(&rootprior,1,MPI_INT,0,MPI_COMM_WORLD);
+}
+
+void PhyloProcess::SlaveSetRootPrior()	{
+
+	MPI_Bcast(&rootprior,1,MPI_INT,0,MPI_COMM_WORLD);
+}
+
 void PhyloProcess::SlaveRestoreData()	{
 	GetData()->Restore();
 	dataclamped = 1;
@@ -1465,6 +1510,15 @@ void PhyloProcess::SlaveExecute(MESSAGE signal)	{
 	bool tvalue;
 
 	switch(signal) {
+	case SETRATEPRIOR:
+		SlaveSetRatePrior();
+		break;
+	case SETPROFILEPRIOR:
+		SlaveSetProfilePrior();
+		break;
+	case SETROOTPRIOR:
+		SlaveSetRootPrior();
+		break;
 	case ROOT:
 		MPI_Bcast(&n,1,MPI_INT,0,MPI_COMM_WORLD);
 		SlaveRoot(n);
@@ -2282,7 +2336,11 @@ void PhyloProcess::ReadSiteRates(string name, int burnin, int every, int until)	
 
 }
 
-void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, int until, int rateprior, int profileprior, int rootprior)	{
+void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, int until, int inrateprior, int inprofileprior, int inrootprior)	{
+
+	GlobalSetRatePrior(inrateprior);
+	GlobalSetProfilePrior(inprofileprior);
+	GlobalSetRootPrior(inrootprior);
 
 	ifstream is((name + ".chain").c_str());
 	if (!is)	{
@@ -2328,12 +2386,15 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 		FromStream(is);
 		i++;
 
-		/*
-		QuickUpdate();
-		GlobalSimulateForward();
-		GlobalUnclamp();
-		GlobalSetDataFromLeaves();
-		*/
+		// output tree
+		ostringstream s;
+		s << name << "_ppred" << samplesize << ".tree";
+		ofstream os(s.str().c_str());
+		SetNamesFromLengths();
+		RenormalizeBranchLengths();
+		GetTree()->ToStream(os);
+		DenormalizeBranchLengths();
+		os.close();
 
 		MPI_Status stat;
 		MESSAGE signal = BCAST_TREE;
