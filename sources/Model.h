@@ -54,7 +54,7 @@ class Model	{
 	int saveall;
 	int incinit;
 
-	Model(string datafile, string treefile, int modeltype, int nratecat, int mixturetype, int ncat, GeneticCodeType codetype, int suffstat, int fixncomp, int empmix, string mixtype, string rrtype, int iscodon, int fixtopo, int NSPR, int NNNI, int fixcodonprofile, int fixomega, int fixbl, int omegaprior, int kappaprior, int dirweightprior, double mintotweight, int dc, int inevery, int inuntil, int insaveall, int inincinit, string inname, int myid, int nprocs)	{
+	Model(string datafile, string treefile, int modeltype, int nratecat, int mixturetype, int ncat, GeneticCodeType codetype, int suffstat, int fixncomp, int empmix, string mixtype, string rrtype, int iscodon, int fixtopo, int NSPR, int NNNI, int fixcodonprofile, int fixomega, int fixbl, int omegaprior, int kappaprior, int dirweightprior, double mintotweight, int dc, int inevery, int inuntil, int insaveall, int inincinit, int topoburnin, string inname, int myid, int nprocs)	{
 
 		every = inevery;
 		until = inuntil;
@@ -180,6 +180,7 @@ class Model	{
 			
 		}
 
+		process->SetTopoBurnin(topoburnin);
 	}
 
 	Model(string inname, int myid, int nprocs)	{

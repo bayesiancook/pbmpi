@@ -83,6 +83,8 @@ int main(int argc, char* argv[])	{
 
 	double mintotweight = 0;
 
+	int topoburnin = 0;
+
 	try	{
 
 		if (argc == 1)	{
@@ -138,6 +140,10 @@ int main(int argc, char* argv[])	{
 			else if (s == "-nni")	{
 				i++;
 				NNNI = atoi(argv[i]);
+			}
+			else if (s == "-topoburnin")	{
+				i++;
+				topoburnin = atoi(argv[i]);
 			}
 			else if (s == "-fixcodonprofile")	{
 				fixcodonprofile = 1;
@@ -553,7 +559,7 @@ int main(int argc, char* argv[])	{
 				exit(1);
 			}
 		}
-		model = new Model(datafile,treefile,modeltype,dgam,mixturetype,ncat,type,suffstat,fixncomp,empmix,mixtype,rrtype,iscodon,fixtopo,NSPR,NNNI,fixcodonprofile,fixomega,fixbl,omegaprior,kappaprior,dirweightprior,mintotweight,dc,every,until,saveall,incinit,name,myid,nprocs);
+		model = new Model(datafile,treefile,modeltype,dgam,mixturetype,ncat,type,suffstat,fixncomp,empmix,mixtype,rrtype,iscodon,fixtopo,NSPR,NNNI,fixcodonprofile,fixomega,fixbl,omegaprior,kappaprior,dirweightprior,mintotweight,dc,every,until,saveall,incinit,topoburnin,name,myid,nprocs);
 		if (! myid)	{
 			// cerr << "create files\n";
 			cerr << '\n';

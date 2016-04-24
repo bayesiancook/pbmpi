@@ -540,19 +540,17 @@ double PhyloProcess::LocalNonMPIBranchLengthMove(const Link* from, double tuning
 	return (double) accepted;
 }
 
-
 double PhyloProcess::MoveTopo(int spr, int nni){
-	double success;
-	// cerr << spr << '\t' << nni << '\n';
-        success += GibbsSPR(spr);
-        for(int i=0; i<nni; i++){
-                success += GibbsNNI(0.1,1);
-        }
+	double success = 0;
+
+	if (size >= topoburnin)	{
+		success += GibbsSPR(spr);
+		for(int i=0; i<nni; i++){
+			success += GibbsNNI(0.1,1);
+		}
+	}
 	return success;
 }
-
-
-
 
 double PhyloProcess::GibbsSPR(int nrep)	{
 	// useless, assuming that preceding move maintains conditinal likelihoods correctly updated
