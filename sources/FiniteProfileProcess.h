@@ -40,6 +40,8 @@ class FiniteProfileProcess: public virtual MixtureProfileProcess	{
 
 	protected:
 
+	virtual void DrawProfileFromPrior();
+
 	void ReadStatFix(string name);
 	void SetStatFix();
 

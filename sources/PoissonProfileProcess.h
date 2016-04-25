@@ -29,6 +29,8 @@ class PoissonProfileProcess : public virtual ProfileProcess {
 
 	protected:
 
+	virtual void UpdateZip(int site) = 0;
+
 	// implemented in specialized phyloprocess subclasses
 	virtual const int* GetSiteProfileSuffStatCount(int site) = 0;
 

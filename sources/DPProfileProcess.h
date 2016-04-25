@@ -54,6 +54,11 @@ class DPProfileProcess: public virtual MixtureProfileProcess	{
 	double LogHyperPrior();
 	virtual double LogAllocPrior();
 
+	virtual void DrawProfileFromPrior()	{
+		cerr << "error: in DPProfileProcess::DrawProfileFromPrior\n";
+		exit(1);
+	}
+
 	double kappa;
 	bool movekappa;
 	int kappaprior;

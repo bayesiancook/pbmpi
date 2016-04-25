@@ -33,12 +33,10 @@ extern MPI_Datatype Propagate_arg;
 //-------------------------------------------------------------------------
 
 void PhyloProcess::Unfold()	{
-	//cout << "Local UNFOLD " << condflag << endl;
 	if (condflag)	{
 		cerr << "error in PhyloProcess::Unfold\n";
 		exit(1);
 	}
-	//cout << "Local UNFOLD called with " << myid << "  " << sitemin << "  " << sitemax << endl;
 	DeleteSuffStat();
 	DeleteMappings();
 	ActivateSumOverRateAllocations();
@@ -56,6 +54,12 @@ void PhyloProcess::Collapse()	{
 	DrawAllocations();
 	SampleNodeStates();
 	if (! dataclamped)	{
+		if (rateprior)	{
+			DrawAllocationsFromPrior();
+		}
+		if (profileprior)	{
+			DrawProfileFromPrior();
+		}
 		SimulateForward();
 	}
 	DeleteCondSiteLogL();
@@ -63,10 +67,6 @@ void PhyloProcess::Collapse()	{
 	InactivateSumOverRateAllocations(ratealloc);
 	SampleSubstitutionMappings(GetRoot());
 	CreateSuffStat();
-
-	// MPI
-	// something about gathering all sufficient stats across all slaves
-	// but in current version, this will not be useful anyway
 }
 
 void PhyloProcess::CreateMappings()	{
@@ -133,16 +133,7 @@ void PhyloProcess::CreateConditionalLikelihoods()	{
 	// do not create for leaves
 	if (! condflag)	{
 		for (int j=0; j<GetNlink(); j++)	{
-			// if ! leaf else condlamp[j] = 0 ?
 			condlmap[j] =  CreateConditionalLikelihoodVector();
-			/*
-			if (j && GetLink(j)->isLeaf())	{
-				condlmap[j] =  CreateConditionalLikelihoodVector();
-			}
-			else	{
-				condlmap[j] = 0;
-			}
-			*/
 		}
 	}
 	condflag = true;
@@ -152,9 +143,7 @@ void PhyloProcess::DeleteConditionalLikelihoods()	{
 
 	if (condflag)	{
 		for (int j=0; j<GetNlink(); j++)	{
-			// if (condlmap[j])	{
-				DeleteConditionalLikelihoodVector(condlmap[j]);
-			// }
+			DeleteConditionalLikelihoodVector(condlmap[j]);
 		}
 	}
 	condflag = false;
@@ -168,8 +157,6 @@ void PhyloProcess::UpdateConditionalLikelihoods()	{
 	ComputeLikelihood(condlmap[0]);
 
 	PreOrderPruning(GetRoot(),condlmap[0]);
-
-	// CheckLikelihood();
 }
 
 void PhyloProcess::GlobalCheckLikelihood()	{
@@ -196,7 +183,6 @@ void PhyloProcess::GlobalCheckLikelihood()	{
 
 void PhyloProcess::CheckLikelihood()	{
 
-	// cerr << "check\t";
 	vector<double> logl;
 	RecursiveComputeLikelihood(GetRoot(),0,logl);
 	double max = 0;
@@ -215,9 +201,6 @@ void PhyloProcess::CheckLikelihood()	{
 		}
 		exit(1);
 	}
-
-
-	// cerr << '\n';
 }
 
 double PhyloProcess::ComputeNodeLikelihood(const Link* from, int auxindex)	{
@@ -338,6 +321,9 @@ void PhyloProcess::SampleNodeStates()	{
 
 
 void PhyloProcess::SimulateForward()	{
+	if (rootprior)	{
+		ChooseStatesAtEquilibrium(GetStates(GetRoot()->GetNode()));
+	}
 	RecursiveSimulateForward(GetRoot());
 }
 
@@ -369,15 +355,6 @@ void PhyloProcess::SampleNodeStates(const Link* from, double*** aux)	{
 	// let substitution process choose states based on this vector
 	// this should collapse the vector into 1s and 0s
 	ChooseStates(aux,GetStates(from->GetNode()));
-
-	/*
-	// if not root
-	// the finite time transition prob between the state of the previous node and the state just chosen at this node (s)
-	// is the corresponding entry of the conditional likelihood vector
-	if (! from->isRoot())	{
-		StoreFiniteTimeTransitionProbs(GetConditionalLikelihoodVector(from),GetStates(from->GetNode()),GetFiniteTimeTransitionProb(from));
-	}
-	*/
 
 	for (const Link* link=from->Next(); link!=from; link=link->Next())	{
 		// propagate forward
@@ -1123,6 +1100,48 @@ double PhyloProcess::GlobalGetMeanDiversity()	{
 	return total / GetNsite();
 }
 
+void PhyloProcess::GlobalSetRatePrior(int inrateprior)	{
+
+	assert(myid == 0);
+	rateprior = inrateprior;
+	MESSAGE signal = SETRATEPRIOR;
+	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(&rateprior,1,MPI_INT,0,MPI_COMM_WORLD);
+}
+
+void PhyloProcess::SlaveSetRatePrior()	{
+
+	MPI_Bcast(&rateprior,1,MPI_INT,0,MPI_COMM_WORLD);
+}
+
+void PhyloProcess::GlobalSetProfilePrior(int inprofileprior)	{
+
+	assert(myid == 0);
+	profileprior = inprofileprior;
+	MESSAGE signal = SETPROFILEPRIOR;
+	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(&profileprior,1,MPI_INT,0,MPI_COMM_WORLD);
+}
+
+void PhyloProcess::SlaveSetProfilePrior()	{
+
+	MPI_Bcast(&profileprior,1,MPI_INT,0,MPI_COMM_WORLD);
+}
+
+void PhyloProcess::GlobalSetRootPrior(int inrootprior)	{
+
+	assert(myid == 0);
+	rootprior = inrootprior;
+	MESSAGE signal = SETROOTPRIOR;
+	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(&rootprior,1,MPI_INT,0,MPI_COMM_WORLD);
+}
+
+void PhyloProcess::SlaveSetRootPrior()	{
+
+	MPI_Bcast(&rootprior,1,MPI_INT,0,MPI_COMM_WORLD);
+}
+
 void PhyloProcess::SlaveRestoreData()	{
 	GetData()->Restore();
 	dataclamped = 1;
@@ -1465,6 +1484,15 @@ void PhyloProcess::SlaveExecute(MESSAGE signal)	{
 	bool tvalue;
 
 	switch(signal) {
+	case SETRATEPRIOR:
+		SlaveSetRatePrior();
+		break;
+	case SETPROFILEPRIOR:
+		SlaveSetProfilePrior();
+		break;
+	case SETROOTPRIOR:
+		SlaveSetRootPrior();
+		break;
 	case ROOT:
 		MPI_Bcast(&n,1,MPI_INT,0,MPI_COMM_WORLD);
 		SlaveRoot(n);
@@ -2282,7 +2310,11 @@ void PhyloProcess::ReadSiteRates(string name, int burnin, int every, int until)	
 
 }
 
-void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, int until, int rateprior, int profileprior, int rootprior)	{
+void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, int until, int inrateprior, int inprofileprior, int inrootprior)	{
+
+	GlobalSetRatePrior(inrateprior);
+	GlobalSetProfilePrior(inprofileprior);
+	GlobalSetRootPrior(inrootprior);
 
 	ifstream is((name + ".chain").c_str());
 	if (!is)	{
@@ -2293,12 +2325,13 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 	double* obstaxstat = new double[GetNtaxa()];
 	SequenceAlignment* datacopy  = new SequenceAlignment(GetData());
 	double obs = 0;
+	double obs2 = 0;
 	if (ppredtype == 2)	{
 		obs = data->GetMeanDiversity();
 		// obs = GlobalGetMeanDiversity();
 	}
 	else if (ppredtype == 3)	{
-		obs = GetObservedCompositionalHeterogeneity(obstaxstat);
+		obs = GetObservedCompositionalHeterogeneity(obstaxstat,obs2);
 	}
 
 	cerr << "burnin: " << burnin << '\n';
@@ -2313,6 +2346,9 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 	double meanstat = 0;
 	double varstat = 0;
 	double ppstat = 0;
+	double meanstat2 = 0;
+	double varstat2 = 0;
+	double ppstat2 = 0;
 	double* meantaxstat = new double[GetNtaxa()];
 	double* vartaxstat = new double[GetNtaxa()];
 	double* pptaxstat = new double[GetNtaxa()];
@@ -2328,12 +2364,15 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 		FromStream(is);
 		i++;
 
-		/*
-		QuickUpdate();
-		GlobalSimulateForward();
-		GlobalUnclamp();
-		GlobalSetDataFromLeaves();
-		*/
+		// output tree
+		ostringstream s;
+		s << name << "_ppred" << samplesize << ".tree";
+		ofstream os(s.str().c_str());
+		SetNamesFromLengths();
+		RenormalizeBranchLengths();
+		GetTree()->ToStream(os);
+		DenormalizeBranchLengths();
+		os.close();
 
 		MPI_Status stat;
 		MESSAGE signal = BCAST_TREE;
@@ -2346,11 +2385,12 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 
 		if (ppredtype > 1)	{
 			double stat = 0;
+			double stat2 = 0;
 			if (ppredtype == 2)	{
 				stat = data->GetMeanDiversity();
 			}
 			else if (ppredtype == 3)	{
-				stat = GetCompositionalHeterogeneity(taxstat);
+				stat = GetCompositionalHeterogeneity(taxstat,stat2);
 				for (int j=0; j<GetNtaxa(); j++)	{
 					meantaxstat[j] += taxstat[j];
 					vartaxstat[j] += taxstat[j] * taxstat[j];
@@ -2363,6 +2403,11 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 			varstat += stat * stat;
 			if (stat < obs)	{
 				ppstat++;
+			}
+			meanstat2 += stat2;
+			varstat2 += stat2 * stat2;
+			if (stat2 < obs2)	{
+				ppstat2++;
 			}
 		}
 		else	{
@@ -2391,6 +2436,11 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 		varstat /= samplesize;
 		varstat -= meanstat * meanstat;
 		ppstat /= samplesize;
+
+		meanstat2 /= samplesize;
+		varstat2 /= samplesize;
+		varstat2 -= meanstat2 * meanstat2;
+		ppstat2 /= samplesize;
 	}
 
 	if (ppredtype == 1)	{
@@ -2408,10 +2458,20 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 	else if (ppredtype == 3)	{
 		ofstream os((name + ".comp").c_str());
 		os << "compositional homogeneity test\n";
+
+		os << '\n';
+		os << "max heterogeneity across taxa\n";
 		os << "obs comp : " << obs << '\n';
 		os << "mean comp: " << meanstat << " +/- " << sqrt(varstat) << '\n';
 		os << "z-score : " << (obs - meanstat) / sqrt(varstat) << '\n';
 		os << "pp      : " << (1 - ppstat) << '\n';
+
+		os << '\n';
+		os << "mean squared heterogeneity across taxa\n";
+		os << "obs comp : " << obs2 << '\n';
+		os << "mean comp: " << meanstat2 << " +/- " << sqrt(varstat2) << '\n';
+		os << "z-score : " << (obs2 - meanstat2) / sqrt(varstat2) << '\n';
+		os << "pp      : " << (1 - ppstat2) << '\n';
 
 		os << '\n';
 		os << "taxonname\tobs\tmean pred\tz-score\tpp\n";
@@ -2420,7 +2480,7 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 			vartaxstat[j] /= samplesize;
 			pptaxstat[j] /= samplesize;
 			vartaxstat[j] -= meantaxstat[j] * meantaxstat[j];
-			os << GetTaxonSet()->GetTaxon(j) << '\t' << obstaxstat[j] << '\t' << meantaxstat[j] << '\t' << meantaxstat[j]/sqrt(vartaxstat[j]) << '\t' << pptaxstat[j] << '\n';
+			os << GetTaxonSet()->GetTaxon(j) << '\t' << obstaxstat[j] << '\t' << meantaxstat[j] << '\t' << (obstaxstat[j] - meantaxstat[j])/sqrt(vartaxstat[j]) << '\t' << pptaxstat[j] << '\n';
 		}
 		cerr << "result of compositional homogeneity test in " << name << ".comp\n";
 	}

@@ -376,6 +376,14 @@ void SubstitutionProcess::DrawAllocations(double*** aux)	{
 	}
 }
 
+void SubstitutionProcess::DrawAllocationsFromPrior()	{
+
+	for (int i=sitemin; i<sitemax; i++)	{
+		int k = (int) (GetNrate(i) * rnd::GetRandom().Uniform());
+		ratealloc[i] = k;
+	}
+}
+
 //-------------------------------------------------------------------------
 //	* sample states for each site, based on vectors of posterior probability stored in double*** t
 //	this is assumed to be conditional on rate allocations 
@@ -407,6 +415,34 @@ void SubstitutionProcess::ChooseStates(double*** t, int* states)	{
 			tmp[l] = 0;
 		}
 		tmp[k] =  1;
+	}
+}
+
+void SubstitutionProcess::ChooseStatesAtEquilibrium(int* states)	{
+	
+	for (int i=sitemin; i<sitemax; i++)	{
+		const double* stat = GetStationary(i);
+		int nstate = GetNstate(i);
+		double cumul[nstate];
+		double tot = 0;
+		for (int k=0; k<nstate; k++)	{
+			tot += stat[k];
+			cumul[k] = tot;
+		}
+		if (fabs(tot-1) > 1e-7)	{
+			cerr << "error in SubstitutionProcess::ChooseStatesAtEquilibrium: does not sum to 1: " << tot << '\n';
+			exit(1);
+		}
+		double u = rnd::GetRandom().Uniform();
+		int k = 0;
+		while ((k<nstate) && (u > cumul[k]))	{
+			k++;
+		}
+		if (k == nstate)	{
+			cerr << "error in SubstitutionProcess::ChooseStatesAtEquilibrium: overflow\n";
+			exit(1);
+		}
+		states[i] = k;
 	}
 }
 
