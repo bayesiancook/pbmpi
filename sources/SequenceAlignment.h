@@ -19,6 +19,9 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 #include "StateSpace.h"
 #include "TaxonSet.h"
 #include "Random.h"
+#include "Partition.h"
+
+#include <vector>
 
 // this class works like an interface
 // it does not do any job
@@ -575,6 +578,132 @@ class SequenceAlignment	{
 
 		return maxdist;
 	}
+
+	double ProportionWithinPartitionVariance(PartitionScheme scheme)   {
+
+        int Nstate = GetNstate();
+        double** sitefreq = new double*[Nsite];
+        for (int j=0; j<Nsite; j++) {
+            sitefreq[j] = new double[Nstate];
+            for (int k=0; k<Nstate; k++)    {
+                sitefreq[j][k] = 0;
+            }
+        }
+
+        double** partfreq = new double*[scheme.Npart];
+        for (int j=0; j<scheme.Npart; j++) {
+            partfreq[j] = new double[Nstate];
+            for (int k=0; k<Nstate; k++)    {
+                partfreq[j][k] = 0;
+            }
+        }
+
+        // get site profiles
+        for (int i=0; i<Ntaxa; i++) {
+            for (int j=0; j<Nsite; j++) {
+                int state = GetState(j,i);
+                if (state != unknown)   {
+                    sitefreq[j][state]++;
+                }
+            }
+        }
+
+        //double* globalstat = new double[Nstate];
+        double* acrossstat = new double[Nstate];
+        double* withinstat = new double[Nstate];
+        double* globalfreq = new double[Nstate];
+
+        for (int k=0; k<Nstate; k++)    {
+            globalfreq[k] = 0;
+            //globalstat[k] = 0;
+            withinstat[k] = 0;
+            acrossstat[k] = 0;
+        }
+
+        int* null = new int[scheme.Npart];
+        int totalnull = 0;
+        for (int j=0; j<scheme.Npart; j++) {
+            null[j] = 0;
+        }
+
+        // get global and partition-specific profiles
+        for (int j=0; j<Nsite; j++) {
+            double total = 0;
+            for (int k=0; k<Nstate; k++)    {
+                total += sitefreq[j][k];
+            }
+            if(total == 0)
+            {
+                null[scheme.sitePart[j]]++;
+                totalnull++;
+                continue;
+            }
+            for (int k=0; k<Nstate; k++)    {
+                sitefreq[j][k] /= total;
+                globalfreq[k] += sitefreq[j][k];
+
+                partfreq[scheme.sitePart[j]][k] += sitefreq[j][k];
+            }
+        }
+
+        double* partstat = new double[Nstate];
+        for (int k=0; k<Nstate; k++)    {
+            globalfreq[k] /= Nsite - totalnull;
+
+            for (int j=0; j<scheme.Npart; j++) {
+                partstat[k] = 0.0;
+
+                partfreq[j][k] /= scheme.partSites[j].size() - null[j];
+                for(std::vector<int>::iterator it = scheme.partSites[j].begin(); it != scheme.partSites[j].end(); it++)
+                {
+                    double tmp = (sitefreq[*it][k] - partfreq[j][k]);
+                    partstat[k] += tmp*tmp;
+
+                    //double tmp = (sitefreq[*it][k] - globalfreq[k]);
+                    //globalstat[k] += tmp*tmp;
+                }
+                partstat[k] /= scheme.partSites[j].size() - null[j];
+
+                double weight = (scheme.partSites[j].size() - null[j])/(Nsite - totalnull);
+                withinstat[k] += partstat[k]*weight;
+
+                double tmp = (partfreq[j][k] - globalfreq[k]);
+                acrossstat[k] += tmp*tmp*weight;
+            }
+
+            //globalstat[k] /= Nsite;
+        }
+        delete [] partstat;
+
+        // compute total variance
+        double SSglobal = 0;
+        double SSwithin = 0;
+        double SSacross = 0;
+        for (int k=0; k<Nstate; k++)    {
+            //SSglobal += globalstat[k];
+            SSwithin += withinstat[k];
+            SSacross += acrossstat[k];
+        }
+
+
+        delete[] globalfreq;
+        //delete[] globalstat;
+        delete[] acrossstat;
+        delete[] withinstat;
+        delete[] null;
+
+        for (int j=0; j<scheme.Npart; j++) {
+            delete[] partfreq[j];
+        }
+        delete[] partfreq;
+
+        for (int j=0; j<Nsite; j++) {
+            delete[] sitefreq[j];
+        }
+        delete[] sitefreq;
+
+        return SSacross/(SSwithin + SSacross);
+    }
 
 	// data fields
 

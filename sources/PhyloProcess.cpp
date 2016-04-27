@@ -2310,7 +2310,7 @@ void PhyloProcess::ReadSiteRates(string name, int burnin, int every, int until)	
 
 }
 
-void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, int until, int inrateprior, int inprofileprior, int inrootprior)	{
+void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, int until, int inrateprior, int inprofileprior, int inrootprior, std::string schemefile)	{
 
 	GlobalSetRatePrior(inrateprior);
 	GlobalSetProfilePrior(inprofileprior);
@@ -2322,6 +2322,8 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 		exit(1);
 	}
 
+	PartitionScheme scheme = PartitionProcess::ReadSchemes(schemefile,GetNsite(),GetMyid(),false)[2];
+
 	double* obstaxstat = new double[GetNtaxa()];
 	SequenceAlignment* datacopy  = new SequenceAlignment(GetData());
 	double obs = 0;
@@ -2332,6 +2334,9 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 	}
 	else if (ppredtype == 3)	{
 		obs = GetObservedCompositionalHeterogeneity(obstaxstat,obs2);
+	}
+	else if (ppredtype == 4)    {
+	    obs = GetProportionWithinPartitionVariance(scheme);
 	}
 
 	cerr << "burnin: " << burnin << '\n';
@@ -2398,6 +2403,10 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 						pptaxstat[j] ++;
 					}
 				}
+			}
+			else if (ppredtype == 3)
+			{
+			    stat = GetProportionWithinPartitionVariance(scheme);
 			}
 			meanstat += stat;
 			varstat += stat * stat;
@@ -2483,6 +2492,15 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 			os << GetTaxonSet()->GetTaxon(j) << '\t' << obstaxstat[j] << '\t' << meantaxstat[j] << '\t' << (obstaxstat[j] - meantaxstat[j])/sqrt(vartaxstat[j]) << '\t' << pptaxstat[j] << '\n';
 		}
 		cerr << "result of compositional homogeneity test in " << name << ".comp\n";
+	}
+	else if (ppredtype == 3)    {
+	    ofstream os((name + ".var").c_str());
+        os << "within-partition variance test\n";
+        os << "obs var : " << obs << '\n';
+        os << "mean var: " << meanstat << " +/- " << sqrt(varstat) << '\n';
+        os << "z-score : " << (meanstat - obs) / sqrt(varstat) << '\n';
+        os << "pp      : " << ppstat << '\n';
+        cerr << "result of var test in " << name << ".var\n";
 	}
 	cerr << '\n';
 }

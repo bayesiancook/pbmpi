@@ -261,7 +261,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	virtual void Read(string name, int burnin, int every, int until);
 	virtual void ReadSiteLogL(string name, int burnin, int every, int until);
 	virtual void ReadCV(string testdatafile, string name, int burnin, int every, int until, int iscodon = 0, GeneticCodeType codetype = Universal);
-	virtual void PostPred(int ppredtype, string name, int burnin, int every, int until, int rateprior, int profileprior, int rootprior);
+	virtual void PostPred(int ppredtype, string name, int burnin, int every, int until, int rateprior, int profileprior, int rootprior, std::string schemefile = "");
 
 	void ReadSiteRates(string name, int burnin, int every, int until);
 
@@ -467,6 +467,10 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	virtual double GetCompositionalHeterogeneity(double* taxstat, double& meandist)	{
 		return data->CompositionalHeterogeneity(taxstat,0,meandist);
 	}
+
+	virtual double GetProportionWithinPartitionVariance(PartitionScheme scheme) {
+        return data->ProportionWithinPartitionVariance(scheme);
+    }
 
 	virtual int GetNprocs() {
 		return nprocs;

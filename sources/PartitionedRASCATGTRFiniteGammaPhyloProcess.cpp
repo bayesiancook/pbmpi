@@ -355,6 +355,11 @@ void PartitionedRASCATGTRFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])
 			else if (s == "-ppred")	{
 				ppred = 1;
 			}
+			else if (s == "-var") {
+                ppred = 4;
+                i++;
+                testdatafile = argv[i];
+            }
 			else if (s == "-p")	{
 				i++;
 				cvschemefile = argv[i];
@@ -488,7 +493,7 @@ void PartitionedRASCATGTRFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])
 		ReadSiteRates(name,burnin,every,until);
 	}
 	else if (ppred)	{
-		PostPred(ppred,name,burnin,every,until,rateprior,profileprior,rootprior);
+		PostPred(ppred,name,burnin,every,until,rateprior,profileprior,rootprior,testdatafile);
 	}
 	else if (map)	{
 		ReadMap(name,burnin,every,until);

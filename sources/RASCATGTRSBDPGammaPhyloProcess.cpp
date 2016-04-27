@@ -202,6 +202,7 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	// 1 : plain ppred (outputs simulated data)
 	// 2 : diversity statistic
 	// 3 : compositional statistic
+	// 4 : partition variance statistic
 
 	int ss = 0;
 	int nocc = 0;
@@ -236,6 +237,11 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 			else if (s == "-ppred")	{
 				ppred = 1;
 			}
+			else if (s == "-var") {
+                ppred = 4;
+                i++;
+                testdatafile = argv[i];
+            }
 			else if (s == "-ppredrate")	{
 				i++;
 				string tmp = argv[i];
@@ -380,7 +386,7 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 		ReadRelRates(name,burnin,every,until);
 	}
 	else if (ppred)	{
-		PostPred(ppred,name,burnin,every,until,rateprior,profileprior,rootprior);
+		PostPred(ppred,name,burnin,every,until,rateprior,profileprior,rootprior,testdatafile);
 	}
 	else if (map)	{
 		ReadMap(name,burnin,every,until);
