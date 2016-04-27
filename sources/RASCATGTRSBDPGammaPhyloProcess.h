@@ -372,7 +372,6 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 	void ReadNocc(string name, int burnin, int every, int until);
 	void ReadRelRates(string name, int burnin, int every, int until);
 	void ReadSiteProfiles(string name, int burnin, int every, int until);
-	void ReadProfileSumSquares(string partitionfile, string name, int burnin, int every, int until);
 	void SlaveComputeCVScore();
 	void SlaveComputeSiteLogL();
 

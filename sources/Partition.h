@@ -64,11 +64,6 @@ public:
 
 	std::string GetPartType(int part){ return scheme.partType[part]; }
 
-	// 0: relative rates
-    // 1: stat
-    // 2: dgam
-    std::vector<PartitionScheme> ReadSchemes(std::string schemefile, int Nsite, int myid, bool linkgam = false, bool unlinkgtr = false, std::string rrtype = "");
-
 	protected:
 
 	void Create(PartitionScheme& inscheme)
@@ -79,6 +74,8 @@ public:
 	{
 
 	}
+
+	std::vector<PartitionScheme> ReadSchemes(std::string schemefile, int Nsite, int myid, bool linkgam = false, bool unlinkgtr = false, std::string rrtype = "");
 
 	PartitionScheme scheme;
 };

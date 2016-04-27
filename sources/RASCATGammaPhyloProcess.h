@@ -262,7 +262,6 @@ class RASCATGammaPhyloProcess : public virtual PoissonPhyloProcess, public virtu
 
 	virtual void ReadPB(int argc, char* argv[]);
 	void ReadSiteProfiles(string name, int burnin, int every, int until);
-	void ReadProfileSumSquares(string schemefile, string name, int burnin, int every, int until);
 
 	void ToStreamHeader(ostream& os)	{
 		PhyloProcess::ToStreamHeader(os);

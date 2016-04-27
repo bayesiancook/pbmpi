@@ -19,7 +19,6 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 #include "RASCATGammaPhyloProcess.h"
 #include "Parallel.h"
 #include <string>
-#include "Partition.h"
 
 void RASCATGammaPhyloProcess::GlobalUpdateParameters()	{
 	// MPI2
@@ -181,8 +180,6 @@ void RASCATGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	int profileprior = 0;
 	int rootprior = 0;
 
-	bool fstat = false;
-
 	try	{
 
 		if (argc == 1)	{
@@ -260,11 +257,6 @@ void RASCATGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 			else if (s == "-map")	{
 				map = 1;
 			}
-            else if (s == "-fstat")    {
-                fstat = true;
-                i++;
-                testdatafile = argv[i];
-            }
 			else if ( (s == "-x") || (s == "-extract") )	{
 				i++;
 				if (i == argc) throw(0);
@@ -334,111 +326,9 @@ void RASCATGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	else if (ppred)	{
 		PostPred(ppred,name,burnin,every,until,rateprior,profileprior,rootprior);
 	}
-    else if (fstat)   {
-        ReadProfileSumSquares(testdatafile,name,burnin,every,until);
-    }
 	else	{
 		Read(name,burnin,every,until);
 	}
-}
-
-void RASCATGammaPhyloProcess::ReadProfileSumSquares(string schemefile, string name, int burnin, int every, int until)    {
-
-    ifstream is((name + ".chain").c_str());
-    if (!is)    {
-        cerr << "error: no .chain file found\n";
-        exit(1);
-    }
-
-    PartitionProcess p;
-    std::vector<PartitionScheme> schemes = p.ReadSchemes(schemefile, GetNsite(), GetMyid());
-
-    int Ngenes = schemes[2].Npart;
-
-    cerr << "burnin : " << burnin << "\n";
-    cerr << "until : " << until << '\n';
-    int i=0;
-    while ((i < until) && (i < burnin)) {
-        FromStream(is);
-        i++;
-    }
-    int samplesize = 0;
-
-    double F = 0.0;
-    double varF = 0.0;
-
-    while (i < until)   {
-        cerr << ".";
-        cerr.flush();
-        samplesize++;
-        FromStream(is);
-        i++;
-
-        std::vector<std::vector<double> > geneMeans(Ngenes, std::vector<double>(GetDim(), 0.0));
-        std::vector<double> grandMean(GetDim(), 0.0);
-
-        for (int i=0; i<GetNsite(); i++)    {
-            double* p = GetProfile(i);
-            for (int k=0; k<GetDim(); k++)  {
-                grandMean[k] += p[k];
-                geneMeans[schemes[2].sitePart[i]][k] += p[k];
-            }
-        }
-
-        for (int k=0; k<GetDim(); k++)  {
-            grandMean[k] /= GetNsite();
-        }
-
-        double SSgene = 0.0;
-
-        for (int i=0; i<Ngenes; i++)  {
-            double g = 0.0;
-            for (int k=0; k<GetDim(); k++)  {
-                geneMeans[i][k] /= schemes[2].partSites[i].size();
-                double d = geneMeans[i][k] - grandMean[k];
-                g += d*d;
-            }
-            SSgene += g * schemes[2].partSites[i].size();
-        }
-
-        SSgene /= Ngenes - 1;
-
-        double SSsite = 0.0;
-
-        for (int i=0; i<GetNsite(); i++)    {
-            double* p = GetProfile(i);
-            for (int k=0; k<GetDim(); k++)  {
-                double d = (p[k] - geneMeans[schemes[2].sitePart[i]][k]);
-                SSsite += d*d;
-            }
-        }
-
-        SSsite /= GetNsite() - Ngenes;
-
-        double f = SSgene / SSsite;
-        F += f;
-        varF += f*f;
-
-
-        int nrep = 1;
-        while ((i<until) && (nrep < every)) {
-            FromStream(is);
-            i++;
-            nrep++;
-        }
-    }
-    cerr << '\n';
-
-    F /= samplesize;
-    varF /= samplesize;
-
-    stringstream ss;
-    ofstream os((name + ".f").c_str());
-    ss << "mean f: " << F << " +/- " << sqrt(varF) << '\n';
-    ss << "df1: " << Ngenes - 1 << '\n';
-    ss << "df2: " << GetNsite() - Ngenes << '\n';
-    cerr << "gene/site profile f statistics in " << name << ".f\n" << ss.str() << "\n";
-    os << "gene/site profile f statistic\n" << ss.str();
 }
 
 void RASCATGammaPhyloProcess::ReadSiteProfiles(string name, int burnin, int every, int until)	{
