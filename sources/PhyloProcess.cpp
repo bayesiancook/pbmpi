@@ -2086,6 +2086,11 @@ void PhyloProcess::ReadPB(int argc, char* argv[])	{
 			else if (s == "-ppred")	{
 				ppred = 1;
 			}
+			else if (s == "-var")    {
+                		ppred = 4;
+               			i++;
+                		testdatafile = argv[i];
+            		}
 			else if (s == "-ppredrate")	{
 				i++;
 				string tmp = argv[i];
@@ -2185,7 +2190,7 @@ void PhyloProcess::ReadPB(int argc, char* argv[])	{
 	}
 
 	if (ppred)	{
-		PostPred(ppred,name,burnin,every,until,rateprior,profileprior,rootprior);
+		PostPred(ppred,name,burnin,every,until,rateprior,profileprior,rootprior,testdatafile);
 	}
 	else if (cv)	{
 		ReadCV(testdatafile,name,burnin,every,until);
@@ -2322,7 +2327,9 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 		exit(1);
 	}
 
-	PartitionScheme scheme = PartitionProcess::ReadSchemes(schemefile,GetNsite(),GetMyid(),false)[2];
+	PartitionScheme scheme;
+	if(schemefile != "")
+		scheme = PartitionProcess::ReadSchemes(schemefile,GetNsite(),GetMyid(),false)[2];
 
 	double* obstaxstat = new double[GetNtaxa()];
 	SequenceAlignment* datacopy  = new SequenceAlignment(GetData());
@@ -2336,9 +2343,9 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 		obs = GetObservedCompositionalHeterogeneity(obstaxstat,obs2);
 	}
 	else if (ppredtype == 4)    {
-	    obs = GetProportionWithinPartitionVariance(scheme);
+		obs = GetObservedProportionWithinPartitionVariance(scheme);
 	}
-
+	
 	cerr << "burnin: " << burnin << '\n';
 	cerr << "every " << every << " points until " << until << '\n';
 	// cerr << "number of points : " << (until - burnin)/every << '\n';
@@ -2404,7 +2411,7 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 					}
 				}
 			}
-			else if (ppredtype == 3)
+			else if (ppredtype == 4)
 			{
 			    stat = GetProportionWithinPartitionVariance(scheme);
 			}
@@ -2493,7 +2500,7 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 		}
 		cerr << "result of compositional homogeneity test in " << name << ".comp\n";
 	}
-	else if (ppredtype == 3)    {
+	else if (ppredtype == 4)    {
 	    ofstream os((name + ".var").c_str());
         os << "within-partition variance test\n";
         os << "obs var : " << obs << '\n';

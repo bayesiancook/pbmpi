@@ -468,9 +468,12 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 		return data->CompositionalHeterogeneity(taxstat,0,meandist);
 	}
 
+	virtual double GetObservedProportionWithinPartitionVariance(PartitionScheme scheme) {
+		return data->ProportionWithinPartitionVariance(scheme);
+	}
 	virtual double GetProportionWithinPartitionVariance(PartitionScheme scheme) {
-        return data->ProportionWithinPartitionVariance(scheme);
-    }
+		return data->ProportionWithinPartitionVariance(scheme);
+	}
 
 	virtual int GetNprocs() {
 		return nprocs;
