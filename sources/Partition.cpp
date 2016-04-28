@@ -31,6 +31,9 @@ vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsi
 	        continue;
 	    }
 
+	    if(line.find_last_of(";") != std::string::npos)
+	        line.erase(line.find_last_of(";"));
+
 		stringstream ss(line);
 
 		string item;
