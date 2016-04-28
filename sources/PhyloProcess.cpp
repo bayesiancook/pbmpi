@@ -2344,6 +2344,7 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 	}
 	else if (ppredtype == 4)    {
 		obs = GetObservedProportionWithinPartitionVariance(scheme);
+		obs = log(obs/(1.0-obs));
 	}
 	
 	cerr << "burnin: " << burnin << '\n';
@@ -2414,6 +2415,7 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 			else if (ppredtype == 4)
 			{
 			    stat = GetProportionWithinPartitionVariance(scheme);
+			    stat = log(stat/(1.0-stat));
 			}
 			meanstat += stat;
 			varstat += stat * stat;

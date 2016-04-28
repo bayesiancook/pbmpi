@@ -702,7 +702,7 @@ class SequenceAlignment	{
         }
         delete[] sitefreq;
 
-        return SSacross/(SSwithin + SSacross);
+        return SSwithin/(SSwithin + SSacross);
     }
 
 	// data fields
