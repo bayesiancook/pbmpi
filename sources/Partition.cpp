@@ -23,8 +23,14 @@ vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsi
 
 	// get the unlinked partition info
 	string line;
+	size_t lineNum = 0;
 	while(getline(theStream, line))
 	{
+	    if(line.find_first_not_of(" \t\n\v\f\r") == std::string::npos)
+	    {
+	        continue;
+	    }
+
 		stringstream ss(line);
 
 		string item;
@@ -33,10 +39,15 @@ vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsi
 			elems.push_back(item);
 		}
 
-		if(elems.size() < 2)
+		if(elems.size() == 1)
 		{
 			cerr << error;
+			cerr << "Line " << lineNum << "\n";
 			exit(1);
+		}
+		else if(elems.size() == 0)
+		{
+		    continue;
 		}
 
 		string type;
@@ -55,6 +66,7 @@ vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsi
 				if(type.empty())
 				{
 						cerr << error;
+						cerr << "Line " << lineNum << ": partition type not specified\n";
 						exit(1);
 				}
 
@@ -126,6 +138,7 @@ vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsi
 					else
 					{
 						cerr << error;
+						cerr << "Line " << lineNum << ": token '" << item << "'\n";
 						exit(1);
 					}
 				}
@@ -133,6 +146,7 @@ vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsi
 				if(range.empty() || range.size() > 2)
 				{
 					cerr << error;
+					cerr << "Line " << lineNum << "\n";
 					exit(1);
 				}
 
@@ -187,6 +201,7 @@ vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsi
 			statscheme.Npart++;
 		}
 
+		lineNum++;
 	}
 
 	if(partsites.size() != Nsite)

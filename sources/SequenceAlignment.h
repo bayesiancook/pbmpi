@@ -601,7 +601,7 @@ class SequenceAlignment	{
         // get site profiles
         for (int i=0; i<Ntaxa; i++) {
             for (int j=0; j<Nsite; j++) {
-                int state = GetState(j,i);
+                int state = GetState(i,j);
                 if (state != unknown)   {
                     sitefreq[j][state]++;
                 }
@@ -620,8 +620,8 @@ class SequenceAlignment	{
             acrossstat[k] = 0;
         }
 
-        int* null = new int[scheme.Npart];
-        int totalnull = 0;
+        double* null = new double[scheme.Npart];
+        double totalnull = 0;
         for (int j=0; j<scheme.Npart; j++) {
             null[j] = 0;
         }
