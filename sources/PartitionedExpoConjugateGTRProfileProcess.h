@@ -41,7 +41,9 @@ class PartitionedExpoConjugateGTRProfileProcess : public virtual PartitionedGTRP
 	void MoveRR();
 
 	int** rrsuffstatcount;
+	int*  allocrrsuffstatcount;
 	double** rrsuffstatbeta;
+	double*  allocrrsuffstatbeta;
 };
 
 #endif

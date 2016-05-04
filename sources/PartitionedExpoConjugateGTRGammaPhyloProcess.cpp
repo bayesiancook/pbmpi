@@ -335,8 +335,8 @@ void PartitionedExpoConjugateGTRGammaPhyloProcess::GlobalUpdateRRSuffStat()	{
 		}
 	}
 
-	MPI_Bcast(rrsuffstatcount,Nrr*Np,MPI_INT,0,MPI_COMM_WORLD);
-	MPI_Bcast(rrsuffstatbeta,Nrr*Np,MPI_DOUBLE,0,MPI_COMM_WORLD);
+	MPI_Bcast(allocrrsuffstatcount,Nrr*Np,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(allocrrsuffstatbeta,Nrr*Np,MPI_DOUBLE,0,MPI_COMM_WORLD);
 	#endif
 }
 
@@ -371,12 +371,22 @@ void PartitionedExpoConjugateGTRGammaPhyloProcess::SlaveUpdateRRSuffStat()	{
 	MPI_Send(bvector,workload*Np*(sizeof(int)+sizeof(double)),MPI_UNSIGNED_CHAR,0,TAG1,MPI_COMM_WORLD);
 	delete[] bvector;
 	#else
-	MPI_Send(rrsuffstatcount,workload*Np,MPI_INT,0,TAG1,MPI_COMM_WORLD);
-	MPI_Barrier(MPI_COMM_WORLD);
-	MPI_Send(rrsuffstatbeta,workload*Np,MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
+	int ivector[workload*Np];
+    double dvector[workload*Np];
+    for(int p=0; p<Np; ++p)
+    {
+        for(int j=0; j<workload; ++j) {
+            ivector[p*workload + j] = rrsuffstatcount[p][j];
+            dvector[p*workload + j] = rrsuffstatbeta[p][j];
+        }
+    }
 
-	MPI_Bcast(rrsuffstatcount,Nrr*Np,MPI_INT,0,MPI_COMM_WORLD);
-	MPI_Bcast(rrsuffstatbeta,Nrr*Np,MPI_DOUBLE,0,MPI_COMM_WORLD);
+    MPI_Send(ivector,workload*Np,MPI_INT,0,TAG1,MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Send(dvector,workload*Np,MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
+
+	MPI_Bcast(allocrrsuffstatcount,Nrr*Np,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(allocrrsuffstatbeta,Nrr*Np,MPI_DOUBLE,0,MPI_COMM_WORLD);
 	#endif
 }
 

@@ -29,12 +29,14 @@ void PartitionedExpoConjugateGTRProfileProcess::Create(int indim, PartitionSchem
 		PartitionedGTRProfileProcess::Create(indim, inscheme);
 	}
 	if (! rrsuffstatcount)	{
+	    allocrrsuffstatcount = new int[GetNpart()*GetDim()];
+	    allocrrsuffstatbeta = new double[GetNpart()*GetDim()];
 		rrsuffstatcount = new int*[GetNpart()];
 		rrsuffstatbeta = new double*[GetNpart()];
 		for(int p = 0; p < GetNpart(); p++)
 		{
-			rrsuffstatcount[p] = new int[Nrr];
-			rrsuffstatbeta[p] = new double[Nrr];
+			rrsuffstatcount[p] = allocrrsuffstatcount + p*GetDim();
+			rrsuffstatbeta[p] = allocrrsuffstatbeta + p*GetDim();
 		}
 	}
 }
@@ -48,6 +50,8 @@ void PartitionedExpoConjugateGTRProfileProcess::Delete()	{
 		}
 		delete[] rrsuffstatcount;
 		delete[] rrsuffstatbeta;
+		delete[] allocrrsuffstatcount;
+		delete[] allocrrsuffstatbeta;
 		rrsuffstatcount = 0;
 		rrsuffstatbeta = 0;
 	}
