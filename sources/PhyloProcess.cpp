@@ -2635,7 +2635,6 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until)	{
 		FromStream(is);
 		i++;
 		QuickUpdate();
-		// Trace(cerr);
 		MPI_Status stat;
 		MESSAGE signal = SITELOGL;
 		MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
