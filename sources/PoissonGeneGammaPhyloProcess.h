@@ -224,7 +224,6 @@ class PoissonGeneGammaPhyloProcess : public virtual PoissonPhyloProcess, public 
 		PoissonPhyloProcess::Delete();
 	}
 
-	int fixtopo;
 	int dc;
 	PoissonProfileProcess* hub;
 	string datafile;

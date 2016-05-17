@@ -347,7 +347,6 @@ class GeneralPathSuffStatRASCATGTRSBDPGammaPhyloProcess : public virtual General
 		return naccept / nrep;
 	}
 
-	int fixtopo;
 	int dc;
 };
 

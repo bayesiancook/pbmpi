@@ -349,7 +349,6 @@ class AACodonMutSelFinitePhyloProcess : public virtual AACodonMutSelFiniteSubsti
 	}
 
 	int dc;
-	int fixtopo;
 	int fixbl;
 	int NSPR;
 	int NNNI;

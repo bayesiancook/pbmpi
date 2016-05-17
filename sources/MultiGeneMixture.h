@@ -197,7 +197,7 @@ class MultiGeneMixture : public virtual SBDPProfileProcess	{
 	double* genelength;
 	double* tmpgenelnL;
 
-	int fixtopo;
+	bool fixtopo;
 	int dc;
 
 	string name;

@@ -417,7 +417,6 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 		delete[] partempfreq;
 	}
 
-	int fixtopo;
 	int NSPR;
 	int NNNI;
 	int iscodon;

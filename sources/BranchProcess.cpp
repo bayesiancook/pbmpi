@@ -193,5 +193,11 @@ double BranchProcess::LengthSuffStatLogProb()	{
 	return total;
 }
 
-
+void BranchProcess::ReadTree(string treefile)
+{
+    ifstream is(treefile.c_str());
+    tree->ReadFromStream(is);
+    tree->RegisterWith(tree->GetTaxonSet());
+    SetLengthsFromNames();
+}
 

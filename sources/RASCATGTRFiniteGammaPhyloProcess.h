@@ -336,7 +336,6 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 		ExpoConjugateGTRPhyloProcess::Delete();
 	}
 
-	int fixtopo;
 	int NSPR;
 	int NNNI;
 	int dc;

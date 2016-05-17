@@ -315,7 +315,6 @@ class CodonMutSelSBDPPhyloProcess : public virtual CodonMutSelSBDPSubstitutionPr
 
 	GeneticCodeType codetype;
 	CodonStateSpace* statespace;
-	int fixtopo;
 	int fixbl;
 	int NSPR;
 	int NNNI;

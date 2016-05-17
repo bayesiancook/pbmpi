@@ -81,7 +81,8 @@ void PhyloProcess::DeleteMappings()	{
 	for (int j=0; j<GetNbranch(); j++)	{
 		if (submap[j])	{
 			for (int i=sitemin; i<sitemax; i++)	{
-				delete submap[j][i];
+			    if(!sitemask[i - sitemin])
+			        delete submap[j][i];
 			}
 			delete[] submap[j];
 			submap[j] = 0;
@@ -1245,12 +1246,58 @@ double PhyloProcess::GlobalComputeNodeLikelihood(const Link* from, int auxindex)
 	// and return it
 
 	logL = 0.0;
+	maskedlogL = 0.0;
 	double sum;
 	for(i=1; i<nprocs; ++i) {
 		MPI_Recv(&sum,1,MPI_DOUBLE,MPI_ANY_SOURCE,TAG1,MPI_COMM_WORLD,&stat);
 		logL += sum;
+		MPI_Recv(&sum,1,MPI_DOUBLE,MPI_ANY_SOURCE,TAG1,MPI_COMM_WORLD,&stat);
+		maskedlogL += sum;
 	}
 	return logL;
+}
+
+void PhyloProcess::GlobalSetSteppingStone(int stone_index, int num_stones)
+{
+    assert(myid == 0);
+    MESSAGE signal = STEPPINGSTONE;
+    MPI_Status stat;
+    MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+    int args[2];
+    args[0] = stone_index;
+    args[1] = num_stones;
+    MPI_Bcast(args,2,MPI_INT,0,MPI_COMM_WORLD);
+}
+
+void PhyloProcess::SlaveSetSteppingStone(void)
+{
+    assert(myid > 0);
+    int args[2];
+    MPI_Bcast(args,2,MPI_INT,0,MPI_COMM_WORLD);
+
+    int stone_index = args[0];
+    int num_stones = args[1];
+
+    double heat_prev = pow(double(num_stones - stone_index)/num_stones, 10.0 / 3.0);
+    double heat = pow(double(num_stones - stone_index - 1)/num_stones, 10.0 / 3.0);
+
+    size_t unmasked_prev = ceil((sitemax - sitemin)*heat_prev);
+    size_t unmasked = ceil((sitemax - sitemin)*heat);
+
+    sitemax = sitemin + unmasked_prev;
+
+    for(size_t i = unmasked; i < unmasked_prev; i++)
+    {
+        sitemask[i] = true;
+    }
+
+    mask_sum_only = true;
+}
+
+void PhyloProcess::FixTopo(string treefile)
+{
+    ReadTree(treefile);
+    fixtopo = true;
 }
 
 void PhyloProcess::GlobalReset(const Link* link, bool condalloc)	{
@@ -1618,6 +1665,9 @@ void PhyloProcess::SlaveExecute(MESSAGE signal)	{
 	case SIMULATE:
 		SimulateForward();
 		break;
+	case STEPPINGSTONE:
+	    SlaveSetSteppingStone();
+	    break;
 	
 	default:
 		// or : SubstitutionProcess::SlaveExecute?
@@ -1637,6 +1687,7 @@ void PhyloProcess::SlaveLikelihood(int fromindex,int auxindex) {
 	assert(myid > 0);
 	double lvalue = ComputeNodeLikelihood(GetLinkForGibbs(fromindex),auxindex);
 	MPI_Send(&lvalue,1,MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
+	MPI_Send(&maskedlogL,1,MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
 }
 
 void PhyloProcess::SlaveGibbsSPRScan(int idown, int iup)	{
@@ -2874,11 +2925,14 @@ void PhyloProcess::SlaveWriteMappings(){
 	delete[] bvector;
 
 	for(int i = sitemin; i < sitemax; i++){
-		stringstream osfmap;
-		osfmap << name << '_' << i << ".map";
-		ofstream osmap((osfmap.str()).c_str(), ios_base::app);
-		WriteTreeMapping(osmap, GetRoot(), i);
-		osmap.close();
+	    if(!sitemask[i - sitemin])
+	    {
+            stringstream osfmap;
+            osfmap << name << '_' << i << ".map";
+            ofstream osmap((osfmap.str()).c_str(), ios_base::app);
+            WriteTreeMapping(osmap, GetRoot(), i);
+            osmap.close();
+	    }
 	}
 }
 

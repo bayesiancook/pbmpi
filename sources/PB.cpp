@@ -15,6 +15,7 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 
 
 #include "Model.h"
+#include "StringStreamUtils.h"
 
 int main(int argc, char* argv[])	{
 
@@ -89,6 +90,10 @@ int main(int argc, char* argv[])	{
 	bool linkgam = false;
 	bool unlinkgtr = false;
 	bool linkmult = true;
+
+	// Steppingstone params
+	size_t steppingstone_size = 1000;
+	size_t num_steppingstones = 0;
 
 	try	{
 
@@ -418,7 +423,18 @@ int main(int argc, char* argv[])	{
 			}
 			*/
 			else if (s == "-ss")	{
-				mixturetype = 5;
+			    i++;
+                if (i == argc) throw(0);
+                num_steppingstones = atoi(argv[i]);
+                i++;
+                if (i == argc) throw(0);
+                s = atoi(argv[i]);
+                if (IsInt(s))   {
+                    steppingstone_size = atoi(argv[i]);
+                }
+                else {
+                    i--;
+                }
 			}
 			else if (s == "-uni")	{
 				type = Universal;
@@ -649,15 +665,13 @@ int main(int argc, char* argv[])	{
 		}
 	}
 	else	{
-		model = new Model(name,myid,nprocs);
+	    model = new Model(name,myid,nprocs,treefile,num_steppingstones,steppingstone_size);
 		if (until != -1)	{
 			model->until = until;
 		}
 	}
 
 	if (myid == 0) {
-		cerr << "run started\n";
-		cerr << '\n';
 		// model->Trace(cerr);
 		model->Run(burnin);
 		MESSAGE signal = KILL;

@@ -331,7 +331,6 @@ class CodonMutSelFinitePhyloProcess : public virtual CodonMutSelFiniteSubstituti
 	}
 
 	int dc;
-	int fixtopo;
 	int fixbl;
 	int NSPR;
 	int NNNI;

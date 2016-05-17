@@ -143,6 +143,8 @@ class BranchProcess : public NewickTree {
 
 	virtual const TaxonSet* GetTaxonSet() const = 0;
 
+	void ReadTree(string treefile);
+
 	protected:
 
 	int GetNbranch()	{
@@ -167,6 +169,7 @@ class BranchProcess : public NewickTree {
 	virtual void Delete() {
 		delete[] blarray;
 		delete[] bkarray;
+		delete tree;
 	}
 
 	double RecursiveLogLengthPrior(const Link* from);

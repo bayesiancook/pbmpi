@@ -339,7 +339,6 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 
 	void UpdatePartOccupancyNumbers();
 
-	int fixtopo;
 	int NSPR;
 	int NNNI;
 

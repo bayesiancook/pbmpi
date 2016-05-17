@@ -276,7 +276,6 @@ class ExpoConjugateGTRGeneGammaPhyloProcess : public virtual ExpoConjugateGTRPhy
 		ExpoConjugateGTRPhyloProcess::Delete();
 	}
 
-	int fixtopo;
 	int dc;
 	ExpoConjugateGTRProfileProcess* hub;
 	string datafile;

@@ -378,7 +378,6 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 
 	void UpdatePartOccupancyNumbers();
 
-	int fixtopo;
 	int NSPR;
 	int NNNI;
 	int iscodon;

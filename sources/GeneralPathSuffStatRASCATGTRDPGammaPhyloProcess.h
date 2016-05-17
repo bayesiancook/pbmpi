@@ -302,7 +302,6 @@ class GeneralPathSuffStatRASCATGTRDPGammaPhyloProcess : public virtual GeneralPa
 		GeneralPathSuffStatGTRPhyloProcess::Delete();
 	}
 
-	int fixtopo;
 	int dc;
 };
 

@@ -307,7 +307,6 @@ class RASCATGammaPhyloProcess : public virtual PoissonPhyloProcess, public virtu
 
 	int iscodon;
 	GeneticCodeType codetype;
-	int fixtopo;
 	int NSPR;
 	int NNNI;
 	int dc;

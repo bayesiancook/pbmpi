@@ -33,7 +33,6 @@ class PartitionedGTRSubstitutionProcess : public virtual MatrixSubstitutionProce
 	void Create(int indim, PartitionScheme rrscheme, int insitemin,int insitemax)	{
 		PartitionedGTRProfileProcess::Create(indim, rrscheme);
 		SubstitutionProcess::Create(rrscheme.GetNsite(),indim,insitemin,insitemax);
-		sitemask = vector<bool>(insitemax - insitemin, false);
 	}
 
 	void Delete() {
@@ -43,29 +42,6 @@ class PartitionedGTRSubstitutionProcess : public virtual MatrixSubstitutionProce
 
 	int GetNstate(int site) {return GetDim();}
 	int GetNstate() {return GetDim();}
-
-	// CPU : level 1
-	void Reset(double*** condl, bool condalloc = false);
-	void Multiply(double*** from, double*** to, bool condalloc = false);
-	void MultiplyByStationaries(double*** from, bool condalloc = false);
-	void Offset(double*** condl, bool condalloc = false);
-	void Initialize(double*** condl, const int* leafstates, bool condalloc = false);
-
-	// CPU : level 2
-	double ComputeLikelihood(double*** aux, bool condalloc = false);
-
-	// CPU : level 3
-	// implemented in GTR or POisson Substitution process
-	void Propagate(double*** from, double*** to, double time, bool condalloc = false);
-
-	void SimuPropagate(int* stateup, int* statedown, double time);
-	/*
-	double* GetStationary(int site)	{
-		return GetProfile(site);
-	}
-	*/
-
-	vector<bool> sitemask;
 };
 
 #endif
