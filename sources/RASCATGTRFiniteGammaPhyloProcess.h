@@ -119,26 +119,23 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 
 		FromStreamHeader(is);
 
-		SequenceAlignment* plaindata = new FileSequenceAlignment(datafile,0,myid,false);
 		if (dc)	{
-			plaindata->DeleteConstantSites();
+			data->DeleteConstantSites();
 		}
-		const TaxonSet* taxonset = plaindata->GetTaxonSet();
-        tree->RegisterWith(taxonset,0);
 
 		int insitemin = -1,insitemax = -1;
 		if (myid > 0) {
-			int width = plaindata->GetNsite()/(nprocs-1);
+			int width = data->GetNsite()/(nprocs-1);
 			insitemin = (myid-1)*width;
 			if (myid == (nprocs-1)) {
-				insitemax = plaindata->GetNsite();
+				insitemax = data->GetNsite();
 			}
 			else {
 				insitemax = myid*width;
 			}
 		}
 
-		Create(tree,plaindata,DGamRateProcess::Ncat,1,fixncomp,empmix,mixtype,rrtype,insitemin,insitemax);
+		Create(tree,data,DGamRateProcess::Ncat,1,fixncomp,empmix,mixtype,rrtype,insitemin,insitemax);
 
 		if (myid == 0)	{
 			FromStream(is);
@@ -293,7 +290,9 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
             NNNI = 0;
         }
         is >> dc;
-        tree = new Tree();
+        data = new FileSequenceAlignment(datafile,0,myid,false);
+        const TaxonSet* taxonset = data->GetTaxonSet();
+        tree = new Tree(taxonset);
         tree->ReadFromStream(is);
 	}
 
