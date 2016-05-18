@@ -251,28 +251,7 @@ class Model	{
                 until = -1;
         }
 		
-        RestoreProcess(is,myid,nprocs);
-
-		process->SetSize(size);
-
-		if(num_stones > 0)
-		{
-		    // allow use of a fixed topology with steppingstones
-		    if(treefile != "None")
-            {
-                process->FixTopo(treefile);
-            }
-
-		    if(myid == 0)
-                process->GlobalSetSteppingStone(stone_index, num_stones);
-		}
-	}
-
-	void RestoreProcess(istream& is, int myid, int nprocs)
-	{
-	    delete process;
-
-	    if (type == "PARTCATFINITE")    {
+        if (type == "PARTCATFINITE")    {
             process = new PartitionedRASCATGTRFiniteGammaPhyloProcess(is,myid,nprocs);
         }
         else if (type == "PARTCATSBDP") {
@@ -330,6 +309,23 @@ class Model	{
             cerr << "error, does not recognize model type : " << type << '\n';
             exit(1);
         }
+
+		if(num_stones > 0)
+		{
+		    // allow use of a fixed topology with steppingstones
+		    if(treefile != "None")
+            {
+                process->FixTopo(treefile);
+            }
+
+		    if(myid == 0)
+		    {
+		        process->GlobalCollapse();
+		        process->SetSize(size);
+                process->GlobalSetSteppingStone(stone_index, num_stones);
+                process->GlobalUnfold();
+		    }
+		}
 	}
 
 	void ToStream(ostream& os, bool header)	{
@@ -461,9 +457,11 @@ class Model	{
                     is >> stone_index >> num_stones;
 
                     process->GlobalCollapse();
-                    process->GlobalSetSteppingStone(stone_index, num_stones);
-                    RestoreProcess(is,process->GetMyid(),process->GetNprocs());
+                    process->FromStreamHeader(is);
+                    process->FromStream(is);
                     process->SetSize(size);
+                    process->GlobalSetSteppingStone(stone_index, num_stones);
+                    process->GlobalUnfold();
 
                     // if the stone has enough states, then continue to the next stone
                     if(size >= until)
