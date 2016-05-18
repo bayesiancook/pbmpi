@@ -239,7 +239,7 @@ class Model	{
             w = num_stones > 0 ? (int) log10 ((double) num_stones) + 1 : 1;
 
             ss_ext.str("");
-            ss_ext << "ss" << setw(w) << stone_index;
+            ss_ext << "_ss" << setfill('0') << setw(w) << stone_index;
         }
         // otherwise we elongate a single chain
         else
@@ -460,10 +460,10 @@ class Model	{
                     is >> saveall;
                     is >> stone_index >> num_stones;
 
-                    RestoreProcess(is,process->GetMyid(),process->GetNprocs());
-
-                    process->SetSize(size);
+                    process->GlobalCollapse();
                     process->GlobalSetSteppingStone(stone_index, num_stones);
+                    RestoreProcess(is,process->GetMyid(),process->GetNprocs());
+                    process->SetSize(size);
 
                     // if the stone has enough states, then continue to the next stone
                     if(size >= until)
@@ -475,7 +475,7 @@ class Model	{
                         stone_index++;
 
                         ss_ext.str("");
-                        ss_ext << "ss" << setw(w) << stone_index;
+                        ss_ext << "_ss" << setfill('0') << setw(w) << stone_index;
                         continue;
                     }
                 }
@@ -491,7 +491,7 @@ class Model	{
             stone_index++;
 
             ss_ext.str("");
-            ss_ext << "ss" << setw(w) << stone_index;
+            ss_ext << "_ss" << setfill('0') << setw(w) << stone_index;
         }
 	}
 

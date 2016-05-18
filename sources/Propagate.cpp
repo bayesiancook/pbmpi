@@ -29,7 +29,7 @@ void MatrixSubstitutionProcess::SimuPropagate(int* stateup, int* statedown, doub
 	double cumul[nstate];
 	double expdiag[nstate];
 	for(int i=sitemin; i<sitemax; i++)	{
-	    if(!sitemask[i-sitemin])
+	    if(!sitemask[i])
 	    {
             int up = stateup[i];
 
@@ -90,7 +90,7 @@ void MatrixSubstitutionProcess::Propagate(double*** from, double*** to, double t
 	// double* bigaux = new double[(sitemax - sitemin) * GetNrate(0) * nstate];
 	double* aux = new double[GetNsite() * GetNrate(0) * nstate];
 	for(i=sitemin; i<sitemax; i++)	{
-	    if(!sitemask[i-sitemin] || mask_sum_only)
+	    if(!sitemask[i] || mask_sum_only)
 	    {
             SubMatrix* matrix = GetMatrix(i);
             double** eigenvect = matrix->GetEigenVect();

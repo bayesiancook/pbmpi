@@ -578,7 +578,7 @@ void PartitionedRASGTRGammaPhyloProcess::SlaveSetTestData()	{
 				}
 				else
 				{
-					sitemask[site-sitemin] = true;
+					sitemask[site] = true;
 				}
 
 				i++;
@@ -602,7 +602,7 @@ void PartitionedRASGTRGammaPhyloProcess::SlaveComputeCVScore()	{
 
 	double total = 0;
 	for (int i=sitemin; i<sitemax; i++)	{
-		if(!sitemask[i-sitemin])
+		if(!sitemask[i])
 			total += sitelogL[i];
 	}
 

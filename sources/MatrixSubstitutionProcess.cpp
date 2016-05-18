@@ -35,7 +35,7 @@ BranchSitePath** MatrixSubstitutionProcess::SampleRootPaths(int* state)	{
 	// BranchSitePath** patharray = new BranchSitePath*[sitemax - sitemin];
 	BranchSitePath** patharray = new BranchSitePath*[GetNsite()];
 	for (int i=sitemin; i<sitemax; i++)	{
-	  if(!sitemask[i-sitemin])
+	  if(!sitemask[i])
 		patharray[i] = new BranchSitePath(state[i]);
 	}
 
@@ -47,7 +47,7 @@ BranchSitePath** MatrixSubstitutionProcess::SamplePaths(int* stateup, int* state
 	// BranchSitePath** patharray = new BranchSitePath*[sitemax - sitemin];
 	BranchSitePath** patharray = new BranchSitePath*[GetNsite()];
 	for (int i=sitemin; i<sitemax; i++)	{
-	  if(!sitemask[i-sitemin])
+	  if(!sitemask[i])
 	  {
 		double rate = GetRate(i);
 		SubMatrix* matrix = GetMatrix(i);

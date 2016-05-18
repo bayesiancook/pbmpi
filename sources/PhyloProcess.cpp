@@ -81,7 +81,7 @@ void PhyloProcess::DeleteMappings()	{
 	for (int j=0; j<GetNbranch(); j++)	{
 		if (submap[j])	{
 			for (int i=sitemin; i<sitemax; i++)	{
-			    if(!sitemask[i - sitemin])
+			    if(!sitemask[i])
 			        delete submap[j][i];
 			}
 			delete[] submap[j];
@@ -1286,7 +1286,9 @@ void PhyloProcess::SlaveSetSteppingStone(void)
 
     sitemax = sitemin + unmasked_prev;
 
-    for(size_t i = unmasked; i < unmasked_prev; i++)
+    sitemask = vector<bool>(GetNsite(), false);
+
+    for(size_t i = sitemin+unmasked; i < sitemax; i++)
     {
         sitemask[i] = true;
     }
@@ -2438,7 +2440,6 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 		DenormalizeBranchLengths();
 		os.close();
 
-		MPI_Status stat;
 		MESSAGE signal = BCAST_TREE;
 		MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 		GlobalBroadcastTree();
@@ -2824,7 +2825,6 @@ void PhyloProcess::ReadMap(string name, int burnin, int every, int until){
 		ofstream sos(s.str().c_str());
 
 		// quick update and mapping on the fly
-		MPI_Status stat;
 		MESSAGE signal = BCAST_TREE;
 		MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 		GlobalBroadcastTree();
@@ -2925,7 +2925,7 @@ void PhyloProcess::SlaveWriteMappings(){
 	delete[] bvector;
 
 	for(int i = sitemin; i < sitemax; i++){
-	    if(!sitemask[i - sitemin])
+	    if(!sitemask[i])
 	    {
             stringstream osfmap;
             osfmap << name << '_' << i << ".map";

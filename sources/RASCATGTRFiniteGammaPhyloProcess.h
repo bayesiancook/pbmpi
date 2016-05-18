@@ -137,7 +137,7 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 			NNNI = 0;
 		}
 		is >> dc;
-		SequenceAlignment* plaindata = new FileSequenceAlignment(datafile,0,myid);
+		SequenceAlignment* plaindata = new FileSequenceAlignment(datafile,0,myid,false);
 		if (dc)	{
 			plaindata->DeleteConstantSites();
 		}
@@ -156,6 +156,8 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 		}
 
 		tree = new Tree(taxonset);
+		MESSAGE signal = BCAST_TREE;
+		MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 		if (myid == 0)	{
 			tree->ReadFromStream(is);
 			GlobalBroadcastTree();

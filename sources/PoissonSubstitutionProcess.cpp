@@ -35,7 +35,7 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 
 void PoissonSubstitutionProcess::Propagate(double*** from, double*** to, double time, bool condalloc)	{
 	for (int i=sitemin; i<sitemax; i++)	{
-	  if(!sitemask[i-sitemin] || mask_sum_only)
+	  if(!sitemask[i] || mask_sum_only)
 	  {
 		const double* stat = GetStationary(i);
 		for (int j=0; j<GetNrate(i); j++)	{
@@ -98,7 +98,7 @@ void PoissonSubstitutionProcess::SimuPropagate(int* stateup, int* statedown, dou
 void PoissonSubstitutionProcess::SimuPropagate(int* stateup, int* statedown, double time)	{
 
 	for (int i=sitemin; i<sitemax; i++)	{
-	  if(!sitemask[i-sitemin])
+	  if(!sitemask[i])
 	  {
 		const double* stat = GetStationary(i);
 		int nstate = GetNstate(i);
@@ -135,7 +135,7 @@ BranchSitePath** PoissonSubstitutionProcess::SampleRootPaths(int* state)	{
 	// BranchSitePath** patharray = new BranchSitePath*[sitemax - sitemin];
 	BranchSitePath** patharray = new BranchSitePath*[GetNsite()];
 	for (int i=sitemin; i<sitemax; i++)	{
-	  if(!sitemask[i-sitemin])
+	  if(!sitemask[i])
 		patharray[i] = new BranchSitePath(0,state[i]);
 	}
 	return patharray;
@@ -145,7 +145,7 @@ BranchSitePath** PoissonSubstitutionProcess::SampleRootPaths(int* state)	{
 BranchSitePath** PoissonSubstitutionProcess::SamplePaths(int* stateup, int* statedown, double time) 	{
 	BranchSitePath** patharray = new BranchSitePath*[GetNsite()];
 	for (int i=sitemin; i<sitemax; i++)	{
-	  if(!sitemask[i-sitemin])
+	  if(!sitemask[i])
 	  {
 		const double* stat = GetStationary(i);
 		double rate = GetRate(i);
@@ -197,7 +197,7 @@ BranchSitePath** PoissonSubstitutionProcess::SamplePaths(int* stateup, int* stat
 
 void PoissonSubstitutionProcess::AddSiteRateSuffStat(int* siteratesuffstatcount, BranchSitePath** patharray)	{
 	for (int i=sitemin; i<sitemax; i++)	{
-	  if(!sitemask[i-sitemin])
+	  if(!sitemask[i])
 		siteratesuffstatcount[i] += patharray[i]->GetNsub();
 	}
 }
@@ -205,7 +205,7 @@ void PoissonSubstitutionProcess::AddSiteRateSuffStat(int* siteratesuffstatcount,
 
 void PoissonSubstitutionProcess::AddBranchLengthSuffStat(int& count, BranchSitePath** patharray)	{
 	for (int i=sitemin; i<sitemax; i++)	{
-	  if(!sitemask[i-sitemin])
+	  if(!sitemask[i])
 		count += patharray[i]->GetNsub();
 	}
 }
@@ -213,7 +213,7 @@ void PoissonSubstitutionProcess::AddBranchLengthSuffStat(int& count, BranchSiteP
 
 void PoissonSubstitutionProcess::AddSiteProfileSuffStat(int** siteprofilesuffstatcount, BranchSitePath** patharray, bool root)	{
 	for (int i=sitemin; i<sitemax; i++)	{
-	  if(!sitemask[i-sitemin])
+	  if(!sitemask[i])
 		if (root || patharray[i]->GetNsub())	{
 			siteprofilesuffstatcount[i][GetRandomStateFromZip(i,patharray[i]->GetFinalState())]++;
 		}
@@ -222,7 +222,7 @@ void PoissonSubstitutionProcess::AddSiteProfileSuffStat(int** siteprofilesuffsta
 
 void PoissonSubstitutionProcess::ChooseTrueStates(BranchSitePath** patharray, int* nodestateup, int* nodestatedown, bool root)	{
 	for (int i=sitemin; i<sitemax; i++)	{
-	  if(!sitemask[i-sitemin])
+	  if(!sitemask[i])
 	  {
 		int tmp = nodestateup[i];
 		if (root || patharray[i]->GetNsub())	{
@@ -237,7 +237,7 @@ void PoissonSubstitutionProcess::ChooseTrueStates(BranchSitePath** patharray, in
 void PoissonSubstitutionProcess::ChooseRootTrueStates(int* nodestate)	{
 
 	for (int i=sitemin; i<sitemax; i++)	{
-	  if(!sitemask[i-sitemin])
+	  if(!sitemask[i])
 	  {
 		int tmp = GetRandomStateFromZip(i,nodestate[i]);
 		nodestate[i] = tmp;
@@ -350,7 +350,7 @@ int PoissonSubstitutionProcess::GetRandomStateFromZip(int site, int zipstate)	{
 
 void PoissonSubstitutionProcess::UnzipBranchSitePath(BranchSitePath** patharray, int* nodestateup, int* nodestatedown){
 	for (int i=sitemin; i<sitemax; i++)	{
-	  if(!sitemask[i-sitemin])
+	  if(!sitemask[i])
 	  {
 		int nsub = patharray[i]->GetNsub();
 		patharray[i]->nsub=0;

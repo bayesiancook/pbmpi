@@ -428,7 +428,7 @@ int main(int argc, char* argv[])	{
                 num_steppingstones = atoi(argv[i]);
                 i++;
                 if (i == argc) throw(0);
-                s = atoi(argv[i]);
+                s = argv[i];
                 if (IsInt(s))   {
                     steppingstone_size = atoi(argv[i]);
                 }
