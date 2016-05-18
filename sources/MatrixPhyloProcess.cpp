@@ -43,7 +43,7 @@ void MatrixPhyloProcess::Unfold()	{
 
 	CreateMatrices();
 
-	// UpdateSubstitutionProcess();
+	UpdateSiteMask();
 
 	CreateCondSiteLogL();
 	CreateConditionalLikelihoods();
@@ -79,6 +79,9 @@ void MatrixPhyloProcess::Collapse()	{
 	DeleteCondSiteLogL();
 	DeleteConditionalLikelihoods();
 	InactivateSumOverRateAllocations(ratealloc);
+
+	UpdateSiteMask();
+
 	SampleSubstitutionMappings(GetRoot());
 	DeleteMatrices();
 	CreateSuffStat();

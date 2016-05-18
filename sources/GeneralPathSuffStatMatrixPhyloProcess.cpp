@@ -41,6 +41,7 @@ void GeneralPathSuffStatMatrixPhyloProcess::Unfold()	{
 
 	// this one is important
 	UpdateMatrices();
+	UpdateSiteMask();
 
 	CreateCondSiteLogL();
 	CreateConditionalLikelihoods();
@@ -62,6 +63,7 @@ void GeneralPathSuffStatMatrixPhyloProcess::Collapse()	{
 	DeleteCondSiteLogL();
 	DeleteConditionalLikelihoods();
 	InactivateSumOverRateAllocations(ratealloc);
+	UpdateSiteMask();
 	SampleSubstitutionMappings(GetRoot());
 	// DeleteMatrices();
 	CreateSuffStat();

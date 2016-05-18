@@ -47,6 +47,26 @@ void SubstitutionProcess::Create(int site, int dim, int insitemin, int insitemax
 	}
 }
 
+void SubstitutionProcess::UpdateSiteMask(void)
+{
+    double heat_prev = pow(double(num_stones - stone_index)/num_stones, 10.0 / 3.0);
+    double heat = pow(double(num_stones - stone_index - 1)/num_stones, 10.0 / 3.0);
+
+    size_t unmasked_prev = ceil((sitemax - sitemin)*heat_prev);
+    size_t unmasked = ceil((sitemax - sitemin)*heat);
+
+    sitemax = sitemin + unmasked_prev;
+
+    sitemask = vector<bool>(GetNsite(), false);
+
+    for(size_t i = sitemin+unmasked; i < sitemax; i++)
+    {
+        sitemask[i] = true;
+    }
+
+    mask_sum_only = true;
+}
+
 void SubstitutionProcess::Delete() {
 	if (ratealloc)	{
 		delete[] ratealloc;

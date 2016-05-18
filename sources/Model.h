@@ -320,9 +320,8 @@ class Model	{
 
 		    if(myid == 0)
 		    {
-		        process->GlobalCollapse();
-		        process->SetSize(size);
                 process->GlobalSetSteppingStone(stone_index, num_stones);
+                process->GlobalCollapse();
                 process->GlobalUnfold();
 		    }
 		}
@@ -456,11 +455,11 @@ class Model	{
                     is >> saveall;
                     is >> stone_index >> num_stones;
 
-                    process->GlobalCollapse();
                     process->FromStreamHeader(is);
                     process->FromStream(is);
                     process->SetSize(size);
                     process->GlobalSetSteppingStone(stone_index, num_stones);
+                    process->GlobalCollapse();
                     process->GlobalUnfold();
 
                     // if the stone has enough states, then continue to the next stone

@@ -40,6 +40,7 @@ void PhyloProcess::Unfold()	{
 	DeleteSuffStat();
 	DeleteMappings();
 	ActivateSumOverRateAllocations();
+	UpdateSiteMask();
 	CreateCondSiteLogL();
 	CreateConditionalLikelihoods();
 	UpdateConditionalLikelihoods();
@@ -65,6 +66,7 @@ void PhyloProcess::Collapse()	{
 	DeleteCondSiteLogL();
 	DeleteConditionalLikelihoods();
 	InactivateSumOverRateAllocations(ratealloc);
+	UpdateSiteMask();
 	SampleSubstitutionMappings(GetRoot());
 	CreateSuffStat();
 }
@@ -1257,9 +1259,11 @@ double PhyloProcess::GlobalComputeNodeLikelihood(const Link* from, int auxindex)
 	return logL;
 }
 
-void PhyloProcess::GlobalSetSteppingStone(int stone_index, int num_stones)
+void PhyloProcess::GlobalSetSteppingStone(int instone_index, int innum_stones)
 {
     assert(myid == 0);
+    stone_index = instone_index;
+    num_stones = innum_stones;
     MESSAGE signal = STEPPINGSTONE;
     MPI_Status stat;
     MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
@@ -1269,31 +1273,14 @@ void PhyloProcess::GlobalSetSteppingStone(int stone_index, int num_stones)
     MPI_Bcast(args,2,MPI_INT,0,MPI_COMM_WORLD);
 }
 
-void PhyloProcess::SlaveSetSteppingStone(void)
+void PhyloProcess::SlaveSetSteppingStone()
 {
     assert(myid > 0);
     int args[2];
     MPI_Bcast(args,2,MPI_INT,0,MPI_COMM_WORLD);
 
-    int stone_index = args[0];
-    int num_stones = args[1];
-
-    double heat_prev = pow(double(num_stones - stone_index)/num_stones, 10.0 / 3.0);
-    double heat = pow(double(num_stones - stone_index - 1)/num_stones, 10.0 / 3.0);
-
-    size_t unmasked_prev = ceil((sitemax - sitemin)*heat_prev);
-    size_t unmasked = ceil((sitemax - sitemin)*heat);
-
-    sitemax = sitemin + unmasked_prev;
-
-    sitemask = vector<bool>(GetNsite(), false);
-
-    for(size_t i = sitemin+unmasked; i < sitemax; i++)
-    {
-        sitemask[i] = true;
-    }
-
-    mask_sum_only = true;
+    stone_index = args[0];
+    num_stones = args[1];
 }
 
 void PhyloProcess::FixTopo(string treefile)
