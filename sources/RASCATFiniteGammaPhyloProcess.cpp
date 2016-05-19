@@ -183,6 +183,7 @@ void RASCATFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	int rateprior = 0;
 	int profileprior = 0;
 	int rootprior = 0;
+	bool ss = false;
 
 	try	{
 
@@ -258,6 +259,9 @@ void RASCATFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 				i++;
 				testdatafile = argv[i];
 			}
+			else if (s == "-ss")	{
+				ss = true;
+			}
 			else if ( (s == "-x") || (s == "-extract") )	{
 				i++;
 				if (i == argc) throw(0);
@@ -296,10 +300,10 @@ void RASCATFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 		exit(1);
 	}
 
-	if (until == -1)	{
+	if (until == -1 && !ss)	{
 		until = GetSize();
 	}
-	if (burnin == -1)	{
+	if (burnin == -1 && !ss)	{
 		burnin = GetSize() / 5;
 	}
 
@@ -323,6 +327,9 @@ void RASCATFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	}
 	else if (map)	{
 		ReadMap(name,burnin,every,until);
+	}
+	else if (ss)	{
+		ReadSteppingStone(name,burnin,every,until);
 	}
 	else	{
 		Read(name,burnin,every,until);

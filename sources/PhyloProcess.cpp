@@ -19,7 +19,7 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 #include "Random.h"
 #include "PhyloProcess.h"
 #include <string>
-
+#include <limits>
 #include <cassert>
 #include "Parallel.h"
 extern MPI_Datatype Propagate_arg;
@@ -2526,6 +2526,81 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 		cerr << "result of compositional homogeneity test in " << name << ".comp\n";
 	}
 	cerr << '\n';
+}
+
+void PhyloProcess::ReadSteppingStone(string name, int burnin, int every, int until)
+{
+	ifstream is((name + "_ss0.param").c_str());
+	if (!is)	{
+		cerr << "error: no " << name << "_ss0.param file found\n";
+		exit(1);
+	}
+
+	int stone_index;
+	int num_stones;
+	string tmp;
+	is >> tmp;
+	is >> tmp >> tmp >> tmp;
+	is >> tmp;
+	is >> stone_index >> num_stones;
+	is.close();
+	is.clear();
+
+	double marginal = 0;
+	for(int stone = 0; stone < num_stones; stone++)
+	{
+		stringstream ss;
+		ss << name << "_ss" << stone << ".ss";
+		is.open(ss.str().c_str());
+		if (!is)	{
+			cerr << "error: no " << ss.str() << " file found\n";
+			exit(1);
+		}
+
+		vector<double> log_likes;
+		double max = -numeric_limits<double>::infinity();
+
+		is >> tmp >> tmp;
+		int gen = 0;
+		double lnL = 0;
+		while(is)
+		{
+			is >> tmp;
+			is >> lnL;
+
+			if(gen >= burnin && gen % every == 0)
+			{
+				log_likes.push_back(lnL);
+				max = std::max(lnL, max);
+			}
+
+			if(gen >= until && until != -1)
+			{
+				break;
+			}
+
+			gen++;
+		}
+		is.close();
+
+		lnL = max;
+		for(size_t i = 0; i < log_likes.size(); i++)
+		{
+			lnL += exp(log_likes[i] - max);
+		}
+
+		lnL -= log(log_likes.size());
+
+		marginal += lnL;
+	}
+	is.close();
+	is.clear();
+
+	ofstream os((name + ".ss").c_str());
+	os << "steppingstone marginal likelihood\n";
+	os << marginal << "\n";
+	cerr << "result of steppingstone analysis in " << name << ".ss\n";
+	os.close();
 }
 
 void PhyloProcess::GlobalSetTestData()	{

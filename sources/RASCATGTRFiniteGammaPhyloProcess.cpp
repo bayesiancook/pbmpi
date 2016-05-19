@@ -199,7 +199,9 @@ void RASCATGTRFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	int rootprior = 0;
 
 	int rr = 0;
-	int ss = 0;
+	int siteprofile = 0;
+
+	bool ss = false;
 
 	try	{
 
@@ -261,8 +263,8 @@ void RASCATGTRFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 					throw(0);
 				}
 			}
-			else if (s == "-ss")	{
-				ss = 1;
+			else if (s == "-siteprofile")	{
+				siteprofile = 1;
 			}
 			else if (s == "-rr")	{
 				rr = 1;
@@ -275,6 +277,9 @@ void RASCATGTRFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 			}
 			else if (s == "-map")	{
 				map = 1;
+			}
+			else if (s == "-ss")	{
+				ss = true;
 			}
 			else if (s == "-cv")	{
 				cv = 1;
@@ -319,10 +324,10 @@ void RASCATGTRFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 		exit(1);
 	}
 
-	if (until == -1)	{
+	if (until == -1 && !ss)	{
 		until = GetSize();
 	}
-	if (burnin == -1)	{
+	if (burnin == -1 && !ss)	{
 		burnin = GetSize() / 5;
 	}
 
@@ -338,7 +343,7 @@ void RASCATGTRFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	else if (sitelogl)	{
 		ReadSiteLogL(name,burnin,every,until);
 	}
-	else if (ss)	{
+	else if (siteprofile)	{
 		ReadSiteProfiles(name,burnin,every,until);
 	}
 	else if (rr)	{
@@ -352,6 +357,9 @@ void RASCATGTRFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	}
 	else if (map)	{
 		ReadMap(name,burnin,every,until);
+	}
+	else if (ss)	{
+		ReadSteppingStone(name,burnin,every,until);
 	}
 	else	{
 		Read(name,burnin,every,until);

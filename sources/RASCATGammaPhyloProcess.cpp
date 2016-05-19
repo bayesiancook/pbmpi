@@ -167,7 +167,7 @@ void RASCATGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	int every = 1;
 	int until = -1;
 	int ppred = 0;
-	int ss = 0;
+	int siteprofile = 0;
 	int map = 0;
 	// 1 : plain ppred (outputs simulated data)
 	// 2 : diversity statistic
@@ -179,6 +179,7 @@ void RASCATGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	int rateprior = 0;
 	int profileprior = 0;
 	int rootprior = 0;
+	bool ss = false;
 
 	try	{
 
@@ -252,7 +253,10 @@ void RASCATGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 				testdatafile = argv[i];
 			}
 			else if (s == "-ss")	{
-				ss = 1;
+				ss = true;
+			}
+			else if (s == "-siteprofile")	{
+				siteprofile = true;
 			}
 			else if (s == "-map")	{
 				map = 1;
@@ -295,10 +299,10 @@ void RASCATGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 		exit(1);
 	}
 
-	if (until == -1)	{
+	if (until == -1 && !ss)	{
 		until = GetSize();
 	}
-	if (burnin == -1)	{
+	if (burnin == -1 && !ss)	{
 		burnin = GetSize() / 5;
 	}
 
@@ -308,7 +312,7 @@ void RASCATGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 		exit(1);
 	}
 
-	if (ss)	{
+	if (siteprofile)	{
 		ReadSiteProfiles(name,burnin,every,until);
 	}
 	else if (map)	{
@@ -325,6 +329,9 @@ void RASCATGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	}
 	else if (ppred)	{
 		PostPred(ppred,name,burnin,every,until,rateprior,profileprior,rootprior);
+	}
+	else if (ss)	{
+		ReadSteppingStone(name,burnin,every,until);
 	}
 	else	{
 		Read(name,burnin,every,until);

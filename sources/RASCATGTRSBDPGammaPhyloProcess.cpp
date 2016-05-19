@@ -203,7 +203,7 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	// 2 : diversity statistic
 	// 3 : compositional statistic
 
-	int ss = 0;
+	int siteprofile = 0;
 	int nocc = 0;
 	int cv = 0;
 	int sitelogl = 0;
@@ -217,6 +217,8 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 
 	int testprofile = 0;
 	double tuning = 1;
+
+	bool ss = false;
 
 	try	{
 
@@ -292,8 +294,8 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 				i++;
 				tuning = atof(argv[i]);
 			}
-			else if (s == "-ss")	{
-				ss = 1;
+			else if (s == "-siteprofile")	{
+				siteprofile = 1;
 			}
 			else if (s == "-rr")	{
 				rr = 1;
@@ -303,6 +305,9 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 			}
 			else if (s == "-map")	{
 				map = 1;
+			}
+			else if (s == "-ss")	{
+				ss = true;
 			}
 			else if (s == "-m")	{
 				nocc = 1;
@@ -345,10 +350,10 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 		exit(1);
 	}
 
-	if (until == -1)	{
+	if (until == -1 && !ss)	{
 		until = GetSize();
 	}
-	if (burnin == -1)	{
+	if (burnin == -1 && !ss)	{
 		burnin = GetSize() / 5;
 	}
 
@@ -373,7 +378,7 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	else if (sitelogl)	{
 		ReadSiteLogL(name,burnin,every,until);
 	}
-	else if (ss)	{
+	else if (siteprofile)	{
 		ReadSiteProfiles(name,burnin,every,until);
 	}
 	else if (rr)	{
@@ -384,6 +389,9 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	}
 	else if (map)	{
 		ReadMap(name,burnin,every,until);
+	}
+	else if (ss)	{
+		ReadSteppingStone(name,burnin,every,until);
 	}
 	else	{
 		Read(name,burnin,every,until);
