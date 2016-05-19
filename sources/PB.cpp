@@ -15,6 +15,7 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 
 
 #include "Model.h"
+#include "StringStreamUtils.h"
 
 int main(int argc, char* argv[])	{
 
@@ -83,7 +84,9 @@ int main(int argc, char* argv[])	{
 
 	double mintotweight = 0;
 
-	int topoburnin = 0;
+	// Steppingstone params
+	size_t steppingstone_size = 1000;
+	size_t num_steppingstones = 0;
 
 	try	{
 
@@ -140,10 +143,6 @@ int main(int argc, char* argv[])	{
 			else if (s == "-nni")	{
 				i++;
 				NNNI = atoi(argv[i]);
-			}
-			else if (s == "-topoburnin")	{
-				i++;
-				topoburnin = atoi(argv[i]);
 			}
 			else if (s == "-fixcodonprofile")	{
 				fixcodonprofile = 1;
@@ -237,7 +236,7 @@ int main(int argc, char* argv[])	{
 			else if (s == "-mtzoa")	{
 				modeltype = 2;
 				rrtype = "mtzoa";
-			}
+            }
 			else if (s == "-mtrev")	{
 				modeltype = 2;
 				rrtype = "mtrev";
@@ -245,10 +244,6 @@ int main(int argc, char* argv[])	{
 			else if (s == "-mtart")	{
 				modeltype = 2;
 				rrtype = "mtart";
-			}
-			else if (s == "-mtzoa")	{
-				modeltype = 2;
-				rrtype = "mtzoa";
 			}
 			else if (s == "-cg6")	{
 				mixturetype = 1;
@@ -360,7 +355,18 @@ int main(int argc, char* argv[])	{
 			}
 			*/
 			else if (s == "-ss")	{
-				mixturetype = 5;
+			    i++;
+                if (i == argc) throw(0);
+                num_steppingstones = atoi(argv[i]);
+                i++;
+                if (i == argc) throw(0);
+                s = argv[i];
+                if (IsInt(s))   {
+                    steppingstone_size = atoi(argv[i]);
+                }
+                else {
+                    i--;
+                }
 			}
 			else if (s == "-uni")	{
 				type = Universal;
@@ -467,35 +473,35 @@ int main(int argc, char* argv[])	{
 	}
 
 	if ((modeltype == -1) && (mixturetype == -1))	{
-		modeltype = 2;
-		mixturetype = 3;
-	}
-	else	{
-		if (modeltype == -1)	{
-			if (!myid)	{
-			cerr << '\n';
-			cerr << "error: incompletely specified model\n";
-			cerr << "exchangeability parameters should be explicitly given\n";
-			cerr << "-gtr -poisson (-f81) -lg -wag -jtt -mtrev -mtart -mtzoa or custom (-rr <filename>)\n";
-			cerr << '\n';
-			}
-			MPI_Finalize();
-			exit(1);
-		}
-		if (mixturetype == -1)	{
-			if (!myid)	{
-			cerr << '\n';
-			cerr << "error: incompletely specified model\n";
-			cerr << "mixture of equilibrium frequency profiles should be explicitly chosen among:\n";
-			cerr << "-cat (or -dp) : infinite mixture (Dirichlet process)\n";
-			cerr << "-ncat 1 : one matrix model\n";
-			cerr << "-catfix <empmix>: empirical mixture (see manual for details)\n";
-			cerr << '\n';
-			}
-			MPI_Finalize();
-			exit(1);
-		}
-	}
+        modeltype = 2;
+        mixturetype = 3;
+    }
+    else	{
+        if (modeltype == -1)	{
+            if (!myid)	{
+            cerr << '\n';
+            cerr << "error: incompletely specified model\n";
+            cerr << "exchangeability parameters should be explicitly given\n";
+            cerr << "-gtr -poisson (-f81) -lg -wag -jtt -mtrev -mtart -mtzoa or custom (-rr <filename>)\n";
+            cerr << '\n';
+            }
+            MPI_Finalize();
+            exit(1);
+        }
+        if (mixturetype == -1)	{
+            if (!myid)	{
+            cerr << '\n';
+            cerr << "error: incompletely specified model\n";
+            cerr << "mixture of equilibrium frequency profiles should be explicitly chosen among:\n";
+            cerr << "-cat (or -dp) : infinite mixture (Dirichlet process)\n";
+            cerr << "-ncat 1 : one matrix model\n";
+            cerr << "-catfix <empmix>: empirical mixture (see manual for details)\n";
+            cerr << '\n';
+            }
+            MPI_Finalize();
+            exit(1);
+        }
+    }
 	if (randfix != -1)	{
 		rnd::init(1,randfix);
 	}
@@ -559,7 +565,9 @@ int main(int argc, char* argv[])	{
 				exit(1);
 			}
 		}
-		model = new Model(datafile,treefile,modeltype,dgam,mixturetype,ncat,type,suffstat,fixncomp,empmix,mixtype,rrtype,iscodon,fixtopo,NSPR,NNNI,fixcodonprofile,fixomega,fixbl,omegaprior,kappaprior,dirweightprior,mintotweight,dc,every,until,saveall,incinit,topoburnin,name,myid,nprocs);
+
+		model = new Model(datafile,treefile,modeltype,dgam,mixturetype,ncat,type,suffstat,fixncomp,empmix,mixtype,rrtype,iscodon,fixtopo,NSPR,NNNI,fixcodonprofile,fixomega,fixbl,omegaprior,kappaprior,dirweightprior,mintotweight,dc,every,until,saveall,incinit,name,myid,nprocs);
+
 		if (! myid)	{
 			// cerr << "create files\n";
 			cerr << '\n';
@@ -579,15 +587,13 @@ int main(int argc, char* argv[])	{
 		}
 	}
 	else	{
-		model = new Model(name,myid,nprocs);
+	    model = new Model(name,myid,nprocs,treefile,num_steppingstones,steppingstone_size);
 		if (until != -1)	{
 			model->until = until;
 		}
 	}
 
 	if (myid == 0) {
-		cerr << "run started\n";
-		cerr << '\n';
 		// model->Trace(cerr);
 		model->Run(burnin);
 		MESSAGE signal = KILL;

@@ -118,54 +118,24 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 		nprocs = np;
 
 		FromStreamHeader(is);
-		is >> datafile;
-		int nratecat;
-		is >> nratecat;
-		int infixncomp;
-		int inempmix;
-		string inmixtype;
-		string inrrtype;
-		is >> infixncomp >> inempmix >> inmixtype;
-		is >> inrrtype;
-		is >> fixtopo;
-		if (atof(version.substr(0,3).c_str()) > 1.4)	{
-			is >> NSPR;
-			is >> NNNI;
-		}
-		else	{
-			NSPR = 10;
-			NNNI = 0;
-		}
-		is >> dc;
-		SequenceAlignment* plaindata = new FileSequenceAlignment(datafile,0,myid);
+
 		if (dc)	{
-			plaindata->DeleteConstantSites();
+			data->DeleteConstantSites();
 		}
-		const TaxonSet* taxonset = plaindata->GetTaxonSet();
 
 		int insitemin = -1,insitemax = -1;
 		if (myid > 0) {
-			int width = plaindata->GetNsite()/(nprocs-1);
+			int width = data->GetNsite()/(nprocs-1);
 			insitemin = (myid-1)*width;
 			if (myid == (nprocs-1)) {
-				insitemax = plaindata->GetNsite();
+				insitemax = data->GetNsite();
 			}
 			else {
 				insitemax = myid*width;
 			}
 		}
 
-		tree = new Tree(taxonset);
-		if (myid == 0)	{
-			tree->ReadFromStream(is);
-			GlobalBroadcastTree();
-		}
-		else	{
-			SlaveBroadcastTree();
-		}
-		tree->RegisterWith(taxonset,0);
-
-		Create(tree,plaindata,nratecat,1,infixncomp,inempmix,inmixtype,inrrtype,insitemin,insitemax);
+		Create(tree,data,DGamRateProcess::Ncat,1,fixncomp,empmix,mixtype,rrtype,insitemin,insitemax);
 
 		if (myid == 0)	{
 			FromStream(is);
@@ -191,17 +161,19 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 
 	void SlaveUpdateParameters();
 
-	void TraceHeader(ostream& os)	{
-		os << "#iter\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
+	void TraceHeader(ostream& hs)	{
+	    stringstream os;
+		os << "iter\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
 		if (! fixrr)	{
 			os << "\trrent\trrmean";
 		}
-		os << '\n'; 
+		os << '\n';
+		hs << os.str();
 	}
 
-	void Trace(ostream& os)	{
-
-		os << GetSize();
+	void Trace(ostream& hs)	{
+	    stringstream os;
+		os << GetSize() - 1;
 		if (chronototal.GetTime())	{
 			os << '\t' << chronototal.GetTime() / 1000;
 			os << '\t' << ((int) (propchrono.GetTime() / chronototal.GetTime() * 100));
@@ -225,6 +197,7 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 		}
 
 		os << '\n';
+		hs << os.str();
 	}
 
 	double Move(double tuning = 1.0)	{
@@ -301,6 +274,28 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 		GetTree()->ToStream(os);
 
 	}
+	void FromStreamHeader(istream& is)    {
+	    PhyloProcess::FromStreamHeader(is);
+	    is >> datafile;
+        is >> DGamRateProcess::Ncat;
+        is >> fixncomp >> empmix >> mixtype;
+        is >> rrtype;
+        is >> fixtopo;
+        if (atof(version.substr(0,3).c_str()) > 1.4)    {
+            is >> NSPR;
+            is >> NNNI;
+        }
+        else    {
+            NSPR = 10;
+            NNNI = 0;
+        }
+        is >> dc;
+        data = new FileSequenceAlignment(datafile,0,myid,false);
+        const TaxonSet* taxonset = data->GetTaxonSet();
+        tree = new Tree(taxonset);
+        tree->ReadFromStream(is);
+        SetLengthsFromNames();
+	}
 
 	void ToStream(ostream& os)	{
 		GammaBranchProcess::ToStream(os);
@@ -336,7 +331,6 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 		ExpoConjugateGTRPhyloProcess::Delete();
 	}
 
-	int fixtopo;
 	int NSPR;
 	int NNNI;
 	int dc;

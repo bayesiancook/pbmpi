@@ -188,7 +188,7 @@ BranchSitePath** PoissonSubstitutionProcess::SamplePaths(int* stateup, int* stat
 
 void PoissonSubstitutionProcess::AddSiteRateSuffStat(int* siteratesuffstatcount, BranchSitePath** patharray)	{
 	for (int i=sitemin; i<sitemax; i++)	{
-	// for (int i=0; i<GetNsite(); i++)	{
+		if(sitemask[i] < 2)
 		siteratesuffstatcount[i] += patharray[i]->GetNsub();
 	}
 }
@@ -196,7 +196,7 @@ void PoissonSubstitutionProcess::AddSiteRateSuffStat(int* siteratesuffstatcount,
 
 void PoissonSubstitutionProcess::AddBranchLengthSuffStat(int& count, BranchSitePath** patharray)	{
 	for (int i=sitemin; i<sitemax; i++)	{
-	// for (int i=0; i<GetNsite(); i++)	{
+		if(sitemask[i] < 2)
 		count += patharray[i]->GetNsub();
 	}
 }
@@ -204,7 +204,7 @@ void PoissonSubstitutionProcess::AddBranchLengthSuffStat(int& count, BranchSiteP
 
 void PoissonSubstitutionProcess::AddSiteProfileSuffStat(int** siteprofilesuffstatcount, BranchSitePath** patharray, bool root)	{
 	for (int i=sitemin; i<sitemax; i++)	{
-	// for (int i=0; i<GetNsite(); i++)	{
+		if(sitemask[i] < 2)
 		if (root || patharray[i]->GetNsub())	{
 			siteprofilesuffstatcount[i][GetRandomStateFromZip(i,patharray[i]->GetFinalState())]++;
 		}

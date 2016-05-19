@@ -592,7 +592,7 @@ class FileSequenceAlignment : public SequenceAlignment	{
 
 	public:
 		FileSequenceAlignment(istream& is);
-		FileSequenceAlignment(string filename,int fullline,int myid);
+		FileSequenceAlignment(string filename,int fullline,int myid,bool verbose = true);
 
 	private:
 
@@ -605,6 +605,7 @@ class FileSequenceAlignment : public SequenceAlignment	{
 	int			ReadSpecial(string filename);
 
 	string* SpeciesNames;
+	bool verbose;
 };
 
 

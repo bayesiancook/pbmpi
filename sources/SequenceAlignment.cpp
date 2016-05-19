@@ -171,13 +171,13 @@ void SequenceAlignment::ToStream(ostream& os)	{
 	os << '\n';
 }
 
-FileSequenceAlignment::FileSequenceAlignment(string filename,int fullline,int myid)	{
-
+FileSequenceAlignment::FileSequenceAlignment(string filename,int fullline,int myid,bool inverb)	{
+    verbose = inverb;
 	SpeciesNames = 0;
-	if (myid == 0) cerr << "read data from file : " << filename << "\n";
 	ReadDataFromFile(filename,0);
 	taxset = new TaxonSet(SpeciesNames,Ntaxa);
-	if (myid == 0) {
+	if (myid == 0 && verbose) {
+	    cerr << "read data file  : " << filename << "\n";
 		cerr << "number of taxa  : " << GetNtaxa() << '\n';
 		cerr << "number of sites : " << GetNsite() << '\n';
 		cerr << "number of states: " << GetNstate() << '\n';
@@ -387,19 +387,25 @@ int FileSequenceAlignment::ReadSpecial(string filespec)	{
 		theStream >> Ntaxa;
 		theStream >> Nsite;
 		theStream >> tmp;
-		cerr << tmp << '\n';
 		int Nstate = tmp.length();
 		
 		int NAlphabetSet = Nstate+5;
 		char* Alphabet = new char[Nstate];
 		char* AlphabetSet = new char[NAlphabetSet];
-		cerr << "alphabet size : " << Nstate << '\n';
-		cerr << "alphabet : ";
+
+		if(verbose)
+		{
+		    cerr << tmp << '\n';
+		    cerr << "alphabet size : " << Nstate << '\n';
+		    cerr << "alphabet : ";
+		}
 		for (int i=0; i<Nstate; i++)	{
 			Alphabet[i] = tmp[i];
 			AlphabetSet[i] = tmp[i];
+			if(verbose)
 			cerr << Alphabet[i] << ' ';
 		}
+		if(verbose)
 		cerr << '\n';
 		returnvalue = 4;
 
@@ -875,7 +881,7 @@ FileSequenceAlignment::ReadPhylip (string filespec, int repeattaxa)	{
 			exit(1);
 		}
 		Nsite = Int(temp);
-		cerr << Ntaxa << '\t' << Nsite << '\n';
+		//cerr << Ntaxa << '\t' << Nsite << '\n';
 
 		Data = new (int *[Ntaxa]);
 		for (int i=0; i<Ntaxa; i++)	{
@@ -973,6 +979,7 @@ FileSequenceAlignment::ReadPhylip (string filespec, int repeattaxa)	{
 	}
 	catch(...)	{
 		cerr << "error while reading data file\n";
+		exit(1);
 	}
 }
 

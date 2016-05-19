@@ -145,6 +145,8 @@ class BranchProcess : public NewickTree {
 
 	protected:
 
+	void ReadTree(string treefile);
+
 	int GetNbranch()	{
 		return tree->GetNbranch();
 	}

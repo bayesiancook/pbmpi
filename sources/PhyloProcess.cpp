@@ -40,6 +40,7 @@ void PhyloProcess::Unfold()	{
 	DeleteSuffStat();
 	DeleteMappings();
 	ActivateSumOverRateAllocations();
+	UpdateSiteMask();
 	CreateCondSiteLogL();
 	CreateConditionalLikelihoods();
 	UpdateConditionalLikelihoods();
@@ -906,7 +907,7 @@ void PhyloProcess::RecursiveNonMPIGibbsSPRScan(Link* from, Link* fromup, Link* d
 
 void PhyloProcess::Create(Tree* intree, SequenceAlignment* indata,int indim)	{
 
-	if (! data)	{
+	if (! loglarray)	{
 		data = indata;
 		// MPI : master and slaves
 		RateProcess::Create(data->GetNsite());
@@ -1243,10 +1244,13 @@ double PhyloProcess::GlobalComputeNodeLikelihood(const Link* from, int auxindex)
 	// and return it
 
 	logL = 0.0;
+	maskedlogL = 0.0;
 	double sum;
 	for(i=1; i<nprocs; ++i) {
-		MPI_Recv(&sum,1,MPI_DOUBLE,MPI_ANY_SOURCE,TAG1,MPI_COMM_WORLD,&stat);
+		MPI_Recv(&sum,1,MPI_DOUBLE,i,TAG1,MPI_COMM_WORLD,&stat);
 		logL += sum;
+		MPI_Recv(&sum,1,MPI_DOUBLE,i,TAG1,MPI_COMM_WORLD,&stat);
+		maskedlogL += sum;
 	}
 	return logL;
 }
@@ -1451,6 +1455,38 @@ void PhyloProcess::GlobalGibbsSPRScan(Link* down, Link* up, double* loglarray)  
 	}
 }
 
+void PhyloProcess::GlobalSetSteppingStone(int instone_index, int innum_stones)
+{
+    assert(myid == 0);
+    stone_index = instone_index;
+    num_stones = innum_stones;
+    MESSAGE signal = STEPPINGSTONE;
+    MPI_Status stat;
+    MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+    int args[2];
+    args[0] = stone_index;
+    args[1] = num_stones;
+    MPI_Bcast(args,2,MPI_INT,0,MPI_COMM_WORLD);
+}
+
+void PhyloProcess::SlaveSetSteppingStone()
+{
+    assert(myid > 0);
+    int args[2];
+    MPI_Bcast(args,2,MPI_INT,0,MPI_COMM_WORLD);
+
+    stone_index = args[0];
+    num_stones = args[1];
+}
+
+void PhyloProcess::FixTopo(string treefile)
+{
+    ReadTree(treefile);
+    MESSAGE signal = BCAST_TREE;
+    MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+    GlobalBroadcastTree();
+    fixtopo = true;
+}
 
 // MPI
 // for slaves
@@ -1616,6 +1652,9 @@ void PhyloProcess::SlaveExecute(MESSAGE signal)	{
 	case SIMULATE:
 		SimulateForward();
 		break;
+	case STEPPINGSTONE:
+        SlaveSetSteppingStone();
+        break;
 	
 	default:
 		// or : SubstitutionProcess::SlaveExecute?
@@ -1635,6 +1674,7 @@ void PhyloProcess::SlaveLikelihood(int fromindex,int auxindex) {
 	assert(myid > 0);
 	double lvalue = ComputeNodeLikelihood(GetLinkForGibbs(fromindex),auxindex);
 	MPI_Send(&lvalue,1,MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
+	MPI_Send(&maskedlogL,1,MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
 }
 
 void PhyloProcess::SlaveGibbsSPRScan(int idown, int iup)	{

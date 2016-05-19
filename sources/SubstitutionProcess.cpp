@@ -35,6 +35,9 @@ using namespace std;
 void SubstitutionProcess::Create(int site, int dim, int insitemin, int insitemax)	{
 	sitemin = insitemin;
 	sitemax = insitemax;
+
+	sitemask = vector<size_t>(site, 0);
+
 	//cout << sitemin << "  " << sitemax << endl;
 	if (! ratealloc)	{
 		RateProcess::Create(site);
@@ -52,6 +55,30 @@ void SubstitutionProcess::Delete() {
 		RateProcess::Delete();
 	}
 };
+
+void SubstitutionProcess::UpdateSiteMask(void)
+{
+    if(num_stones <= 0)
+        return;
+
+    double heat_prev = pow(double(num_stones - stone_index)/num_stones, 10.0 / 3.0);
+    double heat = pow(double(num_stones - stone_index - 1)/num_stones, 10.0 / 3.0);
+
+    size_t unmasked_prev = ceil(GetNsite()*heat_prev);
+    size_t unmasked = ceil(GetNsite()*heat);
+
+    sitemask = vector<size_t>(GetNsite(), 0);
+
+    for(size_t i = unmasked; i < unmasked_prev; i++)
+    {
+        sitemask[i] = 1;
+    }
+
+    for(size_t i = unmasked_prev; i < GetNsite(); i++)
+	{
+		sitemask[i] = 2;
+	}
+}
 
 void SubstitutionProcess::CreateCondSiteLogL()	{
 	if (condsitelogL)	{
@@ -323,9 +350,12 @@ double SubstitutionProcess::ComputeLikelihood(double*** aux, bool condalloc)	{
 	}
 
 	logL = 0;
+	maskedlogL = 0.0;
 	for (int i=sitemin; i<sitemax; i++)	{
-	// for (int i=0; i<GetNsite(); i++)	{
-		logL += sitelogL[i];
+	    if(sitemask[i] == 0)
+	        logL += sitelogL[i];
+	    else if(sitemask[i] == 1)
+	        maskedlogL += sitelogL[i];
 	}
 	return logL;
 }

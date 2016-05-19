@@ -22,6 +22,7 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 #include "BranchSitePath.h"
 #include "Chrono.h"
 #include <algorithm>
+#include <vector>
 
 // ----
 // Substitution Process is the class gathering nearly all CPU-intensive methods of the program
@@ -67,7 +68,7 @@ class SubstitutionProcess : public virtual RateProcess, public virtual ProfilePr
 
 	public:
 
-	SubstitutionProcess() : condsitelogL(0), sitelogL(0), meansiterate(0), ratealloc(0), infprobcount(0), suboverflowcount(0) {}
+	SubstitutionProcess() : condsitelogL(0), sitelogL(0), meansiterate(0), ratealloc(0), infprobcount(0), suboverflowcount(0), stone_index(-1), num_stones(0) {}
 	virtual ~SubstitutionProcess() {}
 
 	// basic accessors, needed to perform elementary likelihood computations and substitution mappings
@@ -90,6 +91,8 @@ class SubstitutionProcess : public virtual RateProcess, public virtual ProfilePr
 
 	void Create(int innsite, int indim, int insitemin,int insitemax);
 	void Delete();
+
+	void UpdateSiteMask();
 
 	// basic modules for creating deleting arrays of conditional likelihoods
 	// used by PhyloProcess
@@ -161,10 +164,15 @@ class SubstitutionProcess : public virtual RateProcess, public virtual ProfilePr
 	double* sitelogL;
 	double* meansiterate;
 	double logL;
+	double maskedlogL;
 	int* ratealloc;
 
 	int infprobcount;
 	int suboverflowcount;
+
+	vector<size_t> sitemask;
+	int stone_index;
+	int num_stones;
 };
 
 #endif
