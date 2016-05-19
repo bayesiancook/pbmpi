@@ -1958,12 +1958,12 @@ void PhyloProcess::SlaveUpdateSiteRateSuffStat()	{
 		ivector[j] = siteratesuffstatcount[i]; j++;
 	}
 	double dvector[workload];
-	MPI_Send(siteratesuffstatcount,workload,MPI_INT,0,TAG1,MPI_COMM_WORLD);
+	MPI_Send(ivector,workload,MPI_INT,0,TAG1,MPI_COMM_WORLD);
 	j = 0;
 	for(i=sitemin; i<sitemax; ++i) {
 		dvector[j] = siteratesuffstatbeta[i]; j++;
 	}
-	MPI_Send(siteratesuffstatbeta,workload,MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
+	MPI_Send(dvector,workload,MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
 
 
 	// finally, sync all processes on same suffstat values 
