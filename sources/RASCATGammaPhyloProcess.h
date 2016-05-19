@@ -265,7 +265,7 @@ class RASCATGammaPhyloProcess : public virtual PoissonPhyloProcess, public virtu
 			data = new CodonSequenceAlignment(tempdata,true,codetype);
 		}
 		else	{
-			data = new FileSequenceAlignment(datafile,0,myid);
+			data = new FileSequenceAlignment(datafile,0,myid,false);
 		}
 		const TaxonSet* taxonset = data->GetTaxonSet();
 		tree = new Tree(taxonset);
