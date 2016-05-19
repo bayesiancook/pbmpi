@@ -114,42 +114,23 @@ class RASCATGTRDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProcess
 		nprocs = np;
 
 		FromStreamHeader(is);
-		is >> datafile;
-		int nratecat;
-		is >> nratecat;
-		string inrrtype;
-		is >> inrrtype;
-		is >> fixtopo;
-		is >> dc;
-		SequenceAlignment* plaindata = new FileSequenceAlignment(datafile,0,myid);
 		if (dc)	{
-			plaindata->DeleteConstantSites();
+			data->DeleteConstantSites();
 		}
-		const TaxonSet* taxonset = plaindata->GetTaxonSet();
 
 		int insitemin = -1,insitemax = -1;
 		if (myid > 0) {
-			int width = plaindata->GetNsite()/(nprocs-1);
+			int width = data->GetNsite()/(nprocs-1);
 			insitemin = (myid-1)*width;
 			if (myid == (nprocs-1)) {
-				insitemax = plaindata->GetNsite();
+				insitemax = data->GetNsite();
 			}
 			else {
 				insitemax = myid*width;
 			}
 		}
 
-		tree = new Tree(taxonset);
-		if (myid == 0)	{
-			tree->ReadFromStream(is);
-			GlobalBroadcastTree();
-		}
-		else	{
-			SlaveBroadcastTree();
-		}
-		tree->RegisterWith(taxonset,0);
-
-		Create(tree,plaindata,nratecat,inrrtype,insitemin,insitemax);
+		Create(tree,data,DGamRateProcess::Ncat,rrtype,insitemin,insitemax);
 
 		if (myid == 0)	{
 			FromStream(is);
@@ -262,6 +243,18 @@ class RASCATGTRDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProcess
 		os << dc << '\n';
 		SetNamesFromLengths();
 		GetTree()->ToStream(os);
+	}
+	void FromStreamHeader(istream& is)    {
+		PhyloProcess::FromStreamHeader(is);
+		is >> datafile;
+		is >> DGamRateProcess::Ncat;
+		is >> rrtype;
+		is >> fixtopo;
+		is >> dc;
+		data = new FileSequenceAlignment(datafile,0,myid,false);
+		const TaxonSet* taxonset = data->GetTaxonSet();
+		tree = new Tree(taxonset);
+		tree->ReadFromStream(is);
 	}
 
 	void ToStream(ostream& os)	{

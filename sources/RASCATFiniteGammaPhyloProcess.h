@@ -120,52 +120,23 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 		nprocs = np;
 
 		FromStreamHeader(is);
-		is >> datafile;
-		int nratecat;
-		is >> nratecat;
-		int infixncomp;
-		int inempmix;
-		string inmixtype;
-		is >> infixncomp >> inempmix >> inmixtype;
-		is >> fixtopo;
-		if (atof(version.substr(0,3).c_str()) > 1.4)	{
-			is >> NSPR;
-			is >> NNNI;
-		}
-		else	{
-			NSPR = 10;
-			NNNI = 0;
-		}
-		is >> dc;
-		SequenceAlignment* plaindata = new FileSequenceAlignment(datafile,0,myid);
 		if (dc)	{
-			plaindata->DeleteConstantSites();
+			data->DeleteConstantSites();
 		}
-		const TaxonSet* taxonset = plaindata->GetTaxonSet();
 
 		int insitemin = -1,insitemax = -1;
 		if (myid > 0) {
-			int width = plaindata->GetNsite()/(nprocs-1);
+			int width = data->GetNsite()/(nprocs-1);
 			insitemin = (myid-1)*width;
 			if (myid == (nprocs-1)) {
-				insitemax = plaindata->GetNsite();
+				insitemax = data->GetNsite();
 			}
 			else {
 				insitemax = myid*width;
 			}
 		}
 
-		tree = new Tree(taxonset);
-		if (myid == 0)	{
-			tree->ReadFromStream(is);
-			GlobalBroadcastTree();
-		}
-		else	{
-			SlaveBroadcastTree();
-		}
-		tree->RegisterWith(taxonset,0);
-
-		Create(tree,plaindata,nratecat,1,infixncomp,inempmix,inmixtype,insitemin,insitemax);
+		Create(tree,data,DGamRateProcess::Ncat,1,fixncomp,empmix,mixtype,insitemin,insitemax);
 
 		if (myid == 0)	{
 			FromStream(is);
@@ -279,6 +250,26 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 		os << dc << '\n';
 		SetNamesFromLengths();
 		GetTree()->ToStream(os);
+	}
+	void FromStreamHeader(istream& is)    {
+		PhyloProcess::FromStreamHeader(is);
+		is >> datafile;
+		is >> DGamRateProcess::Ncat;
+		is >> fixncomp >> empmix >> mixtype;
+		is >> fixtopo;
+		if (atof(version.substr(0,3).c_str()) > 1.4)    {
+			is >> NSPR;
+			is >> NNNI;
+		}
+		else    {
+			NSPR = 10;
+			NNNI = 0;
+		}
+		is >> dc;
+		data = new FileSequenceAlignment(datafile,0,myid,false);
+		const TaxonSet* taxonset = data->GetTaxonSet();
+		tree = new Tree(taxonset);
+		tree->ReadFromStream(is);
 	}
 
 	void ToStream(ostream& os)	{

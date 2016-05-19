@@ -244,39 +244,47 @@ class Model	{
         else if (type == "CATGTRSBDP")  {
             process = new RASCATGTRSBDPGammaPhyloProcess(is,myid,nprocs);
         }
-        else if (type == "GPSSCATGTRSBDP")  {
-            process = new GeneralPathSuffStatRASCATGTRSBDPGammaPhyloProcess(is,myid,nprocs);
-        }
         else if (type == "CATGTRFINITE")    {
-            process = new RASCATGTRFiniteGammaPhyloProcess(is,myid,nprocs);
+			process = new RASCATGTRFiniteGammaPhyloProcess(is,myid,nprocs);
+		}
+        else if(num_stones > 0)
+        {
+        	cerr << "sorry, steppingstone sampling is not implemented for model type: " << type << '\n';
+        	exit(1);
         }
-        else if (type == "GPSSCATGTRFINITE")    {
-            process = new GeneralPathSuffStatRASCATGTRFiniteGammaPhyloProcess(is,myid,nprocs);
-        }
-        else if (type == "AAMUTSELFINITE")  {
-            process = new AAMutSelFinitePhyloProcess(is,myid,nprocs);
-        }
-        else if (type == "AACODONMUTSELFINITE") {
-            process = new AACodonMutSelFinitePhyloProcess(is,myid,nprocs);
-        }
-        else if (type == "AAMUTSELSBDP")    {
-            process = new AAMutSelSBDPPhyloProcess(is,myid,nprocs);
-        }
-        else if (type == "AAMUTSELDP")  {
-            process = new AAMutSelDPPhyloProcess(is,myid,nprocs);
-        }
-        else if (type == "CODONMUTSELFINITE")   {
-            process = new CodonMutSelFinitePhyloProcess(is,myid,nprocs);
-        }
-        else if (type == "CODONMUTSELSBDP") {
-            process = new CodonMutSelSBDPPhyloProcess(is,myid,nprocs);
-        }
-        else if (type == "AACODONMUTSELSBDP")   {
-            process = new AACodonMutSelSBDPPhyloProcess(is,myid,nprocs);
-        }
-        else    {
-            cerr << "error, does not recognize model type : " << type << '\n';
-            exit(1);
+        else
+        {
+        	if (type == "GPSSCATGTRSBDP")  {
+				process = new GeneralPathSuffStatRASCATGTRSBDPGammaPhyloProcess(is,myid,nprocs);
+			}
+			else if (type == "GPSSCATGTRFINITE")    {
+				process = new GeneralPathSuffStatRASCATGTRFiniteGammaPhyloProcess(is,myid,nprocs);
+			}
+			else if (type == "AAMUTSELFINITE")  {
+				process = new AAMutSelFinitePhyloProcess(is,myid,nprocs);
+			}
+			else if (type == "AACODONMUTSELFINITE") {
+				process = new AACodonMutSelFinitePhyloProcess(is,myid,nprocs);
+			}
+			else if (type == "AAMUTSELSBDP")    {
+				process = new AAMutSelSBDPPhyloProcess(is,myid,nprocs);
+			}
+			else if (type == "AAMUTSELDP")  {
+				process = new AAMutSelDPPhyloProcess(is,myid,nprocs);
+			}
+			else if (type == "CODONMUTSELFINITE")   {
+				process = new CodonMutSelFinitePhyloProcess(is,myid,nprocs);
+			}
+			else if (type == "CODONMUTSELSBDP") {
+				process = new CodonMutSelSBDPPhyloProcess(is,myid,nprocs);
+			}
+			else if (type == "AACODONMUTSELSBDP")   {
+				process = new AACodonMutSelSBDPPhyloProcess(is,myid,nprocs);
+			}
+			else    {
+				cerr << "error, does not recognize model type : " << type << '\n';
+				exit(1);
+			}
         }
 
         process->SetSize(size);
@@ -284,7 +292,7 @@ class Model	{
         if(num_stones > 0)
         {
             // allow use of a fixed topology with steppingstones
-            if(treefile != "None")
+            if(treefile != "None" && stone_index == 0)
             {
                 process->FixTopo(treefile);
             }

@@ -116,60 +116,24 @@ class RASCATGammaPhyloProcess : public virtual PoissonPhyloProcess, public virtu
 		nprocs = np;
 
 		FromStreamHeader(is);
-		is >> datafile;
-		int nratecat;
-		is >> nratecat;
-		if (atof(version.substr(0,3).c_str()) > 1.3)	{
-			is >> iscodon;
-			is >> codetype;
-			is >> kappaprior;
-			is >> mintotweight;
-		}
-		else	{
-			iscodon = 0;
-			codetype = Universal;
-			kappaprior = 0;
-			mintotweight = -1;
-		}
-		is >> fixtopo;
-		if (atof(version.substr(0,3).c_str()) > 1.4)	{
-			is >> NSPR;
-			is >> NNNI;
-		}
-		else	{
-			NSPR = 10;
-			NNNI = 0;
-		}
-		is >> dc;
-		SequenceAlignment* plaindata = new FileSequenceAlignment(datafile,0,myid);
+
 		if (dc)	{
-			plaindata->DeleteConstantSites();
+			data->DeleteConstantSites();
 		}
-		const TaxonSet* taxonset = plaindata->GetTaxonSet();
 
 		int insitemin = -1,insitemax = -1;
 		if (myid > 0) {
-			int width = plaindata->GetNsite()/(nprocs-1);
+			int width = data->GetNsite()/(nprocs-1);
 			insitemin = (myid-1)*width;
 			if (myid == (nprocs-1)) {
-				insitemax = plaindata->GetNsite();
+				insitemax = data->GetNsite();
 			}
 			else {
 				insitemax = myid*width;
 			}
 		}
 
-		tree = new Tree(taxonset);
-		if (myid == 0)	{
-			tree->ReadFromStream(is);
-			GlobalBroadcastTree();
-		}
-		else	{
-			SlaveBroadcastTree();
-		}
-		tree->RegisterWith(taxonset,0);
-
-		Create(tree,plaindata,nratecat,insitemin,insitemax);
+		Create(tree,data,DGamRateProcess::Ncat,insitemin,insitemax);
 
 		if (myid == 0)	{
 			FromStream(is);
@@ -278,6 +242,35 @@ class RASCATGammaPhyloProcess : public virtual PoissonPhyloProcess, public virtu
 		GetTree()->ToStream(os);
 	}
 
+	void FromStreamHeader(istream& is)    {
+		PhyloProcess::FromStreamHeader(is);
+		is >> datafile;
+		is >> DGamRateProcess::Ncat;
+		is >> iscodon;
+		is >> codetype;
+		is >> kappaprior;
+		is >> mintotweight;
+		is >> fixtopo;
+		if (atof(version.substr(0,3).c_str()) > 1.4)    {
+			is >> NSPR;
+			is >> NNNI;
+		}
+		else    {
+			NSPR = 10;
+			NNNI = 0;
+		}
+		is >> dc;
+		if (iscodon)	{
+			SequenceAlignment* tempdata = new FileSequenceAlignment(datafile,0,myid,false);
+			data = new CodonSequenceAlignment(tempdata,true,codetype);
+		}
+		else	{
+			data = new FileSequenceAlignment(datafile,0,myid);
+		}
+		const TaxonSet* taxonset = data->GetTaxonSet();
+		tree = new Tree(taxonset);
+		tree->ReadFromStream(is);
+	}
 	void ToStream(ostream& os)	{
 		GammaBranchProcess::ToStream(os);
 		DGamRateProcess::ToStream(os);
