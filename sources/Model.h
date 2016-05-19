@@ -310,21 +310,24 @@ class Model	{
             exit(1);
         }
 
-		if(num_stones > 0)
-		{
-		    // allow use of a fixed topology with steppingstones
-		    if(treefile != "None")
+	process->SetSize(size);
+
+        if(num_stones > 0)
+        {
+            // allow use of a fixed topology with steppingstones
+            if(treefile != "None")
             {
                 process->FixTopo(treefile);
             }
-
-		    if(myid == 0)
-		    {
+            
+            // set stepping stone if elongating a single stone
+            if(myid == 0 && innum_stones == 0)
+            {
                 process->GlobalSetSteppingStone(stone_index, num_stones);
                 process->GlobalCollapse();
                 process->GlobalUnfold();
-		    }
-		}
+            }
+        }
 	}
 
 	void ToStream(ostream& os, bool header)	{
@@ -432,6 +435,8 @@ class Model	{
                     // if not, reset the process and create new output files
                     process->SetSize(0);
                     process->GlobalSetSteppingStone(stone_index, num_stones);
+                    process->GlobalCollapse();
+                    process->GlobalUnfold();
 
                     ofstream os((name + ss_ext.str() + ".treelist").c_str());
                     ofstream tos((name + ss_ext.str() + ".trace").c_str());
@@ -457,7 +462,10 @@ class Model	{
 
                     process->FromStreamHeader(is);
                     process->FromStream(is);
-                    process->SetSize(size);
+                    MESSAGE signal = BCAST_TREE;
+		    MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+		    process->GlobalBroadcastTree();
+		    process->SetSize(size);
                     process->GlobalSetSteppingStone(stone_index, num_stones);
                     process->GlobalCollapse();
                     process->GlobalUnfold();

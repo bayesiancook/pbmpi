@@ -80,8 +80,6 @@ void MatrixPhyloProcess::Collapse()	{
 	DeleteConditionalLikelihoods();
 	InactivateSumOverRateAllocations(ratealloc);
 
-	UpdateSiteMask();
-
 	SampleSubstitutionMappings(GetRoot());
 	DeleteMatrices();
 	CreateSuffStat();

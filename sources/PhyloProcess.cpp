@@ -66,7 +66,6 @@ void PhyloProcess::Collapse()	{
 	DeleteCondSiteLogL();
 	DeleteConditionalLikelihoods();
 	InactivateSumOverRateAllocations(ratealloc);
-	UpdateSiteMask();
 	SampleSubstitutionMappings(GetRoot());
 	CreateSuffStat();
 }
@@ -83,8 +82,7 @@ void PhyloProcess::DeleteMappings()	{
 	for (int j=0; j<GetNbranch(); j++)	{
 		if (submap[j])	{
 			for (int i=sitemin; i<sitemax; i++)	{
-			    if(!sitemask[i])
-			        delete submap[j][i];
+			    delete submap[j][i];
 			}
 			delete[] submap[j];
 			submap[j] = 0;
@@ -911,7 +909,7 @@ void PhyloProcess::RecursiveNonMPIGibbsSPRScan(Link* from, Link* fromup, Link* d
 
 void PhyloProcess::Create(Tree* intree, SequenceAlignment* indata,int indim)	{
 
-	if (! data)	{
+	if (! loglarray)	{
 		data = indata;
 		// MPI : master and slaves
 		RateProcess::Create(data->GetNsite());
@@ -1249,11 +1247,12 @@ double PhyloProcess::GlobalComputeNodeLikelihood(const Link* from, int auxindex)
 
 	logL = 0.0;
 	maskedlogL = 0.0;
-	double sum;
+	double sum = 0.0;
 	for(i=1; i<nprocs; ++i) {
-		MPI_Recv(&sum,1,MPI_DOUBLE,MPI_ANY_SOURCE,TAG1,MPI_COMM_WORLD,&stat);
+		MPI_Recv(&sum,1,MPI_DOUBLE,i,TAG1,MPI_COMM_WORLD,&stat);
 		logL += sum;
-		MPI_Recv(&sum,1,MPI_DOUBLE,MPI_ANY_SOURCE,TAG1,MPI_COMM_WORLD,&stat);
+		sum = 0.0;
+		MPI_Recv(&sum,1,MPI_DOUBLE,i,TAG1,MPI_COMM_WORLD,&stat);
 		maskedlogL += sum;
 	}
 	return logL;
@@ -2000,12 +1999,12 @@ void PhyloProcess::SlaveUpdateSiteRateSuffStat()	{
 		ivector[j] = siteratesuffstatcount[i]; j++;
 	}
 	double dvector[workload];
-	MPI_Send(siteratesuffstatcount,workload,MPI_INT,0,TAG1,MPI_COMM_WORLD);
+	MPI_Send(ivector,workload,MPI_INT,0,TAG1,MPI_COMM_WORLD);
 	j = 0;
 	for(i=sitemin; i<sitemax; ++i) {
 		dvector[j] = siteratesuffstatbeta[i]; j++;
 	}
-	MPI_Send(siteratesuffstatbeta,workload,MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
+	MPI_Send(dvector,workload,MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
 
 
 	// finally, sync all processes on same suffstat values 
@@ -2908,14 +2907,11 @@ void PhyloProcess::SlaveWriteMappings(){
 	delete[] bvector;
 
 	for(int i = sitemin; i < sitemax; i++){
-	    if(!sitemask[i])
-	    {
             stringstream osfmap;
             osfmap << name << '_' << i << ".map";
             ofstream osmap((osfmap.str()).c_str(), ios_base::app);
             WriteTreeMapping(osmap, GetRoot(), i);
             osmap.close();
-	    }
 	}
 }
 

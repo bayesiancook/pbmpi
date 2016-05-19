@@ -97,11 +97,6 @@ class SubstitutionProcess : public virtual RateProcess, public virtual ProfilePr
 	double*** CreateConditionalLikelihoodVector();
 	void DeleteConditionalLikelihoodVector(double*** condl);
 
-	double* CreateProbVector()	{
-		return new double[GetSiteMax() - GetSiteMin()];
-		// return new double[GetNsite()];
-	}
-
 	void CreateCondSiteLogL();
 	void DeleteCondSiteLogL();
 
@@ -160,6 +155,7 @@ class SubstitutionProcess : public virtual RateProcess, public virtual ProfilePr
 
 	int sitemin;
 	int sitemax;
+	int bksitemax;
 	double** condsitelogL;
 	double* sitelogL;
 	double* meansiterate;
@@ -174,6 +170,7 @@ class SubstitutionProcess : public virtual RateProcess, public virtual ProfilePr
 	int num_stones;
 	bool mask_sum_only;
 	vector<bool> sitemask;
+	vector<bool> summask;
 };
 
 #endif

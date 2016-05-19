@@ -1,6 +1,6 @@
 CC=mpic++
 CPPFLAGS= -w -O3 -c
-LDFLAGS= -O3
+LDFLAGS= -O3 -g
 SRCS=  TaxonSet.cpp Tree.cpp Random.cpp SequenceAlignment.cpp CodonSequenceAlignment.cpp \
 	StateSpace.cpp CodonStateSpace.cpp ZippedSequenceAlignment.cpp SubMatrix.cpp \
 	GTRSubMatrix.cpp CodonSubMatrix.cpp linalg.cpp Chrono.cpp BranchProcess.cpp \

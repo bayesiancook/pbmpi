@@ -361,9 +361,6 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 	}
 
 	virtual void ReadPB(int argc, char* argv[]);
-	void GlobalSetTestData();
-	void SlaveSetTestData();
-	void SlaveComputeCVScore();
 	void SlaveComputeSiteLogL();
 	void ReadRelRates(string name, int burnin, int every, int until);
 	void ReadSiteProfiles(string name, int burnin, int every, int until);

@@ -536,7 +536,6 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	int testnsite;
 	int testsitemin;
 	int testsitemax;
-	int bksitemax;
 
 	int dataclamped;
 	int rateprior;

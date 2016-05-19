@@ -88,7 +88,7 @@ void PartitionedExpoConjugateGTRGammaPhyloProcess::UpdateRRSuffStat()	{
 void PartitionedExpoConjugateGTRGammaPhyloProcess::UpdateSiteRateSuffStat()	{
 
 	// cerr << "in update site rate : " << GetTotalLength() << '\n';
-	for (int i=sitemin; i<sitemax; i++)	{
+	for (int i=sitemin; i<bksitemax; i++)	{
 		siteratesuffstatcount[i] = 0;
 		siteratesuffstatbeta[i] = 0;
 	}

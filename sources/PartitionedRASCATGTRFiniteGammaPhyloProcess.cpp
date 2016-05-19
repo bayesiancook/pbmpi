@@ -335,8 +335,6 @@ void PartitionedRASCATGTRFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])
 	int rr = 0;
 	int ss = 0;
 
-	cvschemefile = "None";
-
 	try	{
 
 		if (argc == 1)	{
@@ -360,10 +358,6 @@ void PartitionedRASCATGTRFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])
                 i++;
                 testdatafile = argv[i];
             }
-			else if (s == "-p")	{
-				i++;
-				cvschemefile = argv[i];
-			}
 			else if (s == "-ppredrate")	{
 				i++;
 				string tmp = argv[i];
@@ -478,7 +472,8 @@ void PartitionedRASCATGTRFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])
 	}
 
 	if (cv)	{
-		ReadCV(testdatafile,name,burnin,every,until);
+		cerr << "error : cannot use cross-validation with partitioned model\n";
+		exit(1);
 	}
 	else if (sitelogl)	{
 		ReadSiteLogL(name,burnin,every,until);
@@ -501,223 +496,6 @@ void PartitionedRASCATGTRFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])
 	else	{
 		Read(name,burnin,every,until);
 	}
-}
-
-
-void PartitionedRASCATGTRFiniteGammaPhyloProcess::GlobalSetTestData()	{
-	testnsite = testdata->GetNsite();
-	int* tmp = new int[testnsite * GetNtaxa()];
-	testdata->GetDataVector(tmp);
-
-	MESSAGE signal = SETTESTDATA;
-	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
-	MPI_Bcast(&testnsite,1,MPI_INT,0,MPI_COMM_WORLD);
-	MPI_Bcast(tmp,testnsite*GetNtaxa(),MPI_INT,0,MPI_COMM_WORLD);
-
-	if (cvschemefile == "None")	{
-		cerr << "error : partition scheme file must be specified for cv test dataset\n";
-		MPI_Finalize();
-		exit(1);
-	}
-
-	PartitionScheme datascheme,testscheme;
-
-	vector<PartitionScheme> cvschemes = PartitionedDGamRateProcess::ReadSchemes(cvschemefile, testdata->GetNsite(), myid, linkgam, unlinkgtr, rrtype);
-
-	if(!linkgam)
-	{
-		datascheme = PartitionedDGamRateProcess::scheme;
-		testscheme = cvschemes[2];
-	}
-	else
-	{
-		datascheme = PartitionedGTRProfileProcess::scheme;
-		testscheme = cvschemes[0];
-	}
-
-	if(datascheme.Npart != testscheme.Npart)
-	{
-		cerr << "error : incorrect number of partitions in cv test scheme\n";
-		MPI_Finalize();
-		exit(1);
-	}
-
-	MPI_Bcast(&(datascheme.Npart),1,MPI_INT,0,MPI_COMM_WORLD);
-	for(int p = 0; p < datascheme.Npart; p++)
-	{
-		int ndatasites = datascheme.partSites[p].size();
-		MPI_Bcast(&ndatasites,1,MPI_INT,0,MPI_COMM_WORLD);
-		MPI_Bcast(&(datascheme.partSites[p][0]),ndatasites,MPI_INT,0,MPI_COMM_WORLD);
-
-		int ntestsites = testscheme.partSites[p].size();
-		MPI_Bcast(&ntestsites,1,MPI_INT,0,MPI_COMM_WORLD);
-		MPI_Bcast(&(testscheme.partSites[p][0]),ntestsites,MPI_INT,0,MPI_COMM_WORLD);
-	}
-
-	delete[] tmp;
-}
-
-void PartitionedRASCATGTRFiniteGammaPhyloProcess::SlaveSetTestData()	{
-
-	MPI_Bcast(&testnsite,1,MPI_INT,0,MPI_COMM_WORLD);
-	int* tmp = new int[testnsite * GetNtaxa()];
-	MPI_Bcast(tmp,testnsite*GetNtaxa(),MPI_INT,0,MPI_COMM_WORLD);
-
-	PartitionScheme testscheme,datascheme;
-	MPI_Bcast(&(testscheme.Npart),1,MPI_INT,0,MPI_COMM_WORLD);
-	datascheme.Npart = testscheme.Npart;
-
-	datascheme.partSites.resize(datascheme.Npart);
-	testscheme.partSites.resize(testscheme.Npart);
-
-	datascheme.sitePart.resize(GetNsite());
-	testscheme.sitePart.resize(testnsite);
-
-	SetTestSiteMinAndMax();
-	for(int p = 0; p < datascheme.Npart; p++)
-	{
-		int n;
-
-		MPI_Bcast(&n,1,MPI_INT,0,MPI_COMM_WORLD);
-		datascheme.partSites[p].resize(n);
-		MPI_Bcast(&(datascheme.partSites[p][0]),n,MPI_INT,0,MPI_COMM_WORLD);
-
-		for(int i = 0; i < datascheme.partSites[p].size(); i++)
-		{
-			int site = datascheme.partSites[p][i];
-			datascheme.sitePart[site] = p;
-		}
-
-		MPI_Bcast(&n,1,MPI_INT,0,MPI_COMM_WORLD);
-		testscheme.partSites[p].resize(n);
-		MPI_Bcast(&(testscheme.partSites[p][0]),n,MPI_INT,0,MPI_COMM_WORLD);
-
-		for(int i = 0; i < testscheme.partSites[p].size(); i++)
-		{
-			int site = testscheme.partSites[p][i];
-			testscheme.sitePart[site] = p;
-		}
-	}
-
-	int testwidth = testnsite/(nprocs-1);
-	int width = GetNsite()/(nprocs-1);
-
-	vector<int> partcounts(datascheme.Npart, 0);
-
-	int min = 0;
-	for(int proc = 0; proc < nprocs - 1; proc++)
-	{
-		if(min == sitemin)
-			break;
-
-		for(int site = min; site < min + width; site++)
-		{
-			int datasitepart = datascheme.sitePart[site];
-
-			partcounts[datasitepart]++;
-		}
-
-		min += width;
-	}
-
-	vector<int> testcounts(datascheme.Npart, 0);
-
-	for(int site = sitemin; site < sitemax; site++)
-	{
-		int datasitepart = datascheme.sitePart[site];
-
-		testcounts[datasitepart]++;
-	}
-
-	for(int p = 0; p < partcounts.size(); p++)
-	{
-		int testmin = partcounts[p] * testwidth / width;
-		int testmax = testmin + testcounts[p] * testwidth / width;
-
-		int i = 0;
-		for(int site = sitemin; site < sitemax; site++)
-		{
-			int datasitepart = datascheme.sitePart[site];
-
-			if(datasitepart == p)
-			{
-				if(i < testmax - testmin)
-				{
-					int testsite = testscheme.partSites[p][testmin + i];
-
-					data->SetTestData(testnsite,site,testsite,testsite+1,tmp);
-				}
-				else
-				{
-					sitemask[site] = true;
-				}
-
-				i++;
-			}
-		}
-	}
-
-	delete[] tmp;
-}
-
-void PartitionedRASCATGTRFiniteGammaPhyloProcess::SlaveComputeCVScore()	{
-
-	if (! SumOverRateAllocations())	{
-		cerr << "rate error\n";
-		exit(1);
-	}
-
-	//sitemax = sitemin + testsitemax - testsitemin;
-	double** sitelogl = new double*[GetNsite()];
-	for(int i = sitemin; i < sitemax; i++)
-	{
-		if(!sitemask[i])
-		sitelogl[i] = new double[GetNcomponent()];
-	}
-	
-	// UpdateMatrices();
-
-	for (int k=0; k<GetNcomponent(); k++)	{
-		for(int i = sitemin; i < sitemax; i++)	{
-			PartitionedExpoConjugateGTRFiniteProfileProcess::alloc[i] = k;
-		}
-		UpdateConditionalLikelihoods();
-		for(int i = sitemin; i < sitemax; i++)	{
-			if(!sitemask[i])
-			sitelogl[i][k] = sitelogL[i];
-		}
-	}
-
-	double total = 0;
-	for(int i = sitemin; i < sitemax; i++)	{
-		if(!sitemask[i])
-		{
-			double max = 0;
-			for (int k=0; k<GetNcomponent(); k++)	{
-				if ((!k) || (max < sitelogl[i][k]))	{
-					max = sitelogl[i][k];
-				}
-			}
-			double tot = 0;
-			double totweight = 0;
-			for (int k=0; k<GetNcomponent(); k++)	{
-				tot += weight[k] * exp(sitelogl[i][k] - max);
-				totweight += weight[k];
-			}
-			total += log(tot) + max;
-		}
-	}
-
-	MPI_Send(&total,1,MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
-	
-	for(int i = sitemin; i < sitemax; i++){
-		if(!sitemask[i])
-		delete[] sitelogl[i];
-	}
-	delete[] sitelogl;
-
-	//sitemax = bksitemax;
-
 }
 
 void PartitionedRASCATGTRFiniteGammaPhyloProcess::SlaveComputeSiteLogL()	{

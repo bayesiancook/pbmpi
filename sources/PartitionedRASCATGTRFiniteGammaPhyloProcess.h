@@ -319,9 +319,6 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 	}
 
 	virtual void ReadPB(int argc, char* argv[]);
-	void GlobalSetTestData();
-	void SlaveSetTestData();
-	void SlaveComputeCVScore();
 	void SlaveComputeSiteLogL();
 	void ReadRelRates(string name, int burnin, int every, int until);
 	void ReadSiteProfiles(string name, int burnin, int every, int until);
@@ -351,8 +348,6 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 	bool occupancyNeedsUpdating;
 
 	int*** partoccupancy;
-
-	string cvschemefile;
 };
 
 #endif
