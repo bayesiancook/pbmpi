@@ -35,6 +35,7 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 #include "Parallel.h"
 #include <iostream>
 #include <fstream>
+#include <limits>
 
 using namespace std;
 
@@ -292,6 +293,7 @@ class Model	{
 	}
 
 	void Run(int burnin)	{
+		stringstream ss;
 
 		if (burnin != 0)	{
 			if (GetSize() < burnin)	{
@@ -299,7 +301,8 @@ class Model	{
 			}
 		}
 		ofstream ros((name + ".run").c_str());
-		ros << 1 << '\n';
+		ss << 1 << '\n';
+		ros << ss.str();
 		ros.close();
 	
 		while (RunningStatus() && ((until == -1) || (GetSize() < until)))	{
@@ -314,27 +317,37 @@ class Model	{
 			ofstream os((name + ".treelist").c_str(), ios_base::app);
 			process->SetNamesFromLengths();
 			process->RenormalizeBranchLengths();
-			GetTree()->ToStream(os);
+			ss.str("");
+			GetTree()->ToStream(ss);
 			process->DenormalizeBranchLengths();
+			os << ss.str();
 			os.close();
 
 			ofstream tos((name + ".trace").c_str(), ios_base::app);
-			Trace(tos);
+			ss.str("");
+			Trace(ss);
+			tos << ss.str();
 			tos.close();
 
 			ofstream mos((name + ".monitor").c_str());
-			process->Monitor(mos);
+			ss.str("");
+			process->Monitor(ss);
+			mos << ss.str();
 			mos.close();
 
 			ofstream pos((name + ".param").c_str());
-			pos.precision(12);
-			ToStream(pos,true);
+			pos.precision(numeric_limits<double>::digits10);
+			ss.str("");
+			ToStream(ss,true);
+			pos << ss.str();
 			pos.close();
 
 			if (saveall)	{
 				ofstream cos((name + ".chain").c_str(),ios_base::app);
-				cos.precision(12);
-				ToStream(cos,false);
+				cos.precision(numeric_limits<double>::digits10);
+				ss.str("");
+				ToStream(ss,false);
+				cos << ss.str();
 				cos.close();
 			}
 
