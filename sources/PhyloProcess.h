@@ -53,7 +53,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	// virtual void SlaveUpdate();
 
 	// default constructor: pointers set to nil
-	PhyloProcess() :  siteratesuffstatcount(0), siteratesuffstatbeta(0), branchlengthsuffstatcount(0), branchlengthsuffstatbeta(0), condflag(false), data(0), myid(-1), nprocs(0), size(0), version("1.7"), totaltime(0), dataclamped(1), rateprior(0), profileprior(0), rootprior(1) {}
+	PhyloProcess() :  siteratesuffstatcount(0), siteratesuffstatbeta(0), branchlengthsuffstatcount(0), branchlengthsuffstatbeta(0), condflag(false), data(0), myid(-1), nprocs(0), size(0), version("1.7"), totaltime(0), dataclamped(1), rateprior(0), profileprior(0), rootprior(1), topoburnin(0), fixtopo(false) {}
 	virtual ~PhyloProcess() {}
 
 	string GetVersion() {return version;}
@@ -166,8 +166,8 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	double GlobalComputeNodeLikelihood(const Link* from, int auxindex = -1);
 
 	void GlobalSetSteppingStone(int stone_index, int num_stones);
-	void SlaveSetSteppingStone(void);
-	void FixTopo(string treefile);
+    void SlaveSetSteppingStone(void);
+    void FixTopo(string treefile);
 
 	protected:
 
@@ -303,9 +303,9 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 		return logL;
 	}
 
-	double GetMaskedLogLikelihood()   {
-        return maskedlogL;
-    }
+	double GetMaskedLogLikelihood()	{
+		return maskedlogL;
+	}
 
 	virtual void GlobalUnfold();
 	virtual void GlobalCollapse();
@@ -527,6 +527,10 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	int GetSize() {return size;}
 	void SetSize(int insize) {size = insize;}
 
+	void SetTopoBurnin(int intopoburnin)	{
+		topoburnin = intopoburnin;
+	}
+
 	double GetNormFactor() {return GetNormalizationFactor();}
 
 	string version;
@@ -542,6 +546,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	int profileprior;
 	int rootprior;
 
+	int topoburnin;
 	bool fixtopo;
 };
 

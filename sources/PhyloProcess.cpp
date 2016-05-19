@@ -82,7 +82,8 @@ void PhyloProcess::DeleteMappings()	{
 	for (int j=0; j<GetNbranch(); j++)	{
 		if (submap[j])	{
 			for (int i=sitemin; i<sitemax; i++)	{
-			    delete submap[j][i];
+				if(sitemask[i] < 2)
+					delete submap[j][i];
 			}
 			delete[] submap[j];
 			submap[j] = 0;
@@ -541,19 +542,17 @@ double PhyloProcess::LocalNonMPIBranchLengthMove(const Link* from, double tuning
 	return (double) accepted;
 }
 
-
 double PhyloProcess::MoveTopo(int spr, int nni){
-	double success;
-	// cerr << spr << '\t' << nni << '\n';
-        success += GibbsSPR(spr);
-        for(int i=0; i<nni; i++){
-                success += GibbsNNI(0.1,1);
-        }
+	double success = 0;
+
+	if (size >= topoburnin)	{
+		success += GibbsSPR(spr);
+		for(int i=0; i<nni; i++){
+			success += GibbsNNI(0.1,1);
+		}
+	}
 	return success;
 }
-
-
-
 
 double PhyloProcess::GibbsSPR(int nrep)	{
 	// useless, assuming that preceding move maintains conditinal likelihoods correctly updated
@@ -1258,36 +1257,6 @@ double PhyloProcess::GlobalComputeNodeLikelihood(const Link* from, int auxindex)
 	return logL;
 }
 
-void PhyloProcess::GlobalSetSteppingStone(int instone_index, int innum_stones)
-{
-    assert(myid == 0);
-    stone_index = instone_index;
-    num_stones = innum_stones;
-    MESSAGE signal = STEPPINGSTONE;
-    MPI_Status stat;
-    MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
-    int args[2];
-    args[0] = stone_index;
-    args[1] = num_stones;
-    MPI_Bcast(args,2,MPI_INT,0,MPI_COMM_WORLD);
-}
-
-void PhyloProcess::SlaveSetSteppingStone()
-{
-    assert(myid > 0);
-    int args[2];
-    MPI_Bcast(args,2,MPI_INT,0,MPI_COMM_WORLD);
-
-    stone_index = args[0];
-    num_stones = args[1];
-}
-
-void PhyloProcess::FixTopo(string treefile)
-{
-    ReadTree(treefile);
-    fixtopo = true;
-}
-
 void PhyloProcess::GlobalReset(const Link* link, bool condalloc)	{
 
 	// MPI
@@ -1488,6 +1457,40 @@ void PhyloProcess::GlobalGibbsSPRScan(Link* down, Link* up, double* loglarray)  
 	}
 }
 
+void PhyloProcess::GlobalSetSteppingStone(int instone_index, int innum_stones)
+{
+    assert(myid == 0);
+    stone_index = instone_index;
+    num_stones = innum_stones;
+    MESSAGE signal = STEPPINGSTONE;
+    MPI_Status stat;
+    MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+    int args[2];
+    args[0] = stone_index;
+    args[1] = num_stones;
+    MPI_Bcast(args,2,MPI_INT,0,MPI_COMM_WORLD);
+    sitemask_needs_updating = true;
+}
+
+void PhyloProcess::SlaveSetSteppingStone()
+{
+    assert(myid > 0);
+    int args[2];
+    MPI_Bcast(args,2,MPI_INT,0,MPI_COMM_WORLD);
+
+    stone_index = args[0];
+    num_stones = args[1];
+    sitemask_needs_updating = true;
+}
+
+void PhyloProcess::FixTopo(string treefile)
+{
+    ReadTree(treefile);
+    MESSAGE signal = BCAST_TREE;
+    MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+    GlobalBroadcastTree();
+    fixtopo = true;
+}
 
 // MPI
 // for slaves
@@ -1654,8 +1657,8 @@ void PhyloProcess::SlaveExecute(MESSAGE signal)	{
 		SimulateForward();
 		break;
 	case STEPPINGSTONE:
-	    SlaveSetSteppingStone();
-	    break;
+        SlaveSetSteppingStone();
+        break;
 	
 	default:
 		// or : SubstitutionProcess::SlaveExecute?

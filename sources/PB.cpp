@@ -653,10 +653,14 @@ int main(int argc, char* argv[])	{
 			// MPI master only
 			ofstream os((name + ".treelist").c_str());
 			ofstream tos((name + ".trace").c_str());
-			model->TraceHeader(tos);
+			stringstream ss;
+			model->TraceHeader(ss);
+			tos << ss.str();
 			tos.close();
 			ofstream pos((name + ".param").c_str());
-			model->ToStream(pos,true);
+			ss.str("");
+			model->ToStream(ss,true);
+			pos << ss.str();
 			pos.close();
 			if (saveall)	{
 				ofstream cos((name + ".chain").c_str());

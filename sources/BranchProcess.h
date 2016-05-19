@@ -143,9 +143,9 @@ class BranchProcess : public NewickTree {
 
 	virtual const TaxonSet* GetTaxonSet() const = 0;
 
-	void ReadTree(string treefile);
-
 	protected:
+
+	void ReadTree(string treefile);
 
 	int GetNbranch()	{
 		return tree->GetNbranch();

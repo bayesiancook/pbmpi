@@ -161,18 +161,17 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 
 	void SlaveUpdateParameters();
 
-	void TraceHeader(ostream& hs)	{
-	    stringstream os;
+	void TraceHeader(ostream& os)	{
+
 		os << "iter\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
 		if (! fixrr)	{
 			os << "\trrent\trrmean";
 		}
 		os << '\n';
-		hs << os.str();
 	}
 
-	void Trace(ostream& hs)	{
-	    stringstream os;
+	void Trace(ostream& os)	{
+
 		os << GetSize() - 1;
 		if (chronototal.GetTime())	{
 			os << '\t' << chronototal.GetTime() / 1000;
@@ -197,7 +196,6 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 		}
 
 		os << '\n';
-		hs << os.str();
 	}
 
 	double Move(double tuning = 1.0)	{
@@ -275,25 +273,25 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 
 	}
 	void FromStreamHeader(istream& is)    {
-	    PhyloProcess::FromStreamHeader(is);
-	    is >> datafile;
-        is >> DGamRateProcess::Ncat;
-        is >> fixncomp >> empmix >> mixtype;
-        is >> rrtype;
-        is >> fixtopo;
-        if (atof(version.substr(0,3).c_str()) > 1.4)    {
-            is >> NSPR;
-            is >> NNNI;
-        }
-        else    {
-            NSPR = 10;
-            NNNI = 0;
-        }
-        is >> dc;
-        data = new FileSequenceAlignment(datafile,0,myid,false);
-        const TaxonSet* taxonset = data->GetTaxonSet();
-        tree = new Tree(taxonset);
-        tree->ReadFromStream(is);
+		PhyloProcess::FromStreamHeader(is);
+		is >> datafile;
+		is >> DGamRateProcess::Ncat;
+		is >> fixncomp >> empmix >> mixtype;
+		is >> rrtype;
+		is >> fixtopo;
+		if (atof(version.substr(0,3).c_str()) > 1.4)    {
+			is >> NSPR;
+			is >> NNNI;
+		}
+		else    {
+			NSPR = 10;
+			NNNI = 0;
+		}
+		is >> dc;
+		data = new FileSequenceAlignment(datafile,0,myid,false);
+		const TaxonSet* taxonset = data->GetTaxonSet();
+		tree = new Tree(taxonset);
+		tree->ReadFromStream(is);
 	}
 
 	void ToStream(ostream& os)	{

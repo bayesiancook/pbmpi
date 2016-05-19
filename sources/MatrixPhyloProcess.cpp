@@ -43,8 +43,8 @@ void MatrixPhyloProcess::Unfold()	{
 
 	CreateMatrices();
 
+	// UpdateSubstitutionProcess();
 	UpdateSiteMask();
-
 	CreateCondSiteLogL();
 	CreateConditionalLikelihoods();
 	UpdateConditionalLikelihoods();

@@ -35,8 +35,8 @@ BranchSitePath** MatrixSubstitutionProcess::SampleRootPaths(int* state)	{
 	// BranchSitePath** patharray = new BranchSitePath*[sitemax - sitemin];
 	BranchSitePath** patharray = new BranchSitePath*[GetNsite()];
 	for (int i=sitemin; i<sitemax; i++)	{
-	  if(!sitemask[i])
-		patharray[i] = new BranchSitePath(state[i]);
+		if(sitemask[i] < 2)
+			patharray[i] = new BranchSitePath(state[i]);
 	}
 
 	return patharray;
@@ -47,16 +47,16 @@ BranchSitePath** MatrixSubstitutionProcess::SamplePaths(int* stateup, int* state
 	// BranchSitePath** patharray = new BranchSitePath*[sitemax - sitemin];
 	BranchSitePath** patharray = new BranchSitePath*[GetNsite()];
 	for (int i=sitemin; i<sitemax; i++)	{
-	  if(!sitemask[i])
-	  {
-		double rate = GetRate(i);
-		SubMatrix* matrix = GetMatrix(i);
-		BranchSitePath* path = ResampleAcceptReject(1000,stateup[i],statedown[i],rate,time,matrix);
-		if (! path)	{
-			path = ResampleUniformized(stateup[i],statedown[i],rate,time,matrix);
+		if(sitemask[i] < 2)
+		{
+			double rate = GetRate(i);
+			SubMatrix* matrix = GetMatrix(i);
+			BranchSitePath* path = ResampleAcceptReject(1000,stateup[i],statedown[i],rate,time,matrix);
+			if (! path)	{
+				path = ResampleUniformized(stateup[i],statedown[i],rate,time,matrix);
+			}
+			patharray[i] = path;
 		}
-		patharray[i] = path;
-	  }
 	}
 	return patharray;
 }

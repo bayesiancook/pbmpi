@@ -1,6 +1,6 @@
 *.o
 *.d*
-.cproject
-.project
-.settings
 data/
+.project
+.cproject
+.settings/

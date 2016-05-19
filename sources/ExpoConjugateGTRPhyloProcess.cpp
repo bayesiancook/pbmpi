@@ -85,7 +85,7 @@ void ExpoConjugateGTRPhyloProcess::UpdateRRSuffStat()	{
 void ExpoConjugateGTRPhyloProcess::UpdateSiteRateSuffStat()	{
 
 	// cerr << "in update site rate : " << GetTotalLength() << '\n';
-	for (int i=sitemin; i<bksitemax; i++)	{
+	for (int i=sitemin; i<sitemax; i++)	{
 		siteratesuffstatcount[i] = 0;
 		siteratesuffstatbeta[i] = 0;
 	}
