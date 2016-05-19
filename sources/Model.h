@@ -346,6 +346,7 @@ class Model	{
 		return process->GetSize();
 	}
 
+
 	void RunStone(int burnin)
 	{
 	    cerr << "run " << (name + ss_ext.str()) << " started\n";

@@ -161,18 +161,17 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 
 	void SlaveUpdateParameters();
 
-	void TraceHeader(ostream& hs)	{
-	    stringstream os;
+	void TraceHeader(ostream& os)	{
+
 		os << "iter\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
 		if (! fixrr)	{
 			os << "\trrent\trrmean";
 		}
 		os << '\n';
-		hs << os.str();
 	}
 
-	void Trace(ostream& hs)	{
-	    stringstream os;
+	void Trace(ostream& os)	{
+
 		os << GetSize() - 1;
 		if (chronototal.GetTime())	{
 			os << '\t' << chronototal.GetTime() / 1000;
@@ -197,7 +196,6 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 		}
 
 		os << '\n';
-		hs << os.str();
 	}
 
 	double Move(double tuning = 1.0)	{

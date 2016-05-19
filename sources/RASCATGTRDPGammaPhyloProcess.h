@@ -143,7 +143,7 @@ class RASCATGTRDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProcess
 	}
 
 	void TraceHeader(ostream& os)	{
-		os << "#time\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
+		os << "iter\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
 		if (! fixrr)	{
 			os << "\trrent\trrmean";
 		}
@@ -156,6 +156,7 @@ class RASCATGTRDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProcess
 
 		UpdateOccupancyNumbers();
 
+		os << GetSize() - 1;
 		os << ((int) (chronototal.GetTime() / 1000));
 		if (chronototal.GetTime())	{
 			os << '\t' << ((double) ((int) (chronototal.GetTime() / (1 + GetSize())))) / 1000;

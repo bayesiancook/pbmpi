@@ -159,14 +159,14 @@ class RASCATGammaPhyloProcess : public virtual PoissonPhyloProcess, public virtu
 	}
 
 	void TraceHeader(ostream& os)	{
-		os << "#iter\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
+		os << "iter\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
 		// os << "\tkappa\tallocent";
 		os << '\n'; 
 	}
 
 	void Trace(ostream& os)	{
 
-		os << GetSize();
+		os << GetSize() - 1;
 		if (chronototal.GetTime())	{
 			os << '\t' << chronototal.GetTime() / 1000;
 			os << '\t' << ((int) (propchrono.GetTime() / chronototal.GetTime() * 100));
