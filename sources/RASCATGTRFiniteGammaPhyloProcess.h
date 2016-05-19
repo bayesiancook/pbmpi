@@ -275,26 +275,25 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 
 	}
 	void FromStreamHeader(istream& is)    {
-	    PhyloProcess::FromStreamHeader(is);
-	    is >> datafile;
-        is >> DGamRateProcess::Ncat;
-        is >> fixncomp >> empmix >> mixtype;
-        is >> rrtype;
-        is >> fixtopo;
-        if (atof(version.substr(0,3).c_str()) > 1.4)    {
-            is >> NSPR;
-            is >> NNNI;
-        }
-        else    {
-            NSPR = 10;
-            NNNI = 0;
-        }
-        is >> dc;
-        data = new FileSequenceAlignment(datafile,0,myid,false);
-        const TaxonSet* taxonset = data->GetTaxonSet();
-        tree = new Tree(taxonset);
-        tree->ReadFromStream(is);
-        SetLengthsFromNames();
+		PhyloProcess::FromStreamHeader(is);
+		is >> datafile;
+		is >> DGamRateProcess::Ncat;
+		is >> fixncomp >> empmix >> mixtype;
+		is >> rrtype;
+		is >> fixtopo;
+		if (atof(version.substr(0,3).c_str()) > 1.4)    {
+			is >> NSPR;
+			is >> NNNI;
+		}
+		else    {
+			NSPR = 10;
+			NNNI = 0;
+		}
+		is >> dc;
+		data = new FileSequenceAlignment(datafile,0,myid,false);
+		const TaxonSet* taxonset = data->GetTaxonSet();
+		tree = new Tree(taxonset);
+		tree->ReadFromStream(is);
 	}
 
 	void ToStream(ostream& os)	{

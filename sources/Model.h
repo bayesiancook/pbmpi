@@ -428,6 +428,7 @@ class Model	{
                     is >> every >> unt >> size;
                     is >> saveall;
                     is >> stone_index >> num_stones;
+                    saveall = false;
 
                     process->FromStreamHeader(is);
                     process->FromStream(is);

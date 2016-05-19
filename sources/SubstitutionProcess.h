@@ -68,7 +68,7 @@ class SubstitutionProcess : public virtual RateProcess, public virtual ProfilePr
 
 	public:
 
-	SubstitutionProcess() : condsitelogL(0), sitelogL(0), meansiterate(0), ratealloc(0), infprobcount(0), suboverflowcount(0), stone_index(-1), num_stones(0) {}
+	SubstitutionProcess() : condsitelogL(0), sitelogL(0), meansiterate(0), ratealloc(0), infprobcount(0), suboverflowcount(0), stone_index(-1), num_stones(0), sitemask_needs_updating(false) {}
 	virtual ~SubstitutionProcess() {}
 
 	// basic accessors, needed to perform elementary likelihood computations and substitution mappings
@@ -173,6 +173,7 @@ class SubstitutionProcess : public virtual RateProcess, public virtual ProfilePr
 	vector<size_t> sitemask;
 	int stone_index;
 	int num_stones;
+	bool sitemask_needs_updating;
 };
 
 #endif

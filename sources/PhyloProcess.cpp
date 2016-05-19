@@ -82,7 +82,8 @@ void PhyloProcess::DeleteMappings()	{
 	for (int j=0; j<GetNbranch(); j++)	{
 		if (submap[j])	{
 			for (int i=sitemin; i<sitemax; i++)	{
-				delete submap[j][i];
+				if(sitemask[i] < 2)
+					delete submap[j][i];
 			}
 			delete[] submap[j];
 			submap[j] = 0;
@@ -1467,6 +1468,7 @@ void PhyloProcess::GlobalSetSteppingStone(int instone_index, int innum_stones)
     args[0] = stone_index;
     args[1] = num_stones;
     MPI_Bcast(args,2,MPI_INT,0,MPI_COMM_WORLD);
+    sitemask_needs_updating = true;
 }
 
 void PhyloProcess::SlaveSetSteppingStone()
@@ -1477,6 +1479,7 @@ void PhyloProcess::SlaveSetSteppingStone()
 
     stone_index = args[0];
     num_stones = args[1];
+    sitemask_needs_updating = true;
 }
 
 void PhyloProcess::FixTopo(string treefile)

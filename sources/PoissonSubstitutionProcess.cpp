@@ -35,30 +35,32 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 
 void PoissonSubstitutionProcess::Propagate(double*** from, double*** to, double time, bool condalloc)	{
 	for (int i=sitemin; i<sitemax; i++)	{
-	// for (int i=0; i<GetNsite(); i++)	{
-		const double* stat = GetStationary(i);
-		for (int j=0; j<GetNrate(i); j++)	{
-			if ((! condalloc) || (ratealloc[i] == j))	{
-				double* tmpfrom = from[i][j];
-				double* tmpto = to[i][j];
-				double expo = exp(-GetRate(i,j) * time);
-				double tot = 0;
-				int nstate = GetNstate(i);
-				for (int k=0; k<nstate; k++)	{
-					tot += (*tmpfrom++) * (*stat++);
-					// tot += tmpfrom[k] * stat[k];
+		if(sitemask[i] < 2)
+		{
+			const double* stat = GetStationary(i);
+			for (int j=0; j<GetNrate(i); j++)	{
+				if ((! condalloc) || (ratealloc[i] == j))	{
+					double* tmpfrom = from[i][j];
+					double* tmpto = to[i][j];
+					double expo = exp(-GetRate(i,j) * time);
+					double tot = 0;
+					int nstate = GetNstate(i);
+					for (int k=0; k<nstate; k++)	{
+						tot += (*tmpfrom++) * (*stat++);
+						// tot += tmpfrom[k] * stat[k];
+					}
+					tmpfrom -= nstate;
+					stat -= nstate;
+					tot *= (1-expo);
+					for (int k=0; k<nstate; k++)	{
+						(*tmpto++) = expo * (*tmpfrom++) + tot;
+						// tmpto[k] = expo * tmpfrom[k] + tot;
+					}
+					(*tmpto) = (*tmpfrom);
+					tmpto -= nstate;
+					tmpfrom -= nstate;
+					// tmpto[GetNstate(i)] = tmpfrom[GetNstate(i)];
 				}
-				tmpfrom -= nstate;
-				stat -= nstate;
-				tot *= (1-expo);
-				for (int k=0; k<nstate; k++)	{	
-					(*tmpto++) = expo * (*tmpfrom++) + tot;
-					// tmpto[k] = expo * tmpfrom[k] + tot;
-				}
-				(*tmpto) = (*tmpfrom);
-				tmpto -= nstate;
-				tmpfrom -= nstate;
-				// tmpto[GetNstate(i)] = tmpfrom[GetNstate(i)];
 			}
 		}
 	}
@@ -130,7 +132,8 @@ BranchSitePath** PoissonSubstitutionProcess::SampleRootPaths(int* state)	{
 	// BranchSitePath** patharray = new BranchSitePath*[sitemax - sitemin];
 	BranchSitePath** patharray = new BranchSitePath*[GetNsite()];
 	for (int i=sitemin; i<sitemax; i++)	{
-		patharray[i] = new BranchSitePath(0,state[i]);
+		if(sitemask[i] < 2)
+			patharray[i] = new BranchSitePath(0,state[i]);
 	}
 	return patharray;
 }
@@ -139,43 +142,46 @@ BranchSitePath** PoissonSubstitutionProcess::SampleRootPaths(int* state)	{
 BranchSitePath** PoissonSubstitutionProcess::SamplePaths(int* stateup, int* statedown, double time) 	{
 	BranchSitePath** patharray = new BranchSitePath*[GetNsite()];
 	for (int i=sitemin; i<sitemax; i++)	{
-		const double* stat = GetStationary(i);
-		double rate = GetRate(i);
-		double l = rate * time;
-		int dup = stateup[i];
-		int ddown = statedown[i];
-		double pi = stat[ddown];
+		if(sitemask[i] < 2)
+		{
+			const double* stat = GetStationary(i);
+			double rate = GetRate(i);
+			double l = rate * time;
+			int dup = stateup[i];
+			int ddown = statedown[i];
+			double pi = stat[ddown];
 
-		int m = 0;
-		int mmax = 1000;
-		
-		if (dup == ddown)	{
-			double fact = pi * exp(-l);
-			double total = exp(-l);
-			double q = rnd::GetRandom().Uniform() * (exp(-l) * (1 - pi) + pi);
-			while ((m<mmax) && (total < q))	{
-				m++;
-				fact *= l / m;
-				total += fact;
+			int m = 0;
+			int mmax = 1000;
+
+			if (dup == ddown)	{
+				double fact = pi * exp(-l);
+				double total = exp(-l);
+				double q = rnd::GetRandom().Uniform() * (exp(-l) * (1 - pi) + pi);
+				while ((m<mmax) && (total < q))	{
+					m++;
+					fact *= l / m;
+					total += fact;
+				}
+				if (m == mmax)	{
+					suboverflowcount ++;
+				}
 			}
-			if (m == mmax)	{
-				suboverflowcount ++;
+			else	{
+				double fact = pi * exp(-l);
+				double total = 0;
+				double q = rnd::GetRandom().Uniform() * (1 - exp(-l)) * pi;
+				while ((m<mmax) && (total < q))	{
+					m++;
+					fact *= l / m;
+					total += fact;
+				}
+				if (m == mmax)	{
+					suboverflowcount ++;
+				}
 			}
+			patharray[i] = new BranchSitePath(m,ddown);
 		}
-		else	{
-			double fact = pi * exp(-l);
-			double total = 0;
-			double q = rnd::GetRandom().Uniform() * (1 - exp(-l)) * pi;
-			while ((m<mmax) && (total < q))	{
-				m++;
-				fact *= l / m;
-				total += fact;
-			}
-			if (m == mmax)	{
-				suboverflowcount ++;
-			}
-		}
-		patharray[i] = new BranchSitePath(m,ddown);
 	}
 	return patharray;
 }
@@ -189,7 +195,7 @@ BranchSitePath** PoissonSubstitutionProcess::SamplePaths(int* stateup, int* stat
 void PoissonSubstitutionProcess::AddSiteRateSuffStat(int* siteratesuffstatcount, BranchSitePath** patharray)	{
 	for (int i=sitemin; i<sitemax; i++)	{
 		if(sitemask[i] < 2)
-		siteratesuffstatcount[i] += patharray[i]->GetNsub();
+			siteratesuffstatcount[i] += patharray[i]->GetNsub();
 	}
 }
 
@@ -197,7 +203,7 @@ void PoissonSubstitutionProcess::AddSiteRateSuffStat(int* siteratesuffstatcount,
 void PoissonSubstitutionProcess::AddBranchLengthSuffStat(int& count, BranchSitePath** patharray)	{
 	for (int i=sitemin; i<sitemax; i++)	{
 		if(sitemask[i] < 2)
-		count += patharray[i]->GetNsub();
+			count += patharray[i]->GetNsub();
 	}
 }
 
@@ -205,9 +211,9 @@ void PoissonSubstitutionProcess::AddBranchLengthSuffStat(int& count, BranchSiteP
 void PoissonSubstitutionProcess::AddSiteProfileSuffStat(int** siteprofilesuffstatcount, BranchSitePath** patharray, bool root)	{
 	for (int i=sitemin; i<sitemax; i++)	{
 		if(sitemask[i] < 2)
-		if (root || patharray[i]->GetNsub())	{
-			siteprofilesuffstatcount[i][GetRandomStateFromZip(i,patharray[i]->GetFinalState())]++;
-		}
+			if (root || patharray[i]->GetNsub())	{
+				siteprofilesuffstatcount[i][GetRandomStateFromZip(i,patharray[i]->GetFinalState())]++;
+			}
 	}
 }
 
