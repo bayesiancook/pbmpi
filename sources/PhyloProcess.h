@@ -266,6 +266,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	virtual void ReadSiteLogL(string name, int burnin, int every, int until);
 	virtual void ReadCV(string testdatafile, string name, int burnin, int every, int until, int iscodon = 0, GeneticCodeType codetype = Universal);
 	virtual void PostPred(int ppredtype, string name, int burnin, int every, int until, int rateprior, int profileprior, int rootprior, std::string schemefile = "");
+	virtual void ReadSteppingStone(string name, int burnin, int every, int until);
 
 	void ReadSiteRates(string name, int burnin, int every, int until);
 

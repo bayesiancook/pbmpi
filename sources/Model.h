@@ -58,7 +58,6 @@ class Model	{
 	int saveall;
 	int incinit;
 
-	int w;
 	int stone_index;
 	int num_stones;
 	stringstream ss_ext;
@@ -236,10 +235,9 @@ class Model	{
             until = instone_size;
             stone_index = 0;
             saveall = false;
-            w = num_stones > 0 ? (int) log10 ((double) num_stones) + 1 : 1;
 
             ss_ext.str("");
-            ss_ext << "_ss" << setfill('0') << setw(w) << stone_index;
+            ss_ext << "_ss" << stone_index;
         }
         // otherwise we elongate a single chain
         else
@@ -489,7 +487,7 @@ class Model	{
                         stone_index++;
 
                         ss_ext.str("");
-                        ss_ext << "_ss" << setfill('0') << setw(w) << stone_index;
+                        ss_ext << "_ss" << stone_index;
                         continue;
                     }
                 }
@@ -505,7 +503,7 @@ class Model	{
             stone_index++;
 
             ss_ext.str("");
-            ss_ext << "_ss" << setfill('0') << setw(w) << stone_index;
+            ss_ext << "_ss" << stone_index;
         }
 	}
 
