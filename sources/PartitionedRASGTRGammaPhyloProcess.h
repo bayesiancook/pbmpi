@@ -101,69 +101,22 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 		nprocs = np;
 
 		FromStreamHeader(is);
-		is >> datafile;
-		is >> schemefile;
-		is >> linkgam;
-		is >> unlinkgtr;
-		int nratecat;
-		is >> nratecat;
-		bool inlinkmult;
-		is >> inlinkmult;
-		is >> rrtype;
-		if (atof(version.substr(0,3).c_str()) > 1.3)	{
-			is >> iscodon;
-			is >> codetype;
-			is >> mintotweight;
-		}
-		else	{
-			iscodon = 0;
-			codetype = Universal;
-			mintotweight = -1;
-		}
-		is >> fixtopo;
-		if (atof(version.substr(0,3).c_str()) > 1.4)	{
-			is >> NSPR;
-			is >> NNNI;
-		}
-		else	{
-			NSPR = 10;
-			NNNI = 0;
-		}
-		SequenceAlignment* plaindata;
-		if (iscodon)	{
-			SequenceAlignment* tempdata = new FileSequenceAlignment(datafile,0,myid);
-			plaindata = new CodonSequenceAlignment(tempdata,true,codetype);
-		}
-		else	{
-			plaindata = new FileSequenceAlignment(datafile,0,myid);
-		}
-		const TaxonSet* taxonset = plaindata->GetTaxonSet();
 
 		int insitemin = -1,insitemax = -1;
 		if (myid > 0) {
-			int width = plaindata->GetNsite()/(nprocs-1);
+			int width = data->GetNsite()/(nprocs-1);
 			insitemin = (myid-1)*width;
 			if (myid == (nprocs-1)) {
-				insitemax = plaindata->GetNsite();
+				insitemax = data->GetNsite();
 			}
 			else {
 				insitemax = myid*width;
 			}
 		}
 
-		tree = new Tree(taxonset);
-		if (myid == 0)	{
-			tree->ReadFromStream(is);
-			GlobalBroadcastTree();
-		}
-		else	{
-			SlaveBroadcastTree();
-		}
-		tree->RegisterWith(taxonset,0);
+		vector<PartitionScheme> schemes = PartitionedDGamRateProcess::ReadSchemes(schemefile, data->GetNsite(), myid, linkgam, unlinkgtr, rrtype);
 
-		vector<PartitionScheme> schemes = PartitionedDGamRateProcess::ReadSchemes(schemefile, plaindata->GetNsite(), myid, linkgam, unlinkgtr, rrtype);
-
-		Create(tree,plaindata,nratecat,inlinkmult,schemes[0],schemes[1],schemes[2],insitemin,insitemax);
+		Create(tree,data,PartitionedDGamRateProcess::Ncat,linkmult,schemes[0],schemes[1],schemes[2],insitemin,insitemax);
 
 		if (myid == 0)	{
 			FromStream(is);
@@ -329,6 +282,45 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 		os << NSPR << '\t' << NNNI << '\n';
 		SetNamesFromLengths();
 		GetTree()->ToStream(os);
+	}
+	void FromStreamHeader(istream& is)	{
+		PhyloProcess::FromStreamHeader(is);
+		is >> datafile;
+		is >> schemefile;
+		is >> linkgam;
+		is >> unlinkgtr;
+		is >> PartitionedDGamRateProcess::Ncat;
+		is >> linkmult;
+		is >> rrtype;
+		if (atof(version.substr(0,3).c_str()) > 1.3)	{
+			is >> iscodon;
+			is >> codetype;
+			is >> mintotweight;
+		}
+		else	{
+			iscodon = 0;
+			codetype = Universal;
+			mintotweight = -1;
+		}
+		is >> fixtopo;
+		if (atof(version.substr(0,3).c_str()) > 1.4)	{
+			is >> NSPR;
+			is >> NNNI;
+		}
+		else	{
+			NSPR = 10;
+			NNNI = 0;
+		}
+		if (iscodon)	{
+			SequenceAlignment* tempdata = new FileSequenceAlignment(datafile,0,myid,false);
+			data = new CodonSequenceAlignment(tempdata,true,codetype);
+		}
+		else	{
+			data = new FileSequenceAlignment(datafile,0,myid,false);
+		}
+		const TaxonSet* taxonset = data->GetTaxonSet();
+		tree = new Tree(taxonset);
+		tree->ReadFromStream(is);
 	}
 
 	void ToStream(ostream& os)	{

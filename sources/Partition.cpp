@@ -10,7 +10,11 @@ vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsi
 {
 	string error = "Error: improperly formatted scheme file\n";
 
-	ifstream theStream((Path + schemefile).c_str());
+	ifstream theStream(schemefile.c_str());
+	if (! theStream)   {
+		cerr << "error: cannot open partition scheme file: " << schemefile << "\n";
+		exit(1);
+	}
 
 	map<string, size_t> fixrrparts;
 	map<string, size_t> fixstatparts;
@@ -108,7 +112,7 @@ vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsi
 				}
 				else
 				{
-					if(fixstatparts.find(type) == fixstatparts.end())
+					if(fixprof && fixstatparts.find(type) == fixstatparts.end())
 					{
 						statscheme.partType.push_back(type);
 						fixstatparts[type] = statscheme.Npart++;
@@ -279,15 +283,51 @@ vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsi
 
 	if(myid == 0)
 	{
-		cerr << endl;
-		cerr << "Found " << schemes[2].Npart << " partitions in scheme file '" << schemefile << "'\n";
+		stringstream ss;
+		ss << "Partition scheme\n";
+		map<string, size_t> stat_type_counts;
+		map<string, size_t> rr_type_counts;
+
+		size_t max_label = 0;
+		size_t max_count = 0;
+		size_t offset = 20;
 		for(size_t i = 0; i < schemes[0].Npart; i++)
 		{
 			string t = schemes[0].partType[i] == "None" ? "gtr" : schemes[0].partType[i];
 
-			cerr << t << "\t" << schemes[0].partSites[i].size() << " sites" << endl;
+			rr_type_counts[t]++;
+
+			max_label = std::max(t.size(), max_label);
+			max_count = std::max(rr_type_counts[t], max_count);
 		}
-		cerr << endl;
+		for(size_t i = 0; i < schemes[1].Npart; i++)
+		{
+			string t = schemes[1].partType[i] == "None" ? "Free" : schemes[1].partType[i];
+
+			stat_type_counts[t]++;
+
+			max_label = std::max(t.size(), max_label);
+			max_count = std::max(stat_type_counts[t], max_count);
+		}
+
+		string s = "Relative rates: ";
+		for(map<string,size_t>::iterator it = rr_type_counts.begin(); it != rr_type_counts.end(); it++)
+		{
+			ss << right << setw(offset) << s << left << setw(max_label + 1) << it->first << setw(max_count + 1) << it->second << " partitions\n";
+			if(it == rr_type_counts.begin())
+				s = "";
+		}
+		s = "Profiles: ";
+		for(map<string,size_t>::iterator it = stat_type_counts.begin(); it != stat_type_counts.end(); it++)
+		{
+			ss << right << setw(offset) << s << left << setw(max_label + 1) << it->first << setw(max_count + 1) << it->second << " partitions\n";
+			if(it == stat_type_counts.begin())
+				s = "";
+		}
+
+		ss << setw(offset) << "Rates across sites:";
+		ss << schemes[2].Npart << " partitions" << endl << endl;
+		cerr << ss.str();
 	}
 
 	return schemes;

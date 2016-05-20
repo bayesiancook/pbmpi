@@ -44,7 +44,7 @@ void PartitionedGTRPhyloProcess::Unfold()	{
 	CreateMatrices();
 
 	// UpdateSubstitutionProcess();
-
+	UpdateSiteMask();
 	CreateCondSiteLogL();
 	CreateConditionalLikelihoods();
 	UpdateConditionalLikelihoods();

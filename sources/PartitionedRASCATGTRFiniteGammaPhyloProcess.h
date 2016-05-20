@@ -97,56 +97,22 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 		nprocs = np;
 
 		FromStreamHeader(is);
-		is >> datafile;
-		is >> schemefile;
-		is >> linkgam;
-		is >> unlinkgtr;
-		int nratecat;
-		is >> nratecat;
-		bool inlinkmult;
-		is >> inlinkmult;
-		is >> rrtype;
-		int infixncomp;
-		int inempmix;
-		string inmixtype;
-		is >> infixncomp >> inempmix >> inmixtype;
-		is >> fixtopo;
-		if (atof(version.substr(0,3).c_str()) > 1.4)	{
-			is >> NSPR;
-			is >> NNNI;
-		}
-		else	{
-			NSPR = 10;
-			NNNI = 0;
-		}
-		SequenceAlignment* plaindata = new FileSequenceAlignment(datafile,0,myid);
-		const TaxonSet* taxonset = plaindata->GetTaxonSet();
 
 		int insitemin = -1,insitemax = -1;
 		if (myid > 0) {
-			int width = plaindata->GetNsite()/(nprocs-1);
+			int width = data->GetNsite()/(nprocs-1);
 			insitemin = (myid-1)*width;
 			if (myid == (nprocs-1)) {
-				insitemax = plaindata->GetNsite();
+				insitemax = data->GetNsite();
 			}
 			else {
 				insitemax = myid*width;
 			}
 		}
 
-		tree = new Tree(taxonset);
-		if (myid == 0)	{
-			tree->ReadFromStream(is);
-			GlobalBroadcastTree();
-		}
-		else	{
-			SlaveBroadcastTree();
-		}
-		tree->RegisterWith(taxonset,0);
+		vector<PartitionScheme> schemes = PartitionedDGamRateProcess::ReadSchemes(schemefile, data->GetNsite(), myid, linkgam, unlinkgtr, rrtype);
 
-		vector<PartitionScheme> schemes = PartitionedDGamRateProcess::ReadSchemes(schemefile, plaindata->GetNsite(), myid, linkgam, unlinkgtr, rrtype);
-
-		Create(tree,plaindata,nratecat,inlinkmult,1,schemes[0],schemes[2],infixncomp,inempmix,inmixtype,insitemin,insitemax);
+		Create(tree,data,PartitionedDGamRateProcess::Ncat,linkmult,1,schemes[0],schemes[2],fixncomp,empmix,mixtype,insitemin,insitemax);
 
 		if (myid == 0)	{
 			FromStream(is);
@@ -303,6 +269,30 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 		os << NSPR << '\t' << NNNI << '\n';
 		SetNamesFromLengths();
 		GetTree()->ToStream(os);
+	}
+	void FromStreamHeader(istream& is)	{
+		PhyloProcess::FromStreamHeader(is);
+		is >> datafile;
+		is >> schemefile;
+		is >> linkgam;
+		is >> unlinkgtr;
+		is >> PartitionedDGamRateProcess::Ncat;
+		is >> linkmult;
+		is >> rrtype;
+		is >> fixncomp >> empmix >> mixtype;
+		is >> fixtopo;
+		if (atof(version.substr(0,3).c_str()) > 1.4)	{
+			is >> NSPR;
+			is >> NNNI;
+		}
+		else	{
+			NSPR = 10;
+			NNNI = 0;
+		}
+		data = new FileSequenceAlignment(datafile,0,myid,false);
+		const TaxonSet* taxonset = data->GetTaxonSet();
+		tree = new Tree(taxonset);
+		tree->ReadFromStream(is);
 	}
 
 	void ToStream(ostream& os)	{
