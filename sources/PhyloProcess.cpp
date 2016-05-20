@@ -1461,6 +1461,11 @@ void PhyloProcess::GlobalSetSteppingStone(int instone_index, int innum_stones)
     assert(myid == 0);
     stone_index = instone_index;
     num_stones = innum_stones;
+    if(num_stones > GetNsite())
+    {
+	cerr << "error: more stepping stones than sites\n";
+	exit(1);
+    }
     MESSAGE signal = STEPPINGSTONE;
     MPI_Status stat;
     MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
@@ -2583,12 +2588,12 @@ void PhyloProcess::ReadSteppingStone(string name, int burnin, int every, int unt
 		}
 		is.close();
 
-		lnL = max;
+		lnL = 0.0;
 		for(size_t i = 0; i < log_likes.size(); i++)
 		{
 			lnL += exp(log_likes[i] - max);
 		}
-
+		lnL = log(lnL) + max;
 		lnL -= log(log_likes.size());
 
 		marginal += lnL;
