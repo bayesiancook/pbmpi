@@ -82,7 +82,7 @@ void PhyloProcess::DeleteMappings()	{
 	for (int j=0; j<GetNbranch(); j++)	{
 		if (submap[j])	{
 			for (int i=sitemin; i<sitemax; i++)	{
-				if(sitemask[i] < 2)
+				if(sitemask[i] == 0)
 					delete submap[j][i];
 			}
 			delete[] submap[j];

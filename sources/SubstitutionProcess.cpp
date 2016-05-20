@@ -58,15 +58,15 @@ void SubstitutionProcess::Delete() {
 
 void SubstitutionProcess::UpdateSiteMask(void)
 {
-    if(!sitemask_needs_updating)
-        return;
+	if(!sitemask_needs_updating)
+		return;
 
-    sitemask = vector<size_t>(GetNsite(), 0);
+	sitemask = vector<size_t>(GetNsite(), 0);
 
-    // determine how many sites would be masked in all stone with index > 0
-    size_t masked_prev = 0;
-    size_t would_mask = 0;
-	for(size_t stone = 0; stone <= num_stones; stone++)
+	// determine how many sites would be masked in all stone with index > 0
+	size_t masked_prev = 0;
+	size_t would_mask = 0;
+	for(size_t stone = 0; stone < num_stones; stone++)
 	{
 		double heat = pow(double(num_stones - stone - 1)/num_stones, 10.0 / 3.0);
 
@@ -75,7 +75,7 @@ void SubstitutionProcess::UpdateSiteMask(void)
 		if(stone > 0)
 			would_mask += masked;
 	}
-
+	
 	// mask sites for each stone
 	masked_prev = 0;
 	for(size_t stone = 0; stone <= stone_index; stone++)
@@ -91,9 +91,9 @@ void SubstitutionProcess::UpdateSiteMask(void)
 		{
 			to_mask = GetNsite() - would_mask;
 		}
-
 		// mask sites for this stone, skipping already masked sites
 		size_t tmp = to_mask;
+		size_t offset = 0;
 		size_t i = 0;
 		while(tmp > 0)
 		{
@@ -101,21 +101,17 @@ void SubstitutionProcess::UpdateSiteMask(void)
 			{
 				sitemask[i] = (stone == stone_index ? 1 : 2);
 				tmp--;
-
-				i += to_mask;
-				if(i >= sitemask.size())
-				{
-					i = sitemask.size() % to_mask;
-				}
 			}
-			else
+			
+			i += to_mask;
+			if(i >= sitemask.size())
 			{
-				i++;
+				i = ++offset;
 			}
 		}
 	}
-
-    sitemask_needs_updating = false;
+	
+	sitemask_needs_updating = false;
 }
 
 void SubstitutionProcess::CreateCondSiteLogL()	{
@@ -402,7 +398,7 @@ double SubstitutionProcess::ComputeLikelihood(double*** aux, bool condalloc)	{
 			}
 		}
 	}
-
+	
 	logL = 0;
 	maskedlogL = 0.0;
 	for (int i=sitemin; i<sitemax; i++)	{
@@ -467,13 +463,8 @@ void SubstitutionProcess::DrawAllocations(double*** aux)	{
 void SubstitutionProcess::DrawAllocationsFromPrior()	{
 
 	for (int i=sitemin; i<sitemax; i++)	{
-		if(sitemask[i] < 2)
-		{
-			int k = (int) (GetNrate(i) * rnd::GetRandom().Uniform());
-			ratealloc[i] = k;
-		}
-		else
-			ratealloc[i] = 0;
+		int k = (int) (GetNrate(i) * rnd::GetRandom().Uniform());
+		ratealloc[i] = k;
 	}
 }
 

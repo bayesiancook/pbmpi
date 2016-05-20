@@ -306,6 +306,7 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 		is >> codetype;
 		is >> kappaprior;
 		is >> mintotweight;
+		is >> rrtype;
 		is >> fixtopo;
 		if (atof(version.substr(0,3).c_str()) > 1.4)    {
 			is >> NSPR;
