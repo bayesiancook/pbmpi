@@ -318,7 +318,7 @@ class Model	{
 
         process->SetSize(size);
 
-        if(num_stones > 0)
+        if(num_stones > 0 && myid == 0)
         {
             // allow use of a fixed topology with steppingstones
             if(treefile != "None" && stone_index == 0)
@@ -327,7 +327,7 @@ class Model	{
             }
             
             // set stepping stone if elongating a single stone
-            if(myid == 0 && innum_stones == 0)
+            if(innum_stones == 0)
             {
                 process->GlobalSetSteppingStone(stone_index, num_stones);
                 process->GlobalCollapse();
