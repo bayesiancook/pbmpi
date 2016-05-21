@@ -223,9 +223,9 @@ void Correlation::getParameters(string filename, int start, int stop)
     nbparameter=0;
 
 	/*ALL*/
-    //iss1 >> strtmp;
-    //iss1 >> strtmp;
     iss1 >> strtmp;
+    //iss1 >> strtmp;
+    //iss1 >> strtmp;
 	/*ALL*/
 
     strtmp="null";
@@ -239,9 +239,9 @@ void Correlation::getParameters(string filename, int start, int stop)
     istringstream iss2(strline);
 
 	/*ALL*/
-    //iss2 >> strtmp;
-    //iss2 >> strtmp;
     iss2 >> strtmp;
+    //iss2 >> strtmp;
+    //iss2 >> strtmp;
 	/*ALL*/
 
     for(int j=0;j<nbparameter;j++)
@@ -254,9 +254,9 @@ void Correlation::getParameters(string filename, int start, int stop)
       {
 
 	/*ALL*/
-	//*is >> tmp;
-	//*is >> tmp;
 	*is >> tmp;
+	//*is >> tmp;
+	//*is >> tmp;
 	/*ALL*/
 
 	for(int j=0;j<nbparameter;j++)

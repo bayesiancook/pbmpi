@@ -91,6 +91,8 @@ int main(int argc, char* argv[])	{
 	bool unlinkgtr = false;
 	bool linkmult = true;
 
+	int topoburnin = 0;
+
 	// Steppingstone params
 	size_t steppingstone_size = 1000;
 	size_t num_steppingstones = 0;
@@ -107,7 +109,7 @@ int main(int argc, char* argv[])	{
 			if ((s == "-v") || (s == "--version"))	{
 				if (! myid)	{
 					cerr << "\n";
-					cerr << "pb_mpi version 1.5\n";
+					cerr << "pb_mpi version 1.7\n";
 					cerr << "\n";
 				}
 				MPI_Finalize();
@@ -163,6 +165,10 @@ int main(int argc, char* argv[])	{
 			else if (s == "-nni")	{
 				i++;
 				NNNI = atoi(argv[i]);
+			}
+			else if (s == "-topoburnin")	{
+				i++;
+				topoburnin = atoi(argv[i]);
 			}
 			else if (s == "-fixcodonprofile")	{
 				fixcodonprofile = 1;
@@ -644,7 +650,7 @@ int main(int argc, char* argv[])	{
 			}
 		}
 
-		model = new Model(datafile,treefile,schemefile,linkgam,unlinkgtr,linkmult,modeltype,dgam,mixturetype,ncat,type,suffstat,fixncomp,empmix,mixtype,rrtype,iscodon,fixtopo,NSPR,NNNI,fixcodonprofile,fixomega,fixbl,omegaprior,kappaprior,dirweightprior,mintotweight,dc,every,until,saveall,incinit,name,myid,nprocs);
+		model = new Model(datafile,treefile,schemefile,linkgam,unlinkgtr,linkmult,modeltype,dgam,mixturetype,ncat,type,suffstat,fixncomp,empmix,mixtype,rrtype,iscodon,fixtopo,NSPR,NNNI,fixcodonprofile,fixomega,fixbl,omegaprior,kappaprior,dirweightprior,mintotweight,dc,every,until,saveall,incinit,topoburnin,name,myid,nprocs);
 
 		if (! myid)	{
 			// cerr << "create files\n";

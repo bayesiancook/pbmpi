@@ -62,7 +62,7 @@ class Model	{
 	int num_stones;
 	stringstream ss_ext;
 
-	Model(string datafile, string treefile, string schemefile, bool inlinkgam, bool inunlinkgtr, bool inlinkmult,  int modeltype, int nratecat, int mixturetype, int ncat, GeneticCodeType codetype, int suffstat, int fixncomp, int empmix, string mixtype, string rrtype, int iscodon, int fixtopo, int NSPR, int NNNI, int fixcodonprofile, int fixomega, int fixbl, int omegaprior, int kappaprior, int dirweightprior, double mintotweight, int dc, int inevery, int inuntil, int insaveall, int inincinit, string inname, int myid, int nprocs)	{
+	Model(string datafile, string treefile, string schemefile, bool inlinkgam, bool inunlinkgtr, bool inlinkmult,  int modeltype, int nratecat, int mixturetype, int ncat, GeneticCodeType codetype, int suffstat, int fixncomp, int empmix, string mixtype, string rrtype, int iscodon, int fixtopo, int NSPR, int NNNI, int fixcodonprofile, int fixomega, int fixbl, int omegaprior, int kappaprior, int dirweightprior, double mintotweight, int dc, int inevery, int inuntil, int insaveall, int inincinit, int topoburnin, string inname, int myid, int nprocs)	{
 
 		every = inevery;
 		until = inuntil;
@@ -208,6 +208,13 @@ class Model	{
 			
 		}
 
+		process->SetTopoBurnin(topoburnin);
+
+		bool catch_errors = true;
+		if(modeltype > 2)
+			catch_errors = false;
+
+		process->SetErrorHandling(catch_errors);
 	}
 
 	Model(string inname, int myid, int nprocs, string treefile = "None", int innum_stones = 0, int instone_size = -1) {
@@ -249,6 +256,8 @@ class Model	{
                 until = -1;
         }
 		
+		bool catch_errors = true;
+
         if (type == "PARTCATFINITE")    {
             process = new PartitionedRASCATGTRFiniteGammaPhyloProcess(is,myid,nprocs);
         }
@@ -283,6 +292,8 @@ class Model	{
         }
         else
         {
+        	catch_errors = false;
+
         	if (type == "GPSSCATGTRSBDP")  {
 				process = new GeneralPathSuffStatRASCATGTRSBDPGammaPhyloProcess(is,myid,nprocs);
 			}
@@ -317,6 +328,7 @@ class Model	{
         }
 
         process->SetSize(size);
+        process->SetErrorHandling(catch_errors);
 
         if(num_stones > 0 && myid == 0)
         {
@@ -330,7 +342,7 @@ class Model	{
             if(innum_stones == 0)
             {
                 process->GlobalSetSteppingStone(stone_index, num_stones);
-                process->GlobalCollapse();
+                process->GlobalFold();
                 process->GlobalUnfold();
             }
         }
@@ -441,7 +453,7 @@ class Model	{
                     // if not, reset the process and create new output files
                     process->SetSize(0);
                     process->GlobalSetSteppingStone(stone_index, num_stones);
-                    process->GlobalCollapse();
+                    process->GlobalFold();
                     process->GlobalUnfold();
 
                     ofstream os((name + ss_ext.str() + ".treelist").c_str());
@@ -474,7 +486,7 @@ class Model	{
                     process->GlobalBroadcastTree();
                     process->SetSize(size);
                     process->GlobalSetSteppingStone(stone_index, num_stones);
-                    process->GlobalCollapse();
+                    process->GlobalFold();
                     process->GlobalUnfold();
 
                     // if the stone has enough states, then continue to the next stone

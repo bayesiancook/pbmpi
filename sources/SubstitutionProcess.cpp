@@ -116,6 +116,9 @@ void SubstitutionProcess::UpdateSiteMask(void)
 
 void SubstitutionProcess::CreateCondSiteLogL()	{
 	if (condsitelogL)	{
+		if(catch_errors)
+			return;
+
 		cerr << "error in SubstitutionProcess::CreateSiteLogL\n";
 		exit(1);
 	}
@@ -298,6 +301,8 @@ void SubstitutionProcess::Offset(double*** t, bool condalloc)	{
 					double max = 0;
 					for (int k=0; k<GetNstate(i); k++)	{
 						if (tmp[k] <0)	{
+							if(catch_errors) throw(1);
+
 							cerr << "error in pruning: negative prob : " << tmp[k] << "\n";
 							exit(1);
 							tmp[k] = 0;

@@ -454,7 +454,7 @@ void PartitionedDGamRateProcess::SlaveUpdateRateSuffStat()	{
 	double dvector[GetNcat()*GetNpart()];
 
 	for(int i=0; i<GetNpart(); ++i){
-		memcpy(&ivector[i*GetNcat()], ratesuffstatcount[i], GetNcat()*sizeof(double));
+		memcpy(&ivector[i*GetNcat()], ratesuffstatcount[i], GetNcat()*sizeof(int));
 		memcpy(&dvector[i*GetNcat()], ratesuffstatbeta[i], GetNcat()*sizeof(double));
 	}
 
