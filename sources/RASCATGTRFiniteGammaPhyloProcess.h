@@ -251,34 +251,44 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 		// cerr << "collapse ok\n";
 		// chronocollapse.Stop();
 
-		// chronosuffstat.Start();
-		// cerr << "branch process move\n";
-		GammaBranchProcess::Move(tuning,10);
-		// cerr << "branch process move ok\n";
+		while(true)
+		{
+			// chronosuffstat.Start();
+			// cerr << "branch process move\n";
+			GammaBranchProcess::Move(tuning,10);
+			// cerr << "branch process move ok\n";
 
-		// cerr << "rate move\n";
-		GlobalUpdateParameters();
-		DGamRateProcess::Move(0.3*tuning,10);
-		DGamRateProcess::Move(0.03*tuning,10);
+			// cerr << "rate move\n";
+			GlobalUpdateParameters();
+			DGamRateProcess::Move(0.3*tuning,10);
+			DGamRateProcess::Move(0.03*tuning,10);
 
-		// cerr << "profile move\n";
-		// is called inside ExpoConjugateGTRDPProfileProcess::Move(1,1,10);
-		// GlobalUpdateParameters();
-		ExpoConjugateGTRFiniteProfileProcess::Move(1,1,10);
+			// cerr << "profile move\n";
+			// is called inside ExpoConjugateGTRDPProfileProcess::Move(1,1,10);
+			// GlobalUpdateParameters();
+			ExpoConjugateGTRFiniteProfileProcess::Move(1,1,10);
 
-		if (! fixrr)	{
-			LengthRelRateMove(1,10);
-			LengthRelRateMove(0.1,10);
-			LengthRelRateMove(0.01,10);
+			if (! fixrr)	{
+				LengthRelRateMove(1,10);
+				LengthRelRateMove(0.1,10);
+				LengthRelRateMove(0.01,10);
+			}
+
+			// chronosuffstat.Stop();
+
+			// chronounfold.Start();
+			// cerr << "unfold\n";
+			if(GlobalUnfold())
+			{
+				// cerr << "unfold not ok\n";
+				// chronounfold.Stop();
+				continue;
+			}
+			// cerr << "unfold ok\n";
+			// chronounfold.Stop();
+
+			break;
 		}
-
-		// chronosuffstat.Stop();
-
-		// chronounfold.Start();
-		// cerr << "unfold\n";
-		GlobalUnfold();
-		// cerr << "unfold ok\n";
-		// chronounfold.Stop();
 
 		chronototal.Stop();
 

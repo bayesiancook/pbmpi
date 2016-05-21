@@ -182,6 +182,12 @@ class Model	{
 		}
 
 		process->SetTopoBurnin(topoburnin);
+
+		bool catch_errors = true;
+		if(modeltype > 2)
+			catch_errors = false;
+
+		process->SetErrorHandling(catch_errors);
 	}
 
 	Model(string inname, int myid, int nprocs)	{
@@ -199,6 +205,8 @@ class Model	{
 		is >> every >> until >> size;
 		is >> saveall;
 		
+		bool catch_errors = true;
+
 		if (type == "CATDP")	{
 			process = new RASCATGammaPhyloProcess(is,myid,nprocs); 
 		}
@@ -214,44 +222,50 @@ class Model	{
 		else if (type == "CATGTRSBDP")	{
 			process = new RASCATGTRSBDPGammaPhyloProcess(is,myid,nprocs); 
 		}
-		else if (type == "GPSSCATGTRSBDP")	{
-			process = new GeneralPathSuffStatRASCATGTRSBDPGammaPhyloProcess(is,myid,nprocs); 
-		}
 		else if (type == "CATGTRFINITE")	{
-			process = new RASCATGTRFiniteGammaPhyloProcess(is,myid,nprocs); 
+			process = new RASCATGTRFiniteGammaPhyloProcess(is,myid,nprocs);
 		}
-		else if (type == "GPSSCATGTRFINITE")	{
-			process = new GeneralPathSuffStatRASCATGTRFiniteGammaPhyloProcess(is,myid,nprocs); 
-		}
-		else if (type == "AAMUTSELFINITE")	{
-			process = new AAMutSelFinitePhyloProcess(is,myid,nprocs);
-		}
-		else if (type == "AACODONMUTSELFINITE")	{
-			process = new AACodonMutSelFinitePhyloProcess(is,myid,nprocs);
-		}
-		else if (type == "AAMUTSELSBDP")	{
-			process = new AAMutSelSBDPPhyloProcess(is,myid,nprocs);
-		}
-		else if (type == "AAMUTSELDP")	{
-			process = new AAMutSelDPPhyloProcess(is,myid,nprocs);
-		}
-		else if (type == "CODONMUTSELFINITE")	{
-			process = new CodonMutSelFinitePhyloProcess(is,myid,nprocs);
-		}
-		else if (type == "CODONMUTSELSBDP")	{
-			process = new CodonMutSelSBDPPhyloProcess(is,myid,nprocs);
-		}
-		else if (type == "AACODONMUTSELSBDP")	{
-			process = new AACodonMutSelSBDPPhyloProcess(is,myid,nprocs);
-		}
-		else	{
-			cerr << "error, does not recognize model type : " << type << '\n';
-			exit(1);
+		else
+		{
+			catch_errors = false;
+
+			if (type == "GPSSCATGTRSBDP")	{
+				process = new GeneralPathSuffStatRASCATGTRSBDPGammaPhyloProcess(is,myid,nprocs);
+			}
+			else if (type == "GPSSCATGTRFINITE")	{
+				process = new GeneralPathSuffStatRASCATGTRFiniteGammaPhyloProcess(is,myid,nprocs);
+			}
+			else if (type == "AAMUTSELFINITE")	{
+				process = new AAMutSelFinitePhyloProcess(is,myid,nprocs);
+			}
+			else if (type == "AACODONMUTSELFINITE")	{
+				process = new AACodonMutSelFinitePhyloProcess(is,myid,nprocs);
+			}
+			else if (type == "AAMUTSELSBDP")	{
+				process = new AAMutSelSBDPPhyloProcess(is,myid,nprocs);
+			}
+			else if (type == "AAMUTSELDP")	{
+				process = new AAMutSelDPPhyloProcess(is,myid,nprocs);
+			}
+			else if (type == "CODONMUTSELFINITE")	{
+				process = new CodonMutSelFinitePhyloProcess(is,myid,nprocs);
+			}
+			else if (type == "CODONMUTSELSBDP")	{
+				process = new CodonMutSelSBDPPhyloProcess(is,myid,nprocs);
+			}
+			else if (type == "AACODONMUTSELSBDP")	{
+				process = new AACodonMutSelSBDPPhyloProcess(is,myid,nprocs);
+			}
+			else	{
+				cerr << "error, does not recognize model type : " << type << '\n';
+				exit(1);
+			}
 		}
 
 		// cerr << "RESTORE SETSIZE\n";
 		process->SetSize(size);
 		// cerr << "reset size to " << process->GetSize() << '\n';
+		process->SetErrorHandling(catch_errors);
 	}
 
 	void ToStream(ostream& os, bool header)	{

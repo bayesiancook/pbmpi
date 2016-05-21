@@ -236,27 +236,35 @@ class RASCATSBDPGammaPhyloProcess : public virtual RASCATGammaPhyloProcess, publ
 
 		GlobalCollapse();
 
-		GammaBranchProcess::Move(tuning,10);
+		while(true)
+		{
+			GammaBranchProcess::Move(tuning,10);
 
-		// this one is important 
-		GlobalUpdateParameters();
-		DGamRateProcess::Move(0.3*tuning,10);
-		DGamRateProcess::Move(0.03*tuning,10);
-		// RASCATSubstitutionProcess::MoveRate(tuning);
+			// this one is important
+			GlobalUpdateParameters();
+			DGamRateProcess::Move(0.3*tuning,10);
+			DGamRateProcess::Move(0.03*tuning,10);
+			// RASCATSubstitutionProcess::MoveRate(tuning);
 
-		// this one is not useful
-		// because uniformized process:
-		// conditional on discrete substitution mapping
-		// profiles do not depend on branch lengths and site rates
-		// GlobalUpdateParameters();
+			// this one is not useful
+			// because uniformized process:
+			// conditional on discrete substitution mapping
+			// profiles do not depend on branch lengths and site rates
+			// GlobalUpdateParameters();
 
-		PoissonSBDPProfileProcess::Move(1,1,5);
-		if (iscodon)	{
-			PoissonSBDPProfileProcess::Move(0.1,1,15);
-			PoissonSBDPProfileProcess::Move(0.01,1,15);
+			PoissonSBDPProfileProcess::Move(1,1,5);
+			if (iscodon)	{
+				PoissonSBDPProfileProcess::Move(0.1,1,15);
+				PoissonSBDPProfileProcess::Move(0.01,1,15);
+			}
+
+			if(GlobalUnfold())
+			{
+				continue;
+			}
+
+			break;
 		}
-
-		GlobalUnfold();
 		chronototal.Stop();
 
 		// Trace(cerr);

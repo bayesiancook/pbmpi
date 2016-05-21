@@ -33,22 +33,32 @@ extern MPI_Datatype Propagate_arg;
 //-------------------------------------------------------------------------
 
 void PhyloProcess::Unfold()	{
-	if (condflag)	{
-		cerr << "error in PhyloProcess::Unfold\n";
-		exit(1);
+	if( !catch_errors )
+	{
+		DeleteSuffStat();
+		DeleteMappings();
 	}
-	DeleteSuffStat();
-	DeleteMappings();
 	ActivateSumOverRateAllocations();
 	CreateCondSiteLogL();
 	CreateConditionalLikelihoods();
-	UpdateConditionalLikelihoods();
+	MESSAGE signal = SUCCESS;
+	try
+	{
+		UpdateConditionalLikelihoods();
+	}
+	catch(...)
+	{
+		signal = FAILURE;
+	}
+
+	MPI_Send(&signal,1,MPI_INT,0,TAG1,MPI_COMM_WORLD);
 }
 
 void PhyloProcess::Collapse()	{
 
-	if (! condflag)	{
-		cerr << "error in PhyloProcess::Collapse\n";
+	if(!condflag)
+	{
+		cerr << "error in Collapse: process not unfolded\n";
 		exit(1);
 	}
 	DrawAllocations();
@@ -65,6 +75,11 @@ void PhyloProcess::Collapse()	{
 	DeleteCondSiteLogL();
 	DeleteConditionalLikelihoods();
 	InactivateSumOverRateAllocations(ratealloc);
+	if( catch_errors )
+	{
+		DeleteSuffStat();
+		DeleteMappings();
+	}
 	SampleSubstitutionMappings(GetRoot());
 	CreateSuffStat();
 }
@@ -1201,16 +1216,33 @@ void PhyloProcess::GlobalSimulateForward()	{
 }
 
 
-void PhyloProcess::GlobalUnfold()	{
+int PhyloProcess::GlobalUnfold()	{
 
 	assert(myid == 0);
-	DeleteSuffStat();
+	if( !catch_errors)
+		DeleteSuffStat();
 	GlobalUpdateParameters();
 
 	MESSAGE signal = UNFOLD;
 	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 
+	bool fail = false;
+	MPI_Status stat;
+	for(int i = 1; i < nprocs; i++)
+	{
+		MPI_Recv(&signal,1,MPI_INT,i,TAG1,MPI_COMM_WORLD,&stat);
+		if(signal == FAILURE)
+		{
+			fail = true;
+		}
+	}
+
+	if(fail)
+		return 1;
+
 	GlobalUpdateConditionalLikelihoods();
+
+	return 0;
 }
 
 void PhyloProcess::GlobalCollapse()	{
@@ -1222,6 +1254,9 @@ void PhyloProcess::GlobalCollapse()	{
 	assert(myid == 0);
 	MESSAGE signal = COLLAPSE;
 	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+
+	if( catch_errors)
+		DeleteSuffStat();
 
 	CreateSuffStat();
 }

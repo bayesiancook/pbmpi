@@ -289,38 +289,48 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 		// chronocollapse.Stop();
 
 		// chronosuffstat.Start();
-		// cerr << "branch process move\n";
-		GammaBranchProcess::Move(tuning,10);
-		// cerr << "branch process move ok\n";
+		while(true)
+		{
+			// cerr << "branch process move\n";
+			GammaBranchProcess::Move(tuning,10);
+			// cerr << "branch process move ok\n";
 
-		// cerr << "rate move\n";
-		GlobalUpdateParameters();
-		DGamRateProcess::Move(0.3*tuning,10);
-		DGamRateProcess::Move(0.03*tuning,10);
+			// cerr << "rate move\n";
+			GlobalUpdateParameters();
+			DGamRateProcess::Move(0.3*tuning,10);
+			DGamRateProcess::Move(0.03*tuning,10);
 
-		// cerr << "profile move\n";
-		// is called inside ExpoConjugateGTRSBDPProfileProcess::Move(1,1,10);
-		// GlobalUpdateParameters();
-		GlobalUpdateParameters();
-		ExpoConjugateGTRSBDPProfileProcess::Move(1,1,10);
-		if (iscodon){
-			ExpoConjugateGTRSBDPProfileProcess::Move(0.1,1,15);
-			ExpoConjugateGTRSBDPProfileProcess::Move(0.01,1,15);
+			// cerr << "profile move\n";
+			// is called inside ExpoConjugateGTRSBDPProfileProcess::Move(1,1,10);
+			// GlobalUpdateParameters();
+			GlobalUpdateParameters();
+			ExpoConjugateGTRSBDPProfileProcess::Move(1,1,10);
+			if (iscodon){
+				ExpoConjugateGTRSBDPProfileProcess::Move(0.1,1,15);
+				ExpoConjugateGTRSBDPProfileProcess::Move(0.01,1,15);
+			}
+
+			if (! fixrr){
+				LengthRelRateMove(1,10);
+				LengthRelRateMove(0.1,10);
+				LengthRelRateMove(0.01,10);
+			}
+
+			// chronosuffstat.Stop();
+
+			// chronounfold.Start();
+			// cerr << "unfold\n";
+			if(GlobalUnfold())
+			{
+				// cerr << "unfold not ok\n";
+				// chronounfold.Stop();
+				continue;
+			}
+			// cerr << "unfold ok\n";
+			// chronounfold.Stop();
+
+			break;
 		}
-
-		if (! fixrr){
-			LengthRelRateMove(1,10);
-			LengthRelRateMove(0.1,10);
-			LengthRelRateMove(0.01,10);
-		}
-
-		// chronosuffstat.Stop();
-
-		// chronounfold.Start();
-		// cerr << "unfold\n";
-		GlobalUnfold();
-		// cerr << "unfold ok\n";
-		// chronounfold.Stop();
 
 		chronototal.Stop();
 

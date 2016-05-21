@@ -300,7 +300,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	}
 
 
-	virtual void GlobalUnfold();
+	virtual int GlobalUnfold();
 	virtual void GlobalCollapse();
 
 
