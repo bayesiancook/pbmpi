@@ -67,7 +67,7 @@ void GeneralPathSuffStatMatrixPhyloProcess::Collapse()	{
 	CreateSuffStat();
 }
 
-void GeneralPathSuffStatMatrixPhyloProcess::GlobalUnfold()	{
+int GeneralPathSuffStatMatrixPhyloProcess::GlobalUnfold()	{
 
 	assert(myid == 0);
 	DeleteSuffStat();
@@ -79,6 +79,8 @@ void GeneralPathSuffStatMatrixPhyloProcess::GlobalUnfold()	{
 	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 
 	GlobalUpdateConditionalLikelihoods();
+
+	return 0;
 }
 
 

@@ -172,6 +172,8 @@ void MatrixSubstitutionProcess::Propagate(double*** from, double*** to, double t
 					// exit in case of numerical errors
 					for(k=0; k<nstate; k++)	{
 						if (isnan(down[k]))	{
+							if(catch_errors) throw(1);
+
 							cerr << "error in back prop\n";
 							for(l=0; l<nstate; l++)	{
 								cerr << up[l] << '\t' << down[l] << '\t' << matrix->Stationary(l) << '\n';
@@ -182,6 +184,8 @@ void MatrixSubstitutionProcess::Propagate(double*** from, double*** to, double t
 					maxup = 0.0;
 					for(k=0; k<nstate; k++)	{
 						if (up[k] < 0.0)	{
+							if(catch_errors) throw(1);
+
 							cerr << "error in backward propagate: negative prob : " << up[k] << "\n";
 							exit(1);
 						}
@@ -200,6 +204,8 @@ void MatrixSubstitutionProcess::Propagate(double*** from, double*** to, double t
 						}
 					}
 					if (maxup == 0.0)	{
+						if(catch_errors) throw(1);
+
 						cerr << "error in backward propagate: null up array\n";
 						cerr << "site : " << i << '\n';
 						for(l=0; l<nstate; l++)	{
@@ -210,6 +216,8 @@ void MatrixSubstitutionProcess::Propagate(double*** from, double*** to, double t
 						exit(1);
 					}
 					if (max == 0.0)	{
+						if(catch_errors) throw(1);
+
 						cerr << "error in backward propagate: null array\n";
 						for(k=0; k<nstate; k++)	{
 							cerr << up[k] << '\t' << down[k] << '\n';

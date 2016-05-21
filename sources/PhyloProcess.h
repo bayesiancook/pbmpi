@@ -203,6 +203,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	
 
 	virtual void Unfold();
+	virtual void Fold();
 	virtual void Collapse();
 
 	void GlobalBroadcastTree();
@@ -308,7 +309,8 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 		return maskedlogL;
 	}
 
-	virtual void GlobalUnfold();
+	virtual int GlobalUnfold();
+	virtual void GlobalFold();
 	virtual void GlobalCollapse();
 
 
