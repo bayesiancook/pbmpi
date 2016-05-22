@@ -270,14 +270,14 @@ class GeneralPathSuffStatRASCATGTRSBDPGammaPhyloProcess : public virtual General
 
 
 		// cerr << "unfold\n";
-		GlobalUnfold();
+		int err = GlobalUnfold();
 		// cerr << "unfold ok\n";
 
 		chronototal.Stop();
 
 		// Trace(cerr);
 
-		return 1;
+		return err;
 	}
 
 	void ToStreamHeader(ostream& os)	{

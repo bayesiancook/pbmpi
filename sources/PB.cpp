@@ -429,18 +429,18 @@ int main(int argc, char* argv[])	{
 			}
 			*/
 			else if (s == "-ss")	{
-			    i++;
-                if (i == argc) throw(0);
-                num_steppingstones = atoi(argv[i]);
-                i++;
-                if (i == argc) throw(0);
-                s = argv[i];
-                if (IsInt(s))   {
-                    steppingstone_size = atoi(argv[i]);
-                }
-                else {
-                    i--;
-                }
+				i++;
+				if (i == argc) throw(0);
+				num_steppingstones = atoi(argv[i]);
+				i++;
+				if (i == argc) throw(0);
+				s = argv[i];
+				if (IsInt(s))   {
+					steppingstone_size = atoi(argv[i]);
+				}
+				else {
+					i--;
+				}
 			}
 			else if (s == "-uni")	{
 				type = Universal;
@@ -675,21 +675,30 @@ int main(int argc, char* argv[])	{
 		}
 	}
 	else	{
-	    model = new Model(name,myid,nprocs,treefile,num_steppingstones,steppingstone_size);
+		model = new Model(name,myid,nprocs,true,treefile,num_steppingstones,steppingstone_size);
 		if (until != -1)	{
 			model->until = until;
 		}
 	}
-
-	if (myid == 0) {
-		// model->Trace(cerr);
-		model->Run(burnin);
-		MESSAGE signal = KILL;
-		MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+	try
+	{
+		if (myid == 0) {
+			cerr << "run started\n";
+			cerr << '\n';
+			// model->Trace(cerr);
+			model->Run(burnin);
+			MESSAGE signal = KILL;
+			MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+		}
+		else {
+			// MPI slave
+			model->WaitLoop();
+		}
 	}
-	else {
-		// MPI slave
-		model->WaitLoop();
+	catch(exception& e)
+	{
+		cerr << e.what() << endl;
+		exit(1);
 	}
 	MPI_Finalize();
 }

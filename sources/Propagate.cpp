@@ -20,6 +20,7 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 #include <cmath>
 #include <iostream>
 #include <vector>
+#include <stdexcept>
 using namespace std;
 
 
@@ -85,7 +86,7 @@ void MatrixSubstitutionProcess::Propagate(double*** from, double*** to, double t
 	double length,max,maxup;
 	const int nstate = GetMatrix(sitemin)->GetNstate();
 	// double* bigaux = new double[(sitemax - sitemin) * GetNrate(0) * nstate];
-	double* aux = new double[GetNsite() * GetNrate(0) * nstate];
+	vector<double> aux(GetNsite() * GetNrate(0) * nstate, 0.0);
 	for(i=sitemin; i<sitemax; i++)	{
 		if(sitemask[i] < 2)
 		{
@@ -172,22 +173,20 @@ void MatrixSubstitutionProcess::Propagate(double*** from, double*** to, double t
 					// exit in case of numerical errors
 					for(k=0; k<nstate; k++)	{
 						if (isnan(down[k]))	{
-							if(catch_errors) throw(1);
-
-							cerr << "error in back prop\n";
+							stringstream ss;
+							ss << "error in back prop\n";
 							for(l=0; l<nstate; l++)	{
-								cerr << up[l] << '\t' << down[l] << '\t' << matrix->Stationary(l) << '\n';
+								ss << up[l] << '\t' << down[l] << '\t' << matrix->Stationary(l) << '\n';
 							}
-							exit(1);
+							throw runtime_error(ss.str());
 						}
 					}
 					maxup = 0.0;
 					for(k=0; k<nstate; k++)	{
 						if (up[k] < 0.0)	{
-							if(catch_errors) throw(1);
-
-							cerr << "error in backward propagate: negative prob : " << up[k] << "\n";
-							exit(1);
+							stringstream ss;
+							ss << "error in backward propagate: negative prob : " << up[k] << "\n";
+							throw runtime_error(ss.str());
 						}
 						if (maxup < up[k])	{
 							maxup = up[k];
@@ -204,29 +203,26 @@ void MatrixSubstitutionProcess::Propagate(double*** from, double*** to, double t
 						}
 					}
 					if (maxup == 0.0)	{
-						if(catch_errors) throw(1);
-
-						cerr << "error in backward propagate: null up array\n";
-						cerr << "site : " << i << '\n';
+						stringstream ss;
+						ss << "error in backward propagate: null up array\n";
+						ss << "site : " << i << '\n';
 						for(l=0; l<nstate; l++)	{
-							cerr << matrix->Stationary(l) << '\n';
+							ss << matrix->Stationary(l) << '\n';
 						}
-						cerr << time << '\t' << length << '\n';
-						cerr << GetDim() << '\n';
-						exit(1);
+						ss << time << '\t' << length << '\n';
+						ss << GetDim() << '\n';
+						throw runtime_error(ss.str());
 					}
 					if (max == 0.0)	{
-						if(catch_errors) throw(1);
-
-						cerr << "error in backward propagate: null array\n";
+						stringstream ss;
+						ss << "error in backward propagate: null array\n";
 						for(k=0; k<nstate; k++)	{
-							cerr << up[k] << '\t' << down[k] << '\n';
+							ss << up[k] << '\t' << down[k] << '\n';
 						}
-						cerr << length << '\n';
-						cerr << '\n';
-						exit(1);
+						ss << length << '\n';
+						ss << '\n';
+						throw runtime_error(ss.str());
 					}
-
 
 					// this is the offset (in log)
 					down[nstate] = up[nstate];
@@ -234,7 +230,5 @@ void MatrixSubstitutionProcess::Propagate(double*** from, double*** to, double t
 			}
 		}
 	}
-
-	delete[] aux;
 	// propchrono.Stop();
 }

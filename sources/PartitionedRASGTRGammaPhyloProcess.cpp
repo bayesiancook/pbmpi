@@ -217,6 +217,8 @@ void PartitionedRASGTRGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	int rootprior = 0;
 
 	double tuning = 1;
+	
+	bool ss = false;
 
 	try	{
 
@@ -285,6 +287,9 @@ void PartitionedRASGTRGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 			}
 			else if (s == "-map")	{
 				map = 1;
+			}
+			else if (s == "-ss")	{
+				ss = true;
 			}
 			else if ( (s == "-x") || (s == "-extract") )	{
 				i++;
@@ -355,6 +360,9 @@ void PartitionedRASGTRGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	}
 	else if (map)	{
 		ReadMap(name,burnin,every,until);
+	}
+	else if (ss)	{
+		ReadSteppingStone(name,burnin,every,until);
 	}
 	else	{
 		Read(name,burnin,every,until);

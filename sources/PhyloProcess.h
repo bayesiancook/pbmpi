@@ -38,6 +38,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	virtual void SlaveExecute(MESSAGE);
 
         virtual void SlaveRoot(int);
+        virtual void SlaveRootAt(int);
 	virtual void SlaveGibbsSPRScan(int,int);
 	virtual void SlaveLikelihood(int,int);
 	virtual void SlavePropose(int,double);
@@ -162,12 +163,12 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 
 	const TaxonSet* GetTaxonSet() const {return data->GetTaxonSet();}
 
-	void GlobalUpdateConditionalLikelihoods();
+	bool GlobalUpdateConditionalLikelihoods();
 	double GlobalComputeNodeLikelihood(const Link* from, int auxindex = -1);
 
 	void GlobalSetSteppingStone(int stone_index, int num_stones);
-    void SlaveSetSteppingStone(void);
-    void FixTopo(string treefile);
+	void SlaveSetSteppingStone(void);
+	void FixTopo(string treefile);
 
 	protected:
 
@@ -309,8 +310,8 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 		return maskedlogL;
 	}
 
-	virtual int GlobalUnfold();
 	virtual void GlobalFold();
+	virtual bool GlobalUnfold();
 	virtual void GlobalCollapse();
 
 
@@ -319,11 +320,12 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	void GlobalMultiplyByStationaries(const Link* from, bool condalloc = false);
 	void GlobalInitialize(const Link* from, const Link* link, bool condalloc = false);
 
-	void GlobalPropagate(const Link* from, const Link* to, double time, bool condalloc = false);
+	bool GlobalPropagate(const Link* from, const Link* to, double time, bool condalloc = false);
 	double GlobalProposeMove(const Branch* branch, double tuning);
 	void GlobalRestore(const Branch* branch);
 
-	void GlobalRootAtRandom();
+	bool GlobalRootAtRandom();
+	void GlobalRootAt(Link* newroot);
 	Link* GlobalDetach(Link* down, Link* up);
 	// void GlobalDetach(Link* down, Link* up);
 	void GlobalAttach(Link* down, Link* up, Link* fromdown, Link* fromup);
@@ -381,7 +383,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 
 	int GibbsSPR();
 	// double GibbsSPR();
-	void GlobalGibbsSPRScan(Link* down, Link* up, double* loglarray);
+	bool GlobalGibbsSPRScan(Link* down, Link* up, double* loglarray);
 	void RecursiveGibbsSPRScan(Link* from, Link* fromup, Link* down, Link* up, double* loglarray, int& n);
 	void RecursiveGibbsFillMap(Link* from, Link* fromup, map<pair<Link*,Link*>,double>& loglmap, double* loglarray, int& n);
 
@@ -543,6 +545,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	int testnsite;
 	int testsitemin;
 	int testsitemax;
+	int bksitemax;
 
 	int dataclamped;
 	int rateprior;

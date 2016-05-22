@@ -24,30 +24,29 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 
 
 void PartitionedGTRPhyloProcess::Unfold()	{
-	if (condflag)	{
-		cerr << "error in PhyloProcess::Unfold\n";
-		exit(1);
-	}
-	/*
-	static bool first = true;
-	if (first) {
-		first = false;
-	}
-	else {
-		DeleteSuffStat();
-	}
-	*/
+
 	DeleteSuffStat();
 	DeleteMappings();
-	ActivateSumOverRateAllocations();
 
-	CreateMatrices();
+	if (!condflag)	{
+		ActivateSumOverRateAllocations();
 
-	// UpdateSubstitutionProcess();
-	UpdateSiteMask();
-	CreateCondSiteLogL();
-	CreateConditionalLikelihoods();
-	UpdateConditionalLikelihoods();
+		CreateMatrices();
+		UpdateSiteMask();
+		CreateCondSiteLogL();
+		CreateConditionalLikelihoods();
+	}
+
+	MESSAGE signal = SUCCESS;
+	try
+	{
+		UpdateConditionalLikelihoods();
+	}
+	catch(...)
+	{
+		signal = FAILURE;
+	}
+	MPI_Send(&signal,1,MPI_INT,0,TAG1,MPI_COMM_WORLD);
 }
 
 void PartitionedGTRPhyloProcess::UpdateConditionalLikelihoods()	{
@@ -61,6 +60,12 @@ void PartitionedGTRPhyloProcess::UpdateConditionalLikelihoods()	{
 	PreOrderPruning(GetRoot(),condlmap[0]);
 
 	// CheckLikelihood();
+}
+
+void PartitionedGTRPhyloProcess::Fold()	{
+	DeleteMatrices();
+	DeleteCondSiteLogL();
+	DeleteConditionalLikelihoods();
 }
 
 void PartitionedGTRPhyloProcess::Collapse()	{

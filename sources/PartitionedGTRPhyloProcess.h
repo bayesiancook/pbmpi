@@ -51,6 +51,7 @@ class PartitionedGTRPhyloProcess : public virtual PhyloProcess, public virtual P
 
 	// override PhyloProcess functions because should also create and delete all the matrices
 	virtual void Unfold();
+	virtual void Fold();
 	virtual void Collapse();
 
 	virtual void UpdateConditionalLikelihoods();

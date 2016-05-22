@@ -75,7 +75,7 @@ void SubstitutionProcess::UpdateSiteMask(void)
 		if(stone > 0)
 			would_mask += masked;
 	}
-	
+
 	// mask sites for each stone
 	masked_prev = 0;
 	for(size_t stone = 0; stone <= stone_index; stone++)
@@ -102,7 +102,7 @@ void SubstitutionProcess::UpdateSiteMask(void)
 				sitemask[i] = (stone == stone_index ? 1 : 2);
 				tmp--;
 			}
-			
+
 			i += to_mask;
 			if(i >= sitemask.size())
 			{
@@ -110,15 +110,12 @@ void SubstitutionProcess::UpdateSiteMask(void)
 			}
 		}
 	}
-	
+
 	sitemask_needs_updating = false;
 }
 
 void SubstitutionProcess::CreateCondSiteLogL()	{
 	if (condsitelogL)	{
-		if(catch_errors)
-			return;
-
 		cerr << "error in SubstitutionProcess::CreateSiteLogL\n";
 		exit(1);
 	}
@@ -301,10 +298,9 @@ void SubstitutionProcess::Offset(double*** t, bool condalloc)	{
 					double max = 0;
 					for (int k=0; k<GetNstate(i); k++)	{
 						if (tmp[k] <0)	{
-							if(catch_errors) throw(1);
-
-							cerr << "error in pruning: negative prob : " << tmp[k] << "\n";
-							exit(1);
+							stringstream ss;
+							ss << "error in pruning: negative prob : " << tmp[k] << "\n";
+							throw runtime_error(ss.str());
 							tmp[k] = 0;
 						}
 						if (max < tmp[k])	{
@@ -403,14 +399,14 @@ double SubstitutionProcess::ComputeLikelihood(double*** aux, bool condalloc)	{
 			}
 		}
 	}
-	
+
 	logL = 0;
 	maskedlogL = 0.0;
 	for (int i=sitemin; i<sitemax; i++)	{
-	    if(sitemask[i] == 0)
-	        logL += sitelogL[i];
-	    else if(sitemask[i] == 1)
-	        maskedlogL += sitelogL[i];
+		if(sitemask[i] == 0)
+			logL += sitelogL[i];
+		else if(sitemask[i] == 1)
+			maskedlogL += sitelogL[i];
 	}
 	return logL;
 }

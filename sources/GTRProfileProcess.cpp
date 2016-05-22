@@ -36,7 +36,7 @@ void GTRProfileProcess::Create(int innsite, int indim)	{
 
 void GTRProfileProcess::Delete()	{
 	if (rr)	{
-		//DeleteMatrices();
+		DeleteMatrices();
 		delete[] rr;
 		rr = 0;
 		ProfileProcess::Delete();

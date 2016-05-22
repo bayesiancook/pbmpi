@@ -51,7 +51,7 @@ class GeneralPathSuffStatMatrixPhyloProcess : public virtual MatrixPhyloProcess,
 	map<int,double>& GetSiteWaitingTime(int site) {return sitewaitingtime[site];}
 
 	// should also create the matrices
-	int GlobalUnfold();
+	bool GlobalUnfold();
 	// void GlobalCollapse();
 
 	void CreateSuffStat();

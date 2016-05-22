@@ -169,7 +169,6 @@ class BranchProcess : public NewickTree {
 	virtual void Delete() {
 		delete[] blarray;
 		delete[] bkarray;
-		delete tree;
 	}
 
 	double RecursiveLogLengthPrior(const Link* from);

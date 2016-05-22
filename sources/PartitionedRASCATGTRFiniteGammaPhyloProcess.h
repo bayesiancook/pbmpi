@@ -245,14 +245,14 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 		// chronosuffstat.Stop();
 
 		// chronounfold.Start();
-		GlobalUnfold();
+		bool err = GlobalUnfold();
 		// chronounfold.Stop();
 
 		chronototal.Stop();
 
 		// Trace(cerr);
 
-		return 1;
+		return err;
 	}
 
 	void ToStreamHeader(ostream& os)	{

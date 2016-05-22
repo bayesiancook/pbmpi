@@ -132,8 +132,7 @@ BranchSitePath** PoissonSubstitutionProcess::SampleRootPaths(int* state)	{
 	// BranchSitePath** patharray = new BranchSitePath*[sitemax - sitemin];
 	BranchSitePath** patharray = new BranchSitePath*[GetNsite()];
 	for (int i=sitemin; i<sitemax; i++)	{
-		if(sitemask[i] == 0)
-			patharray[i] = new BranchSitePath(0,state[i]);
+		patharray[i] = new BranchSitePath(0,state[i]);
 	}
 	return patharray;
 }
@@ -142,46 +141,43 @@ BranchSitePath** PoissonSubstitutionProcess::SampleRootPaths(int* state)	{
 BranchSitePath** PoissonSubstitutionProcess::SamplePaths(int* stateup, int* statedown, double time) 	{
 	BranchSitePath** patharray = new BranchSitePath*[GetNsite()];
 	for (int i=sitemin; i<sitemax; i++)	{
-		if(sitemask[i] == 0)
-		{
-			const double* stat = GetStationary(i);
-			double rate = GetRate(i);
-			double l = rate * time;
-			int dup = stateup[i];
-			int ddown = statedown[i];
-			double pi = stat[ddown];
+		const double* stat = GetStationary(i);
+		double rate = GetRate(i);
+		double l = rate * time;
+		int dup = stateup[i];
+		int ddown = statedown[i];
+		double pi = stat[ddown];
 
-			int m = 0;
-			int mmax = 1000;
+		int m = 0;
+		int mmax = 1000;
 
-			if (dup == ddown)	{
-				double fact = pi * exp(-l);
-				double total = exp(-l);
-				double q = rnd::GetRandom().Uniform() * (exp(-l) * (1 - pi) + pi);
-				while ((m<mmax) && (total < q))	{
-					m++;
-					fact *= l / m;
-					total += fact;
-				}
-				if (m == mmax)	{
-					suboverflowcount ++;
-				}
+		if (dup == ddown)	{
+			double fact = pi * exp(-l);
+			double total = exp(-l);
+			double q = rnd::GetRandom().Uniform() * (exp(-l) * (1 - pi) + pi);
+			while ((m<mmax) && (total < q))	{
+				m++;
+				fact *= l / m;
+				total += fact;
 			}
-			else	{
-				double fact = pi * exp(-l);
-				double total = 0;
-				double q = rnd::GetRandom().Uniform() * (1 - exp(-l)) * pi;
-				while ((m<mmax) && (total < q))	{
-					m++;
-					fact *= l / m;
-					total += fact;
-				}
-				if (m == mmax)	{
-					suboverflowcount ++;
-				}
+			if (m == mmax)	{
+				suboverflowcount ++;
 			}
-			patharray[i] = new BranchSitePath(m,ddown);
 		}
+		else	{
+			double fact = pi * exp(-l);
+			double total = 0;
+			double q = rnd::GetRandom().Uniform() * (1 - exp(-l)) * pi;
+			while ((m<mmax) && (total < q))	{
+				m++;
+				fact *= l / m;
+				total += fact;
+			}
+			if (m == mmax)	{
+				suboverflowcount ++;
+			}
+		}
+		patharray[i] = new BranchSitePath(m,ddown);
 	}
 	return patharray;
 }
@@ -194,26 +190,26 @@ BranchSitePath** PoissonSubstitutionProcess::SamplePaths(int* stateup, int* stat
 
 void PoissonSubstitutionProcess::AddSiteRateSuffStat(int* siteratesuffstatcount, BranchSitePath** patharray)	{
 	for (int i=sitemin; i<sitemax; i++)	{
-		if(sitemask[i] == 0)
-			siteratesuffstatcount[i] += patharray[i]->GetNsub();
+	// for (int i=0; i<GetNsite(); i++)	{
+		siteratesuffstatcount[i] += patharray[i]->GetNsub();
 	}
 }
 
 
 void PoissonSubstitutionProcess::AddBranchLengthSuffStat(int& count, BranchSitePath** patharray)	{
 	for (int i=sitemin; i<sitemax; i++)	{
-		if(sitemask[i] == 0)
-			count += patharray[i]->GetNsub();
+	// for (int i=0; i<GetNsite(); i++)	{
+		count += patharray[i]->GetNsub();
 	}
 }
 
 
 void PoissonSubstitutionProcess::AddSiteProfileSuffStat(int** siteprofilesuffstatcount, BranchSitePath** patharray, bool root)	{
 	for (int i=sitemin; i<sitemax; i++)	{
-		if(sitemask[i] == 0)
-			if (root || patharray[i]->GetNsub())	{
-				siteprofilesuffstatcount[i][GetRandomStateFromZip(i,patharray[i]->GetFinalState())]++;
-			}
+	// for (int i=0; i<GetNsite(); i++)	{
+		if (root || patharray[i]->GetNsub())	{
+			siteprofilesuffstatcount[i][GetRandomStateFromZip(i,patharray[i]->GetFinalState())]++;
+		}
 	}
 }
 
@@ -268,17 +264,17 @@ void PoissonSubstitutionProcess::UpdateZip()	{
 }
 
 void PoissonSubstitutionProcess::UpdateZip(int i)	{
-    double total = 0;
-    double* pi = GetProfile(i);
-    for (int k=0; k<GetOrbitSize(i); k++)	{
-        int n = GetStateFromZip(i,k);
-        zipstat[i][k] = 0;
-        zipstat[i][k] = pi[GetStateFromZip(i,k)];
-        total += zipstat[i][k];
-    }
-    if (GetZipSize(i) > GetOrbitSize(i))	{
-        zipstat[i][GetOrbitSize(i)] = 1-total;
-    }
+		double total = 0;
+		double* pi = GetProfile(i);
+		for (int k=0; k<GetOrbitSize(i); k++)	{
+			int n = GetStateFromZip(i,k);
+			zipstat[i][k] = 0;
+			zipstat[i][k] = pi[GetStateFromZip(i,k)];
+			total += zipstat[i][k];
+		}
+		if (GetZipSize(i) > GetOrbitSize(i))	{
+			zipstat[i][GetOrbitSize(i)] = 1-total;
+		}
 }
 
 int PoissonSubstitutionProcess::GetRandomStateFromZip(int site, int zipstate)	{

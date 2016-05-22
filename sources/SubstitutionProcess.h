@@ -23,6 +23,7 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 #include "Chrono.h"
 #include <algorithm>
 #include <vector>
+#include <stdexcept>
 
 // ----
 // Substitution Process is the class gathering nearly all CPU-intensive methods of the program
@@ -94,15 +95,20 @@ class SubstitutionProcess : public virtual RateProcess, public virtual ProfilePr
 	void Create(int innsite, int indim, int insitemin,int insitemax);
 	void Delete();
 
+	void UpdateSiteMask();
+
 	// basic modules for creating deleting arrays of conditional likelihoods
 	// used by PhyloProcess
 	double*** CreateConditionalLikelihoodVector();
 	void DeleteConditionalLikelihoodVector(double*** condl);
 
+	double* CreateProbVector()	{
+		return new double[GetSiteMax() - GetSiteMin()];
+		// return new double[GetNsite()];
+	}
+
 	void CreateCondSiteLogL();
 	void DeleteCondSiteLogL();
-
-	void UpdateSiteMask(void);
 
 	// ------------------
 	// various computatonial accessory methods
@@ -118,14 +124,14 @@ class SubstitutionProcess : public virtual RateProcess, public virtual ProfilePr
 	// only for the category specified for that site by double* ratealloc
 
 	// CPU : level 1
-	virtual void Reset(double*** condl, bool condalloc = false);
-	virtual void Multiply(double*** from, double*** to, bool condalloc = false);
-	virtual void MultiplyByStationaries(double*** from, bool condalloc = false);
-	virtual void Offset(double*** condl, bool condalloc = false);
+	void Reset(double*** condl, bool condalloc = false);
+	void Multiply(double*** from, double*** to, bool condalloc = false);
+	void MultiplyByStationaries(double*** from, bool condalloc = false);
+	void Offset(double*** condl, bool condalloc = false);
 	virtual void Initialize(double*** condl, const int* leafstates, bool condalloc = false);
 
 	// CPU : level 2
-	virtual double ComputeLikelihood(double*** aux, bool condalloc = false);
+	double ComputeLikelihood(double*** aux, bool condalloc = false);
 
 	// CPU : level 3
 	// implemented in GTR or POisson Substitution process
@@ -157,7 +163,6 @@ class SubstitutionProcess : public virtual RateProcess, public virtual ProfilePr
 
 	int sitemin;
 	int sitemax;
-	int bksitemax;
 	double** condsitelogL;
 	double* sitelogL;
 	double* meansiterate;

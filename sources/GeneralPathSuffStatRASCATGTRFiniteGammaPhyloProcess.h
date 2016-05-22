@@ -255,14 +255,14 @@ class GeneralPathSuffStatRASCATGTRFiniteGammaPhyloProcess : public virtual Gener
 
 
 		// cerr << "unfold\n";
-		GlobalUnfold();
+		int err = GlobalUnfold();
 		// cerr << "unfold ok\n";
 
 		chronototal.Stop();
 
 		// Trace(cerr);
 
-		return 1;
+		return err;
 	}
 
 	double LengthRelRateMove(double tuning, int nrep)	{

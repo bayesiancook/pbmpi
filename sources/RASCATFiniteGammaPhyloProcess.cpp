@@ -203,11 +203,11 @@ void RASCATFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 			else if (s == "-ppred")	{
 				ppred = 1;
 			}
-			else if (s == "-var") {
-                ppred = 4;
-                i++;
-                testdatafile = argv[i];
-            }
+			else if (s == "-var")	{
+				ppred = 4;
+				i++;
+				testdatafile = argv[i];
+			}
 			else if (s == "-ppredrate")	{
 				i++;
 				string tmp = argv[i];

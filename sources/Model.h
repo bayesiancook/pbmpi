@@ -82,6 +82,7 @@ class Model	{
 		// 2 : dp
 		// 3 : tdp : removed
 		// 4 : sbdp
+		// 5 : site specific
 		
 		// PARTITIONED
 		if (schemefile != "None")
@@ -209,143 +210,162 @@ class Model	{
 		}
 
 		process->SetTopoBurnin(topoburnin);
+		process->SetErrorHandling(true);
 
-		bool catch_errors = true;
-		if(modeltype > 2)
-			catch_errors = false;
-
-		process->SetErrorHandling(catch_errors);
+		if(myid == 0 && nprocs > process->GetNsite())
+		{
+			cerr << "error: More processors than sites";
+			exit(1);
+		}
 	}
 
-	Model(string inname, int myid, int nprocs, string treefile = "None", int innum_stones = 0, int instone_size = -1) {
+	Model(string inname, int myid, int nprocs, bool catch_errors, string treefile = "None", int innum_stones = 0, int instone_size = -1) {
 
-	    name = inname;
+		name = inname;
 
-        ifstream is((name + ".param").c_str());
-        if (! is)   {
-            cerr << "error: cannot open " << name << ".param\n";
-            exit(1);
-        }
+		ifstream is((name + ".param").c_str());
+		if (! is)	{
+			cerr << "error: cannot open " << name << ".param\n";
+			exit(1);
+		}
 
-	    int size;
+		is >> type;
+		int size;
+		is >> every >> until >> size;
+		is >> saveall;
+		is >> stone_index >> num_stones;
 
-	    is >> type;
-        is >> every >> until >> size;
-        is >> saveall;
-        is >> stone_index >> num_stones;
+		// if we are elongating multiple stones
+		// begin with the first stone
+		if(innum_stones > 0)
+		{
+			num_stones = innum_stones;
+			until = instone_size;
+			stone_index = 0;
+			saveall = false;
 
-	    // if we are elongating multiple stones
-        // begin with the first stone
-        if(innum_stones > 0)
-        {
-            num_stones = innum_stones;
-            until = instone_size;
-            stone_index = 0;
-            saveall = false;
-
-            ss_ext.str("");
-            ss_ext << "_ss" << stone_index;
-        }
-        // otherwise we elongate a single chain
-        else
-        {
-            // if the chain is a steppingstone
-            // then continue forever
-            // note that this can be overridden by -x
-            if(num_stones > 0)
-                until = -1;
-        }
+			ss_ext.str("");
+			ss_ext << "_ss" << stone_index;
+		}
+		// otherwise we elongate a single chain
+		else
+		{
+			// if the chain is a steppingstone
+			// then continue forever
+			// note that this can be overridden by -x
+			if(num_stones > 0)
+				until = -1;
+		}
 		
-		bool catch_errors = true;
-
-        if (type == "PARTCATFINITE")    {
-            process = new PartitionedRASCATGTRFiniteGammaPhyloProcess(is,myid,nprocs);
-        }
-        else if (type == "PARTCATSBDP") {
-            process = new PartitionedRASCATGTRSBDPGammaPhyloProcess(is,myid,nprocs);
-        }
-        else if (type == "PARTCATFIX")  {
-            process = new PartitionedRASGTRGammaPhyloProcess(is,myid,nprocs);
-        }
-        else if (type == "CATDP")   {
-            process = new RASCATGammaPhyloProcess(is,myid,nprocs);
-        }
-        else if (type == "CATSBDP") {
-            process = new RASCATSBDPGammaPhyloProcess(is,myid,nprocs);
-        }
-        else if (type == "CATFINITE")   {
-            process = new RASCATFiniteGammaPhyloProcess(is,myid,nprocs);
-        }
-        else if (type == "CATGTRDP")    {
-            process = new RASCATGTRDPGammaPhyloProcess(is,myid,nprocs);
-        }
-        else if (type == "CATGTRSBDP")  {
-            process = new RASCATGTRSBDPGammaPhyloProcess(is,myid,nprocs);
-        }
-        else if (type == "CATGTRFINITE")    {
+		if (type == "PARTCATFINITE")    {
+			process = new PartitionedRASCATGTRFiniteGammaPhyloProcess(is,myid,nprocs);
+		}
+		else if (type == "PARTCATSBDP") {
+			process = new PartitionedRASCATGTRSBDPGammaPhyloProcess(is,myid,nprocs);
+		}
+		else if (type == "PARTCATFIX")  {
+			process = new PartitionedRASGTRGammaPhyloProcess(is,myid,nprocs);
+		}
+		else if (type == "CATDP")   {
+			process = new RASCATGammaPhyloProcess(is,myid,nprocs);
+		}
+		else if (type == "CATSBDP") {
+			process = new RASCATSBDPGammaPhyloProcess(is,myid,nprocs);
+		}
+		else if (type == "CATFINITE")   {
+			process = new RASCATFiniteGammaPhyloProcess(is,myid,nprocs);
+		}
+		else if (type == "CATGTRDP")    {
+			process = new RASCATGTRDPGammaPhyloProcess(is,myid,nprocs);
+		}
+		else if (type == "CATGTRSBDP")  {
+			process = new RASCATGTRSBDPGammaPhyloProcess(is,myid,nprocs);
+		}
+		else if (type == "CATGTRFINITE")    {
 			process = new RASCATGTRFiniteGammaPhyloProcess(is,myid,nprocs);
 		}
-        else if(num_stones > 0)
-        {
-        	cerr << "sorry, steppingstone sampling is not implemented for model type: " << type << '\n';
-        	exit(1);
-        }
-        else
-        {
-        	catch_errors = false;
+		else if (type == "CATDP")	{
+			process = new RASCATGammaPhyloProcess(is,myid,nprocs); 
+		}
+		else if (type == "CATSBDP")	{
+			process = new RASCATSBDPGammaPhyloProcess(is,myid,nprocs); 
+		}
+		else if (type == "CATFINITE")	{
+			process = new RASCATFiniteGammaPhyloProcess(is,myid,nprocs); 
+		}
+		else if (type == "CATGTRDP")	{
+			process = new RASCATGTRDPGammaPhyloProcess(is,myid,nprocs); 
+		}
+		else if (type == "CATGTRSBDP")	{
+			process = new RASCATGTRSBDPGammaPhyloProcess(is,myid,nprocs); 
+		}
+		else if (type == "CATGTRFINITE")	{
+			process = new RASCATGTRFiniteGammaPhyloProcess(is,myid,nprocs); 
+		}
+		else if(num_stones > 0)
+		{
+			cerr << "sorry, steppingstone sampling is not implemented for model type: " << type << '\n';
+			exit(1);
+		}
+		else if (type == "GPSSCATGTRSBDP")	{
+			process = new GeneralPathSuffStatRASCATGTRSBDPGammaPhyloProcess(is,myid,nprocs);
+		}
+		else if (type == "GPSSCATGTRFINITE")	{
+			process = new GeneralPathSuffStatRASCATGTRFiniteGammaPhyloProcess(is,myid,nprocs); 
+		}
+		else if (type == "AAMUTSELFINITE")	{
+			process = new AAMutSelFinitePhyloProcess(is,myid,nprocs);
+		}
+		else if (type == "AACODONMUTSELFINITE")	{
+			process = new AACodonMutSelFinitePhyloProcess(is,myid,nprocs);
+		}
+		else if (type == "AAMUTSELSBDP")	{
+			process = new AAMutSelSBDPPhyloProcess(is,myid,nprocs);
+		}
+		else if (type == "AAMUTSELDP")	{
+			process = new AAMutSelDPPhyloProcess(is,myid,nprocs);
+		}
+		else if (type == "CODONMUTSELFINITE")	{
+			process = new CodonMutSelFinitePhyloProcess(is,myid,nprocs);
+		}
+		else if (type == "CODONMUTSELSBDP")	{
+			process = new CodonMutSelSBDPPhyloProcess(is,myid,nprocs);
+		}
+		else if (type == "AACODONMUTSELSBDP")	{
+			process = new AACodonMutSelSBDPPhyloProcess(is,myid,nprocs);
+		}
+		else	{
+			cerr << "error, does not recognize model type : " << type << '\n';
+			exit(1);
+		}
 
-        	if (type == "GPSSCATGTRSBDP")  {
-				process = new GeneralPathSuffStatRASCATGTRSBDPGammaPhyloProcess(is,myid,nprocs);
-			}
-			else if (type == "GPSSCATGTRFINITE")    {
-				process = new GeneralPathSuffStatRASCATGTRFiniteGammaPhyloProcess(is,myid,nprocs);
-			}
-			else if (type == "AAMUTSELFINITE")  {
-				process = new AAMutSelFinitePhyloProcess(is,myid,nprocs);
-			}
-			else if (type == "AACODONMUTSELFINITE") {
-				process = new AACodonMutSelFinitePhyloProcess(is,myid,nprocs);
-			}
-			else if (type == "AAMUTSELSBDP")    {
-				process = new AAMutSelSBDPPhyloProcess(is,myid,nprocs);
-			}
-			else if (type == "AAMUTSELDP")  {
-				process = new AAMutSelDPPhyloProcess(is,myid,nprocs);
-			}
-			else if (type == "CODONMUTSELFINITE")   {
-				process = new CodonMutSelFinitePhyloProcess(is,myid,nprocs);
-			}
-			else if (type == "CODONMUTSELSBDP") {
-				process = new CodonMutSelSBDPPhyloProcess(is,myid,nprocs);
-			}
-			else if (type == "AACODONMUTSELSBDP")   {
-				process = new AACodonMutSelSBDPPhyloProcess(is,myid,nprocs);
-			}
-			else    {
-				cerr << "error, does not recognize model type : " << type << '\n';
-				exit(1);
-			}
-        }
+		// cerr << "RESTORE SETSIZE\n";
+		process->SetSize(size);
+		// cerr << "reset size to " << process->GetSize() << '\n';
+		process->SetErrorHandling(catch_errors);
 
-        process->SetSize(size);
-        process->SetErrorHandling(catch_errors);
+		if(myid == 0 && nprocs > process->GetNsite())
+		{
+			cerr << "error: More processors than sites";
+			exit(1);
+		}
 
-        if(num_stones > 0 && myid == 0)
-        {
-            // allow use of a fixed topology with steppingstones
-            if(treefile != "None" && stone_index == 0)
-            {
-                process->FixTopo(treefile);
-            }
-            
-            // set stepping stone if elongating a single stone
-            if(innum_stones == 0)
-            {
-                process->GlobalSetSteppingStone(stone_index, num_stones);
-                process->GlobalFold();
-                process->GlobalUnfold();
-            }
-        }
+		if(num_stones > 0 && myid == 0)
+		{
+			// allow use of a fixed topology with steppingstones
+			if(treefile != "None" && stone_index == 0)
+			{
+				process->FixTopo(treefile);
+			}
+
+			// set stepping stone if elongating a single stone
+			if(innum_stones == 0)
+			{
+				process->GlobalSetSteppingStone(stone_index, num_stones);
+				process->GlobalFold();
+				process->GlobalUnfold();
+			}
+		}
 	}
 
 	void ToStream(ostream& os, bool header)	{
@@ -367,12 +387,22 @@ class Model	{
 		process->WaitLoop();
 	}
 
-	double Move(double tuning, int nrep)	{
-		double total = 0;
+	void Move(double tuning, int nrep)	{
 		for (int rep=0; rep<nrep; rep++)	{
-			total += process->Move(tuning);
+			stringstream backup;
+			process->ToStream(backup);
+			while(process->Move(tuning))
+			{
+				//cerr << "warning: numerical error in move, retrying...\n";
+				backup.clear();
+				backup.seekg(0);
+				process->FromStream(backup);
+				MESSAGE signal = BCAST_TREE;
+				MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+				process->GlobalBroadcastTree();
+				process->GlobalUnfold();
+			}
 		}
-		return total / nrep;
 	}
 
 	int RunningStatus()	{
@@ -441,81 +471,81 @@ class Model	{
 
 	void Run(int burnin)	{
 
-	    while(stone_index < num_stones)
-        {
-	        // if we are elongating multiple stones
-            if(!ss_ext.str().empty())
-            {
-                // check if the next stone already exists
-                ifstream is((name + ss_ext.str() + ".param").c_str());
-                if (! is )
-                {
-                    // if not, reset the process and create new output files
-                    process->SetSize(0);
-                    process->GlobalSetSteppingStone(stone_index, num_stones);
-                    process->GlobalFold();
-                    process->GlobalUnfold();
+		while(stone_index < num_stones)
+		{
+			// if we are elongating multiple stones
+			if(!ss_ext.str().empty())
+			{
+				// check if the next stone already exists
+				ifstream is((name + ss_ext.str() + ".param").c_str());
+				if (! is )
+				{
+					// if not, reset the process and create new output files
+					process->SetSize(0);
+					process->GlobalSetSteppingStone(stone_index, num_stones);
+					process->GlobalFold();
+					process->GlobalUnfold();
+			
+					ofstream os((name + ss_ext.str() + ".treelist").c_str());
+					ofstream tos((name + ss_ext.str() + ".trace").c_str());
+					TraceHeader(tos);
+					tos.close();
+					ofstream ssos((name + ss_ext.str() + ".ss").c_str());
+					ssos << "iter\tss\n";
+					ssos.close();
+					ofstream pos((name + ss_ext.str() + ".param").c_str());
+					pos.precision(numeric_limits<double>::digits10);
+					ToStream(pos,true);
+					pos.close();
+				}
+				else
+				{
+					// if so, then restore the process
+					int size;
+					is >> type;
+					int unt;
+					is >> every >> unt >> size;
+					is >> saveall;
+					is >> stone_index >> num_stones;
+					saveall = false;
 
-                    ofstream os((name + ss_ext.str() + ".treelist").c_str());
-                    ofstream tos((name + ss_ext.str() + ".trace").c_str());
-                    TraceHeader(tos);
-                    tos.close();
-                    ofstream ssos((name + ss_ext.str() + ".ss").c_str());
-                    ssos << "iter\tss\n";
-                    ssos.close();
-                    ofstream pos((name + ss_ext.str() + ".param").c_str());
-                    pos.precision(numeric_limits<double>::digits10);
-                    ToStream(pos,true);
-                    pos.close();
-                }
-                else
-                {
-                    // if so, then restore the process
-                    int size;
-                    is >> type;
-                    int unt;
-                    is >> every >> unt >> size;
-                    is >> saveall;
-                    is >> stone_index >> num_stones;
-                    saveall = false;
+					process->FromStreamHeader(is);
+					process->FromStream(is);
+					MESSAGE signal = BCAST_TREE;
+					MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+					process->GlobalBroadcastTree();
+					process->SetSize(size);
+					process->GlobalSetSteppingStone(stone_index, num_stones);
+					process->GlobalFold();
+					process->GlobalUnfold();
 
-                    process->FromStreamHeader(is);
-                    process->FromStream(is);
-                    MESSAGE signal = BCAST_TREE;
-                    MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
-                    process->GlobalBroadcastTree();
-                    process->SetSize(size);
-                    process->GlobalSetSteppingStone(stone_index, num_stones);
-                    process->GlobalFold();
-                    process->GlobalUnfold();
+					// if the stone has enough states, then continue to the next stone
+					if(size >= until)
+					{
+						cerr << (name + ss_ext.str()) << " already complete. continuing...\n\n";
 
-                    // if the stone has enough states, then continue to the next stone
-                    if(size >= until)
-                    {
-                        cerr << (name + ss_ext.str()) << " already complete. continuing...\n\n";
+						is.close();
 
-                        is.close();
+						stone_index++;
 
-                        stone_index++;
+						ss_ext.str("");
+						ss_ext << "_ss" << stone_index;
+						continue;
+					}
+				}
+			}
 
-                        ss_ext.str("");
-                        ss_ext << "_ss" << stone_index;
-                        continue;
-                    }
-                }
-            }
+			RunStone(burnin);
 
-            RunStone(burnin);
+			// if we were simply elongating a single stone,
+			// then we can quit here
+			if(ss_ext.str().empty())
+				break;
 
-            // if we were simply elongating a single stone,
-            // then we can quit here
-            if(ss_ext.str().empty())
-                break;
+			stone_index++;
 
-            stone_index++;
-
-            ss_ext.str("");
-            ss_ext << "_ss" << stone_index;
+			ss_ext.str("");
+			ss_ext << "_ss" << stone_index;
         }
 	}
 

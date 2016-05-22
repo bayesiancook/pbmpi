@@ -211,34 +211,29 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 
 		GlobalCollapse();
 
-		while(true)
-		{
-			GammaBranchProcess::Move(tuning,10);
+		GammaBranchProcess::Move(tuning,10);
 
-			// this one is important
-			GlobalUpdateParameters();
-			DGamRateProcess::Move(0.3*tuning,10);
-			DGamRateProcess::Move(0.03*tuning,10);
-			// RASCATSubstitutionProcess::MoveRate(tuning);
+		// this one is important 
+		GlobalUpdateParameters();
+		DGamRateProcess::Move(0.3*tuning,10);
+		DGamRateProcess::Move(0.03*tuning,10);
+		// RASCATSubstitutionProcess::MoveRate(tuning);
 
-			// this one is not useful
-			// because uniformized process:
-			// conditional on discrete substitution mapping
-			// profiles do not depend on branch lengths and site rates
-			// GlobalUpdateParameters();
+		// this one is not useful
+		// because uniformized process:
+		// conditional on discrete substitution mapping
+		// profiles do not depend on branch lengths and site rates
+		// GlobalUpdateParameters();
 
-			PoissonFiniteProfileProcess::Move(1,1,5);
+		PoissonFiniteProfileProcess::Move(1,1,5);
 
-			if(GlobalUnfold())
-				continue;
+		bool err = GlobalUnfold();
 
-			break;
-		}
 		chronototal.Stop();
 
 		// Trace(cerr);
 
-		return 1;
+		return err;
 	
 	}
 

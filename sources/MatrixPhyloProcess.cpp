@@ -24,17 +24,18 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 
 
 void MatrixPhyloProcess::Unfold()	{
-	if( !catch_errors )
-	{
-		DeleteSuffStat();
-		DeleteMappings();
-	}
-	ActivateSumOverRateAllocations();
-	CreateMatrices();
 
-	UpdateSiteMask();
-	CreateCondSiteLogL();
-	CreateConditionalLikelihoods();
+	DeleteSuffStat();
+	DeleteMappings();
+
+	if (!condflag)	{
+		ActivateSumOverRateAllocations();
+
+		CreateMatrices();
+		UpdateSiteMask();
+		CreateCondSiteLogL();
+		CreateConditionalLikelihoods();
+	}
 
 	MESSAGE signal = SUCCESS;
 	try
@@ -43,41 +44,9 @@ void MatrixPhyloProcess::Unfold()	{
 	}
 	catch(...)
 	{
-		DeleteMatrices();
 		signal = FAILURE;
 	}
 	MPI_Send(&signal,1,MPI_INT,0,TAG1,MPI_COMM_WORLD);
-}
-
-void MatrixPhyloProcess::Fold()	{
-	DeleteMatrices();
-	DeleteCondSiteLogL();
-	DeleteConditionalLikelihoods();
-}
-
-void MatrixPhyloProcess::Collapse()	{
-
-	if(!condflag)
-	{
-		cerr << "error in Collapse: process not unfolded\n";
-		exit(1);
-	}
-	DrawAllocations();
-	SampleNodeStates();
-	if (! dataclamped)	{
-		SimulateForward();
-	}
-	DeleteCondSiteLogL();
-	DeleteConditionalLikelihoods();
-	InactivateSumOverRateAllocations(ratealloc);
-	if( catch_errors )
-	{
-		DeleteSuffStat();
-		DeleteMappings();
-	}
-	SampleSubstitutionMappings(GetRoot());
-	DeleteMatrices();
-	CreateSuffStat();
 }
 
 void MatrixPhyloProcess::UpdateConditionalLikelihoods()	{
@@ -91,6 +60,32 @@ void MatrixPhyloProcess::UpdateConditionalLikelihoods()	{
 	PreOrderPruning(GetRoot(),condlmap[0]);
 
 	// CheckLikelihood();
+}
+
+void MatrixPhyloProcess::Fold()	{
+	DeleteMatrices();
+	DeleteCondSiteLogL();
+	DeleteConditionalLikelihoods();
+}
+
+void MatrixPhyloProcess::Collapse()	{
+
+	if (! condflag)	{
+		cerr << "error in PhyloProcess::Collapse\n";
+		exit(1);
+	}
+	// UpdateConditionalLikelihoods();
+	DrawAllocations();
+	SampleNodeStates();
+	if (! dataclamped)	{
+		SimulateForward();
+	}
+	DeleteCondSiteLogL();
+	DeleteConditionalLikelihoods();
+	InactivateSumOverRateAllocations(ratealloc);
+	SampleSubstitutionMappings(GetRoot());
+	DeleteMatrices();
+	CreateSuffStat();
 }
 
 /*

@@ -177,7 +177,7 @@ FileSequenceAlignment::FileSequenceAlignment(string filename,int fullline,int my
 	ReadDataFromFile(filename,0);
 	taxset = new TaxonSet(SpeciesNames,Ntaxa);
 	if (myid == 0 && verbose) {
-	    cerr << "read data file  : " << filename << "\n";
+		cerr << "read data file  : " << filename << "\n";
 		cerr << "number of taxa  : " << GetNtaxa() << '\n';
 		cerr << "number of sites : " << GetNsite() << '\n';
 		cerr << "number of states: " << GetNstate() << '\n';

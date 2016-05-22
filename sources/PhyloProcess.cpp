@@ -33,15 +33,17 @@ extern MPI_Datatype Propagate_arg;
 //-------------------------------------------------------------------------
 
 void PhyloProcess::Unfold()	{
-	if( !catch_errors )
-	{
-		DeleteSuffStat();
-		DeleteMappings();
+
+	DeleteSuffStat();
+	DeleteMappings();
+
+	if (!condflag)	{
+		ActivateSumOverRateAllocations();
+		UpdateSiteMask();
+		CreateCondSiteLogL();
+		CreateConditionalLikelihoods();
 	}
-	ActivateSumOverRateAllocations();
-	UpdateSiteMask();
-	CreateCondSiteLogL();
-	CreateConditionalLikelihoods();
+
 	MESSAGE signal = SUCCESS;
 	try
 	{
@@ -49,9 +51,9 @@ void PhyloProcess::Unfold()	{
 	}
 	catch(...)
 	{
+		if(!catch_errors) throw;
 		signal = FAILURE;
 	}
-
 	MPI_Send(&signal,1,MPI_INT,0,TAG1,MPI_COMM_WORLD);
 }
 
@@ -62,9 +64,8 @@ void PhyloProcess::Fold()	{
 
 void PhyloProcess::Collapse()	{
 
-	if(!condflag)
-	{
-		cerr << "error in Collapse: process not unfolded\n";
+	if (! condflag)	{
+		cerr << "error in PhyloProcess::Collapse\n";
 		exit(1);
 	}
 	DrawAllocations();
@@ -81,11 +82,6 @@ void PhyloProcess::Collapse()	{
 	DeleteCondSiteLogL();
 	DeleteConditionalLikelihoods();
 	InactivateSumOverRateAllocations(ratealloc);
-	if( catch_errors )
-	{
-		DeleteSuffStat();
-		DeleteMappings();
-	}
 	SampleSubstitutionMappings(GetRoot());
 	CreateSuffStat();
 }
@@ -464,15 +460,19 @@ double PhyloProcess::LocalBranchLengthMove(const Link* from, double tuning)	{
 	double loghastings = GlobalProposeMove(from->GetBranch(),tuning);
 	// double loghastings = ProposeMove(from->GetBranch(),tuning);
 
-	GlobalPropagate(0,from,GetLength(from->GetBranch()));
-	// Propagate(aux,GetConditionalLikelihoodVector(from),GetLength(from->GetBranch()));
+	int accepted = 0;
 
-	double newloglikelihood = GlobalComputeNodeLikelihood(from);
-	// double newloglikelihood = ComputeNodeLikelihood(from);
-	double newlogprior = LogBranchLengthPrior(from->GetBranch());
-	double delta = newlogprior + newloglikelihood - currentlogprior - currentloglikelihood + loghastings;
-	
-	int accepted = (log(rnd::GetRandom().Uniform()) < delta);
+	// Propagate(aux,GetConditionalLikelihoodVector(from),GetLength(from->GetBranch()));
+	if(GlobalPropagate(0,from,GetLength(from->GetBranch())) == 0)
+	{
+		double newloglikelihood = GlobalComputeNodeLikelihood(from);
+		// double newloglikelihood = ComputeNodeLikelihood(from);
+		double newlogprior = LogBranchLengthPrior(from->GetBranch());
+		double delta = newlogprior + newloglikelihood - currentlogprior - currentloglikelihood + loghastings;
+
+		accepted = (log(rnd::GetRandom().Uniform()) < delta);
+	}
+
 	if (!accepted)	{
 		GlobalRestore(from->GetBranch());
 		// Restore(from->GetBranch());
@@ -545,13 +545,23 @@ double PhyloProcess::LocalNonMPIBranchLengthMove(const Link* from, double tuning
 	double currentlogprior = LogBranchLengthPrior(from->GetBranch());
 	double loghastings = ProposeMove(from->GetBranch(),tuning);
 
-	Propagate(condlmap[0],GetConditionalLikelihoodVector(from),GetLength(from->GetBranch()));
+	int accepted = 0;
+	try
+	{
+		Propagate(condlmap[0],GetConditionalLikelihoodVector(from),GetLength(from->GetBranch()));
 
-	double newloglikelihood = ComputeNodeLikelihood(from);
-	double newlogprior = LogBranchLengthPrior(from->GetBranch());
-	double delta = newlogprior + newloglikelihood - currentlogprior - currentloglikelihood + loghastings;
+		double newloglikelihood = ComputeNodeLikelihood(from);
+		double newlogprior = LogBranchLengthPrior(from->GetBranch());
+		double delta = newlogprior + newloglikelihood - currentlogprior - currentloglikelihood + loghastings;
+
+		accepted = (log(rnd::GetRandom().Uniform()) < delta);
+	}
+	catch(...)
+	{
+		if(!catch_errors) throw;
+		accepted = 0;
+	}
 	
-	int accepted = (log(rnd::GetRandom().Uniform()) < delta);
 	if (!accepted)	{
 		Restore(from->GetBranch());
 		Propagate(condlmap[0],GetConditionalLikelihoodVector(from),GetLength(from->GetBranch()));
@@ -623,15 +633,18 @@ int PhyloProcess::GibbsSPR()	{
 
 	Link* up = 0;
 	Link* down = 0;
-	GlobalRootAtRandom();
+	if(GlobalRootAtRandom())
+	{
+		return 0;
+	}
 	GetTree()->DrawSubTree(down,up);
 
 	if (down->isRoot())	{
-		cerr << "down is root\n";
+		//cerr << "down is root\n";
 		return 0;
 	}
 	if (up->isRoot())	{
-		cerr << "up is root\n";
+		//cerr << "up is root\n";
 		return 0;
 	}
 	int sizebefore = GetTree()->GetSize();
@@ -650,7 +663,14 @@ int PhyloProcess::GibbsSPR()	{
 	// UpdateConditionalLikelihoods();
 	
 	// double* loglarray = new double[GetNbranch()];
-	GlobalGibbsSPRScan(down,up,loglarray);
+	if(GlobalGibbsSPRScan(down,up,loglarray))
+	{
+		//cerr << "error in GlobalGibbsSPRScan\n";
+		GlobalAttach(down,up,fromdown,fromdown->Out()->Next());
+		GlobalUpdateConditionalLikelihoods();
+		return 0;
+	}
+
 	map<pair<Link*,Link*>, double> loglmap;
 	int n = 0;
 	RecursiveGibbsFillMap(GetRoot(),GetRoot(),loglmap,loglarray,n);
@@ -721,28 +741,37 @@ void PhyloProcess::RecursiveGibbsSPRScan(Link* from, Link* fromup, Link* down, L
 		GetTree()->Attach(down,up,from,fromup);
 		// UpdateConditionalLikelihoods();
 		// GlobalReset(0);
-		double*** aux = condlmap[0];
-		Reset(aux);
-		for (const Link* link=up->Next(); link!=up; link=link->Next())	{
-			if (link->isRoot())	{
-				cerr << "ROOT\n";
-				exit(1);
+		double logl = 0.0;
+		try
+		{
+			double*** aux = condlmap[0];
+			Reset(aux);
+			for (const Link* link=up->Next(); link!=up; link=link->Next())	{
+				if (link->isRoot())	{
+					throw runtime_error("ROOT\n");
+				}
+				// GlobalMultiply(link,0);
+				Multiply(GetConditionalLikelihoodVector(link),aux);
 			}
-			// GlobalMultiply(link,0);
-			Multiply(GetConditionalLikelihoodVector(link),aux);
+
+			// GlobalPropagate(0,up->Out(),GetLength(up->GetBranch()));
+			Propagate(aux,GetConditionalLikelihoodVector(up->Out()),GetLength(up->GetBranch()));
+			logl = ComputeNodeLikelihood(up->Out(),0);
+			// double logl = GlobalComputeNodeLikelihood(up->Out(),0);
+			// UpdateConditionalLikelihoods();
+			// double logl2 = ComputeNodeLikelihood(up->Out(),aux);
+			// cerr << logl << '\t' << logl2 << '\n';
+			if (n >= GetNbranch())	{
+				throw runtime_error("branch overflow\n");
+			}
 		}
-		// GlobalPropagate(0,up->Out(),GetLength(up->GetBranch()));
-		Propagate(aux,GetConditionalLikelihoodVector(up->Out()),GetLength(up->GetBranch()));
-		double logl = ComputeNodeLikelihood(up->Out(),0);
-		// double logl = GlobalComputeNodeLikelihood(up->Out(),0);
-		// UpdateConditionalLikelihoods();
-		// double logl2 = ComputeNodeLikelihood(up->Out(),aux);
-		// cerr << logl << '\t' << logl2 << '\n';
-		if (n >= GetNbranch())	{
-			cerr << "branch overflow\n";
-			exit(1);
+		catch(...)
+		{
+			GetTree()->Detach(down,up);
+			throw runtime_error("error in RecursiveGibbsSPRScan\n");
 		}
 		loglarray[n] = logl;
+
 		n++;
 		// loglmap[pair<Link*,Link*>(from,fromup)] = logl;
 		Link* tmp1 = GetTree()->Detach(down,up);
@@ -782,8 +811,8 @@ void PhyloProcess::RecursiveGibbsFillMap(Link* from, Link* fromup, map<pair<Link
 
 	if (! from->isRoot())	{
 		if (n >= GetNbranch())	{
-			cerr << "branch overflow\n";
-			exit(1);
+			 cerr << "branch overflow\n";
+			 exit(1);
 		}
 		loglmap[pair<Link*,Link*>(from,fromup)] = loglarray[n];
 		n++;
@@ -804,6 +833,7 @@ double PhyloProcess::NonMPIGibbsSPR()	{
 	// this is important
 	// for the conditional likelihoods of the cut-then-regrafted subtree to be OK
 
+	Link* oldroot = GetTree()->GetRoot()->Next();
 	GetTree()->RootAtRandom();
 
 	Link* up = 0;
@@ -821,11 +851,21 @@ double PhyloProcess::NonMPIGibbsSPR()	{
 		cerr << "error in gibbs spr: non matching subtree sizes\n";
 		exit(1);
 	}
-
-	UpdateConditionalLikelihoods();
 	
 	map<pair<Link*,Link*>, double> loglmap;
-	RecursiveNonMPIGibbsSPRScan(GetRoot(),GetRoot(),down,up,loglmap);
+	try
+	{
+		UpdateConditionalLikelihoods();
+		RecursiveNonMPIGibbsSPRScan(GetRoot(),GetRoot(),down,up,loglmap);
+	}
+	catch(...)
+	{
+		if(!catch_errors) throw;
+		GetTree()->Attach(down,up,fromdown,fromdown->Out()->Next());
+		GetTree()->RootAt(oldroot);
+		UpdateConditionalLikelihoods();
+		return 0;
+	}
 
 	double max=0;
 	int j = 0;
@@ -880,16 +920,23 @@ void PhyloProcess::RecursiveNonMPIGibbsSPRScan(Link* from, Link* fromup, Link* d
 		// NewickTree::ToStream(s1);
 		GetTree()->Attach(down,up,from,fromup);
 		// UpdateConditionalLikelihoods();
-		double*** aux = condlmap[0];
-		Reset(aux);
-		for (const Link* link=up->Next(); link!=up; link=link->Next())	{
-			if (link->isRoot())	{
-				cerr << "ROOT\n";
-				exit(1);
+		try
+		{
+			double*** aux = condlmap[0];
+			Reset(aux);
+			for (const Link* link=up->Next(); link!=up; link=link->Next())	{
+				if (link->isRoot())	{
+					throw runtime_error( "ROOT\n");
+				}
+				Multiply(GetConditionalLikelihoodVector(link),aux);
 			}
-			Multiply(GetConditionalLikelihoodVector(link),aux);
+			Propagate(aux,GetConditionalLikelihoodVector(up->Out()),GetLength(up->GetBranch()));
 		}
-		Propagate(aux,GetConditionalLikelihoodVector(up->Out()),GetLength(up->GetBranch()));
+		catch(...)
+		{
+			GetTree()->Detach(down,up);
+			throw runtime_error( "error in RecursiveNonMPIGibbsSPRScan\n");
+		}
 		double logl = ComputeNodeLikelihood(up->Out(),0);
 		// UpdateConditionalLikelihoods();
 		// double logl2 = ComputeNodeLikelihood(up->Out(),aux);
@@ -1223,11 +1270,10 @@ void PhyloProcess::GlobalSimulateForward()	{
 }
 
 
-int PhyloProcess::GlobalUnfold()	{
+bool PhyloProcess::GlobalUnfold()	{
 
 	assert(myid == 0);
-	if( !catch_errors)
-		DeleteSuffStat();
+	DeleteSuffStat();
 	GlobalUpdateParameters();
 
 	MESSAGE signal = UNFOLD;
@@ -1238,18 +1284,12 @@ int PhyloProcess::GlobalUnfold()	{
 	for(int i = 1; i < nprocs; i++)
 	{
 		MPI_Recv(&signal,1,MPI_INT,i,TAG1,MPI_COMM_WORLD,&stat);
-		if(signal == FAILURE)
-		{
-			fail = true;
-		}
+		fail = fail || (signal == FAILURE);
 	}
 
-	if(fail)
-		return 1;
+	GlobalComputeNodeLikelihood(GetRoot(),0);
 
-	GlobalUpdateConditionalLikelihoods();
-
-	return 0;
+	return fail;
 }
 
 void PhyloProcess::GlobalFold()	{
@@ -1269,8 +1309,6 @@ void PhyloProcess::GlobalCollapse()	{
 	MESSAGE signal = COLLAPSE;
 	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 
-	if( catch_errors)
-		DeleteSuffStat();
 
 	CreateSuffStat();
 }
@@ -1362,7 +1400,7 @@ void PhyloProcess::GlobalInitialize(const Link* from, const Link* link, bool con
 }
 
 
-void PhyloProcess::GlobalPropagate(const Link* from, const Link* to, double time, bool condalloc)	{
+bool PhyloProcess::GlobalPropagate(const Link* from, const Link* to, double time, bool condalloc)	{
 
 	// MPI
 	assert(myid == 0);
@@ -1374,6 +1412,16 @@ void PhyloProcess::GlobalPropagate(const Link* from, const Link* to, double time
 	args.condalloc = (condalloc) ? 1 : 0;
 	args.time = time;
 	MPI_Bcast(&args,1,Propagate_arg,0,MPI_COMM_WORLD);
+
+	bool fail = false;
+	MPI_Status stat;
+	for(int i = 1; i < nprocs; i++)
+	{
+		MPI_Recv(&signal,1,MPI_INT,i,TAG1,MPI_COMM_WORLD,&stat);
+		fail = fail || (signal == FAILURE);
+	}
+
+	return fail;
 }
 
 double PhyloProcess::GlobalProposeMove(const Branch* branch, double tuning)	{
@@ -1406,7 +1454,7 @@ void PhyloProcess::GlobalRestore(const Branch* branch)	{
 	Restore(branch);
 }
 
-void PhyloProcess::GlobalUpdateConditionalLikelihoods()	{
+bool PhyloProcess::GlobalUpdateConditionalLikelihoods()	{
 
 	// MPI
 	// just send Updateconlikelihood message to all slaves
@@ -1414,8 +1462,18 @@ void PhyloProcess::GlobalUpdateConditionalLikelihoods()	{
 	MESSAGE signal = UPDATE;
 	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 
+	MPI_Status stat;
+	bool fail = false;
+	for(int i = 1; i < nprocs; i++)
+	{
+		MPI_Recv(&signal,1,MPI_INT,i,TAG1,MPI_COMM_WORLD,&stat);
+		fail = fail || (signal == FAILURE);
+	}
+
 	GlobalComputeNodeLikelihood(GetRoot(),0);
 	// GlobalCheckLikelihood();
+
+	return fail;
 }
 
 Link* PhyloProcess::GlobalDetach(Link* down, Link* up)	{
@@ -1446,7 +1504,7 @@ void PhyloProcess::GlobalAttach(Link* down, Link* up, Link* fromdown, Link* from
 	GetTree()->Attach(down,up,fromdown,fromup);
 }
 
-void PhyloProcess::GlobalRootAtRandom()	{
+bool PhyloProcess::GlobalRootAtRandom()	{
 
 	//Link* newroot = GetTree()->ChooseLinkAtRandom();
 	// I have to do it this way because GetLink returns a const Link pointer, 
@@ -1469,13 +1527,37 @@ void PhyloProcess::GlobalRootAtRandom()	{
 		cerr << "error : root at leaf\n";
 		exit(1);
 	}
+	Link* oldroot = GetRoot()->Next();
 	GetTree()->RootAt(newroot);
-	GlobalUpdateConditionalLikelihoods();	
-	
+	if(GlobalUpdateConditionalLikelihoods())
+	{
+		//cerr << "error in root\n";
+		GlobalRootAt(oldroot);
+		return true;
+	}
+
+	return false;
+}
+
+void PhyloProcess::GlobalRootAt(Link* newroot)	{
+
+	assert(myid == 0);
+	// except root
+	int choose = GetLinkIndex(newroot);
+	// because root is first in choose internal node
+	// choose ++;
+	// MPI
+	// call slaves, send a reroot message with argument newroot
+	MESSAGE signal = ROOTAT;
+	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(&choose,1,MPI_INT,0,MPI_COMM_WORLD);
+
+	GetTree()->RootAt(newroot);
+	GlobalUpdateConditionalLikelihoods();
 }
 
 
-void PhyloProcess::GlobalGibbsSPRScan(Link* down, Link* up, double* loglarray)  {
+bool PhyloProcess::GlobalGibbsSPRScan(Link* down, Link* up, double* loglarray)  {
 	assert(myid == 0);
 	int i,j,args[2],nbranch = GetNbranch();
 	MPI_Status stat;
@@ -1496,12 +1578,17 @@ void PhyloProcess::GlobalGibbsSPRScan(Link* down, Link* up, double* loglarray)  
 	for(i=0; i<nbranch; ++i) {
 		loglarray[i] = 0.0;
 	}
+	bool fail = false;
 	for(i=1; i<nprocs; ++i) {
-		MPI_Recv(dvector,nbranch,MPI_DOUBLE,MPI_ANY_SOURCE,TAG1,MPI_COMM_WORLD,&stat);
+		MPI_Recv(&signal,1,MPI_INT,i,TAG1,MPI_COMM_WORLD,&stat);
+		fail = fail || (signal == FAILURE);
+		MPI_Recv(dvector,nbranch,MPI_DOUBLE,i,TAG1,MPI_COMM_WORLD,&stat);
 		for(j=0; j<nbranch; ++j) {
 			loglarray[j] += dvector[j];
 		}
 	}
+
+	return fail;
 }
 
 void PhyloProcess::GlobalSetSteppingStone(int instone_index, int innum_stones)
@@ -1587,6 +1674,10 @@ void PhyloProcess::SlaveExecute(MESSAGE signal)	{
 		MPI_Bcast(&n,1,MPI_INT,0,MPI_COMM_WORLD);
 		SlaveRoot(n);
 		break;
+	case ROOTAT:
+		MPI_Bcast(&n,1,MPI_INT,0,MPI_COMM_WORLD);
+		SlaveRootAt(n);
+		break;
 	case LIKELIHOOD:
 		MPI_Bcast(arg,2,MPI_INT,0,MPI_COMM_WORLD);
 		SlaveLikelihood(arg[0],arg[1]);
@@ -1658,7 +1749,16 @@ void PhyloProcess::SlaveExecute(MESSAGE signal)	{
 		Collapse();
 		break;
 	case 	UPDATE:
-		UpdateConditionalLikelihoods();
+		try
+		{
+			UpdateConditionalLikelihoods();
+		}
+		catch(...)
+		{
+			if(!catch_errors) throw;
+			signal = FAILURE;
+		}
+		MPI_Send(&signal,1,MPI_INT,0,TAG1,MPI_COMM_WORLD);
 		break;
 	case UPDATE_SRATE:
 		SlaveUpdateSiteRateSuffStat();
@@ -1712,8 +1812,8 @@ void PhyloProcess::SlaveExecute(MESSAGE signal)	{
 		SimulateForward();
 		break;
 	case STEPPINGSTONE:
-        SlaveSetSteppingStone();
-        break;
+		SlaveSetSteppingStone();
+		break;
 	
 	default:
 		// or : SubstitutionProcess::SlaveExecute?
@@ -1726,6 +1826,12 @@ void PhyloProcess::SlaveRoot(int n) {
 	assert(myid > 0);
 	Link* tmp = 0;
 	Link* newroot = GetTree()->ChooseInternalNode(GetRoot(),tmp,n);
+	GetTree()->RootAt(newroot);
+}
+
+void PhyloProcess::SlaveRootAt(int n) {
+	assert(myid > 0);
+	Link* newroot = this->GetLink(n);
 	GetTree()->RootAt(newroot);
 }
 
@@ -1742,8 +1848,17 @@ void PhyloProcess::SlaveGibbsSPRScan(int idown, int iup)	{
 	int n = 0;
 	Link* down = GetLink(idown);
 	Link* up = GetLink(iup);
-	RecursiveGibbsSPRScan(GetRoot(),GetRoot(),down,up,loglarray,n);
-
+	MESSAGE signal = SUCCESS;
+	try
+	{
+		RecursiveGibbsSPRScan(GetRoot(),GetRoot(),down,up,loglarray,n);
+	}
+	catch(...)
+	{
+		if(!catch_errors) throw;
+		signal = FAILURE;
+	}
+	MPI_Send(&signal,1,MPI_INT,0,TAG1,MPI_COMM_WORLD);
 	// MPI3 : send loglarray
 	MPI_Send(loglarray,GetNbranch(),MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
 }
@@ -1792,11 +1907,21 @@ void PhyloProcess::SlaveInitialize(int n,int m,bool v) {
 
 void PhyloProcess::SlavePropagate(int n,int m,bool v,double t) {
 	assert(myid > 0);
-	// const Link* from = GetLink(n);
-	// const Link* to = GetLink(m);
-	// Propagate(condlmap[from],condlmap[to],t,v);
-	Propagate(condlmap[n],condlmap[m],t,v);
-	Offset(condlmap[m]);
+	MESSAGE signal = SUCCESS;
+	try
+	{
+		// const Link* from = GetLink(n);
+		// const Link* to = GetLink(m);
+		// Propagate(condlmap[from],condlmap[to],t,v);
+		Propagate(condlmap[n],condlmap[m],t,v);
+		Offset(condlmap[m]);
+	}
+	catch(...)
+	{
+		if(!catch_errors) throw;
+		signal = FAILURE;
+	}
+	MPI_Send(&signal,1,MPI_INT,0,TAG1,MPI_COMM_WORLD);
 }
 
 void PhyloProcess::SlaveDetach(int n,int m) {
@@ -2184,10 +2309,10 @@ void PhyloProcess::ReadPB(int argc, char* argv[])	{
 				ppred = 1;
 			}
 			else if (s == "-var")    {
-                		ppred = 4;
-               			i++;
-                		testdatafile = argv[i];
-            		}
+				ppred = 4;
+				i++;
+				testdatafile = argv[i];
+			}
 			else if (s == "-ppredrate")	{
 				i++;
 				string tmp = argv[i];
@@ -2443,7 +2568,7 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 		obs = GetObservedProportionWithinPartitionVariance(scheme);
 		obs = log(obs/(1.0-obs));
 	}
-	
+
 	cerr << "burnin: " << burnin << '\n';
 	cerr << "every " << every << " points until " << until << '\n';
 	// cerr << "number of points : " << (until - burnin)/every << '\n';
@@ -3040,11 +3165,11 @@ void PhyloProcess::SlaveWriteMappings(){
 	delete[] bvector;
 
 	for(int i = sitemin; i < sitemax; i++){
-            stringstream osfmap;
-            osfmap << name << '_' << i << ".map";
-            ofstream osmap((osfmap.str()).c_str(), ios_base::app);
-            WriteTreeMapping(osmap, GetRoot(), i);
-            osmap.close();
+		stringstream osfmap;
+		osfmap << name << '_' << i << ".map";
+		ofstream osmap((osfmap.str()).c_str(), ios_base::app);
+		WriteTreeMapping(osmap, GetRoot(), i);
+		osmap.close();
 	}
 }
 
