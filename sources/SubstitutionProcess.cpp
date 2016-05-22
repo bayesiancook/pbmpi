@@ -224,8 +224,9 @@ void SubstitutionProcess::Offset(double*** t, bool condalloc)	{
 				double max = 0;
 				for (int k=0; k<GetNstate(i); k++)	{
 					if (tmp[k] <0)	{
-						cerr << "error in pruning: negative prob : " << tmp[k] << "\n";
-						exit(1);
+						stringstream ss;
+						ss << "error in pruning: negative prob : " << tmp[k] << "\n";
+						throw runtime_error(ss.str());
 						tmp[k] = 0;
 					}
 					if (max < tmp[k])	{
@@ -368,8 +369,8 @@ void SubstitutionProcess::DrawAllocations(double*** aux)	{
 			int j = 0;
 			while ((j<GetNrate(i)) && (p[j] < u)) j++;
 			if (j == GetNrate(i))	{
-				cerr << "error in SubstitutionProcess::SampleAlloc\n";
-				exit(1);
+				 cerr << "error in SubstitutionProcess::SampleAlloc\n";
+				 exit(1);
 			}
 			ratealloc[i] = j;
 		}
@@ -439,8 +440,8 @@ void SubstitutionProcess::ChooseStatesAtEquilibrium(int* states)	{
 			k++;
 		}
 		if (k == nstate)	{
-			cerr << "error in SubstitutionProcess::ChooseStatesAtEquilibrium: overflow\n";
-			exit(1);
+			 cerr << "error in SubstitutionProcess::ChooseStatesAtEquilibrium: overflow\n";
+			 exit(1);
 		}
 		states[i] = k;
 	}

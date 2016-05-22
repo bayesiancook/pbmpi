@@ -251,12 +251,13 @@ class RASCATGammaPhyloProcess : public virtual PoissonPhyloProcess, public virtu
 
 		PoissonDPProfileProcess::Move(1,1,5);
 
-		GlobalUnfold();
+		bool err = GlobalUnfold();
+
 		chronototal.Stop();
 
 		// Trace(cerr);
 
-		return 1;
+		return err;
 	
 	}
 

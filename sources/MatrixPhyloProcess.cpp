@@ -24,30 +24,29 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 
 
 void MatrixPhyloProcess::Unfold()	{
-	if (condflag)	{
-		cerr << "error in PhyloProcess::Unfold\n";
-		exit(1);
-	}
-	/*
-	static bool first = true;
-	if (first) {
-		first = false;
-	}
-	else {
-		DeleteSuffStat();
-	}
-	*/
+
 	DeleteSuffStat();
 	DeleteMappings();
-	ActivateSumOverRateAllocations();
 
-	CreateMatrices();
+	if (!condflag)	{
+		ActivateSumOverRateAllocations();
 
-	// UpdateSubstitutionProcess();
+		CreateMatrices();
 
-	CreateCondSiteLogL();
-	CreateConditionalLikelihoods();
-	UpdateConditionalLikelihoods();
+		CreateCondSiteLogL();
+		CreateConditionalLikelihoods();
+	}
+
+	MESSAGE signal = SUCCESS;
+	try
+	{
+		UpdateConditionalLikelihoods();
+	}
+	catch(...)
+	{
+		signal = FAILURE;
+	}
+	MPI_Send(&signal,1,MPI_INT,0,TAG1,MPI_COMM_WORLD);
 }
 
 void MatrixPhyloProcess::UpdateConditionalLikelihoods()	{
@@ -62,7 +61,6 @@ void MatrixPhyloProcess::UpdateConditionalLikelihoods()	{
 
 	// CheckLikelihood();
 }
-
 
 void MatrixPhyloProcess::Collapse()	{
 

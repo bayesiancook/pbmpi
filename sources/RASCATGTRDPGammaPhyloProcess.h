@@ -244,14 +244,14 @@ class RASCATGTRDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProcess
 
 
 		// cerr << "unfold\n";
-		GlobalUnfold();
+		bool err = GlobalUnfold();
 		// cerr << "unfold ok\n";
 
 		chronototal.Stop();
 
 		// Trace(cerr);
 
-		return 1;
+		return err;
 	}
 
 	void ToStreamHeader(ostream& os)	{

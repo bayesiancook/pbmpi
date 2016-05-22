@@ -182,9 +182,16 @@ class Model	{
 		}
 
 		process->SetTopoBurnin(topoburnin);
+		process->SetErrorHandling(true);
+
+		if(myid == 0 && nprocs > process->GetNsite())
+		{
+			cerr << "error: More processors than sites";
+			exit(1);
+		}
 	}
 
-	Model(string inname, int myid, int nprocs)	{
+	Model(string inname, int myid, int nprocs, bool catch_errors)	{
 
 		name = inname;
 
@@ -252,6 +259,13 @@ class Model	{
 		// cerr << "RESTORE SETSIZE\n";
 		process->SetSize(size);
 		// cerr << "reset size to " << process->GetSize() << '\n';
+		process->SetErrorHandling(catch_errors);
+
+		if(myid == 0 && nprocs > process->GetNsite())
+		{
+			cerr << "error: More processors than sites";
+			exit(1);
+		}
 	}
 
 	void ToStream(ostream& os, bool header)	{
@@ -272,12 +286,22 @@ class Model	{
 		process->WaitLoop();
 	}
 
-	double Move(double tuning, int nrep)	{
-		double total = 0;
+	void Move(double tuning, int nrep)	{
 		for (int rep=0; rep<nrep; rep++)	{
-			total += process->Move(tuning);
+			stringstream backup;
+			process->ToStream(backup);
+			while(process->Move(tuning))
+			{
+				//cerr << "warning: numerical error in move, retrying...\n";
+				backup.clear();
+				backup.seekg(0);
+				process->FromStream(backup);
+				MESSAGE signal = BCAST_TREE;
+				MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+				process->GlobalBroadcastTree();
+				process->GlobalUnfold();
+			}
 		}
-		return total / nrep;
 	}
 
 	int RunningStatus()	{

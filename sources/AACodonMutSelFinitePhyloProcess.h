@@ -314,12 +314,12 @@ class AACodonMutSelFinitePhyloProcess : public virtual AACodonMutSelFiniteSubsti
 		chronosuffstat.Stop();
 
 		chronounfold.Start();
-		GlobalUnfold();
+		bool err = GlobalUnfold();
 		chronounfold.Stop();
 
 		chronototal.Stop();
 		//cerr << "ok\n";
-		return 1;
+		return err;
 	}
 
 

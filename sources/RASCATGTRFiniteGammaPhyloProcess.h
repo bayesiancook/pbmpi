@@ -276,7 +276,7 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 
 		// chronounfold.Start();
 		// cerr << "unfold\n";
-		GlobalUnfold();
+		bool err = GlobalUnfold();
 		// cerr << "unfold ok\n";
 		// chronounfold.Stop();
 
@@ -285,7 +285,7 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 		// Trace(cerr);
 
 		// cerr << "move ok\n";
-		return 1;
+		return err;
 	}
 
 	void ToStreamHeader(ostream& os)	{
