@@ -2772,20 +2772,26 @@ void PhyloProcess::ReadSteppingStone(string name, int burnin, int every, int unt
 		}
 
 		vector<double> log_likes;
-		double max = -numeric_limits<double>::infinity();
+		vector<double> log_weights;
+		double maxlnL = -numeric_limits<double>::infinity();
+		double maxw = maxlnL;
 
-		is >> tmp >> tmp;
+		is >> tmp >> tmp >> tmp;
 		int gen = 0;
 		double lnL = 0;
+		double w = 0;
 		while(is)
 		{
 			is >> tmp;
 			is >> lnL;
+			is >> w;
 
 			if(gen >= burnin && gen % every == 0)
 			{
 				log_likes.push_back(lnL);
-				max = std::max(lnL, max);
+				log_weights.push_back(w);
+				maxlnL = std::max(maxlnL, lnL);
+				maxw = std::max(maxw, w);
 			}
 
 			if(gen >= until && until != -1)
@@ -2798,31 +2804,34 @@ void PhyloProcess::ReadSteppingStone(string name, int burnin, int every, int unt
 		is.close();
 
 		if(log_likes.empty())
-                {
-                        cerr << "error: no samples after burnin\n";
-                        exit(1);
-                }
+		{
+			cerr << "error: no samples after burnin\n";
+			exit(1);
+		}
 
-		// compute the log-sum-exp of the lnLs
-                lnL = 0.0;
-                for(size_t i = 0; i < log_likes.size(); i++)
-                {
-                        lnL += exp(log_likes[i] - max);
-                }
-                lnL = log(lnL) + max;
+		// compute the log-sum-exp of the lnLs and weights
+		lnL = 0.0;
+		w = 0;
+		for(size_t i = 0; i < log_likes.size(); i++)
+		{
+			lnL += exp(log_likes[i] - maxlnL);
+			w += exp(log_weights[i] - maxw);
+		}
+		lnL = log(lnL) + maxlnL;
+		w = log(w) + maxw;
 
-                // now compute the effective sample size of this importance sampling estimate
-                double ess = 0;
-                for(size_t i = 0; i < log_likes.size(); i++)
-                {
-                        ess += exp(2*(log_likes[i] - lnL));
-                }
-                ess = 1.0 / ess;
-                effsizes.push_back(ess);
+		// now compute the effective sample size from the log weights
+		double ess = 0;
+		for(size_t i = 0; i < log_weights.size(); i++)
+		{
+			ess += exp(2*(log_weights[i] - w));
+		}
+		ess = 1.0 / ess;
+		effsizes.push_back(ess);
 
-                // now normalize the lnL and add to the marginal total
-                lnL -= log(log_likes.size());
-                marginal += lnL;
+		// now normalize the lnL and add to the marginal total
+		lnL -= log(log_likes.size());
+		marginal += lnL;
 	}
 	is.close();
 	is.clear();

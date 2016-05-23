@@ -449,7 +449,7 @@ class Model	{
             if(num_stones > 0)
             {
                 ofstream tos((name + ss_ext.str() + ".ss").c_str(), ios_base::app);
-                tos << GetSize() - 1 << "\t" << process->GetMaskedLogLikelihood() << "\n";
+                tos << GetSize() - 1 << "\t" << process->GetMaskedLogLikelihood() << "\t" << -process->GetLogLikelihood() << "\n";
                 tos.close();
             }
 
@@ -491,7 +491,7 @@ class Model	{
 					TraceHeader(tos);
 					tos.close();
 					ofstream ssos((name + ss_ext.str() + ".ss").c_str());
-					ssos << "iter\tss\n";
+					ssos << "iter\tss\tw\n";
 					ssos.close();
 					ofstream pos((name + ss_ext.str() + ".param").c_str());
 					pos.precision(numeric_limits<double>::digits10);
