@@ -1280,8 +1280,14 @@ bool PhyloProcess::GlobalUnfold()	{
 		fail = fail || (signal == FAILURE);
 	}
 
-	GlobalComputeNodeLikelihood(GetRoot(),0);
-
+	if(fail)
+        {
+                //cerr << "warning: numerical error in pruning likelihood\n";
+        }
+        else
+        {
+                GlobalComputeNodeLikelihood(GetRoot(),0);
+        }
 	return fail;
 }
 
