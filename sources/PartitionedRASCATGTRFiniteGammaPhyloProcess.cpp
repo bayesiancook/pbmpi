@@ -463,10 +463,10 @@ void PartitionedRASCATGTRFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])
 		exit(1);
 	}
 
-	if (until == -1)	{
+	if (until == -1 && !ss)	{
 		until = GetSize();
 	}
-	if (burnin == -1)	{
+	if (burnin == -1 && !ss)	{
 		burnin = GetSize() / 5;
 	}
 
