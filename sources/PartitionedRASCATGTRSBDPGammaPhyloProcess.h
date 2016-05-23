@@ -322,15 +322,18 @@ class PartitionedRASCATGTRSBDPGammaPhyloProcess : public virtual PartitionedExpo
 			NSPR = 10;
 			NNNI = 0;
 		}
-		if (iscodon)	{
-			SequenceAlignment* tempdata = new FileSequenceAlignment(datafile,0,myid,false);
-			data = new CodonSequenceAlignment(tempdata,true,codetype);
+		if(!data)
+		{
+			if (iscodon)	{
+				SequenceAlignment* tempdata = new FileSequenceAlignment(datafile,0,myid,false);
+				data = new CodonSequenceAlignment(tempdata,true,codetype);
+			}
+			else	{
+				data = new FileSequenceAlignment(datafile,0,myid,false);
+			}
+			const TaxonSet* taxonset = data->GetTaxonSet();
+			tree = new Tree(taxonset);
 		}
-		else	{
-			data = new FileSequenceAlignment(datafile,0,myid,false);
-		}
-		const TaxonSet* taxonset = data->GetTaxonSet();
-		tree = new Tree(taxonset);
 		tree->ReadFromStream(is);
 	}
 

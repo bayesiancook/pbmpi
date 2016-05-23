@@ -267,9 +267,12 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 			NNNI = 0;
 		}
 		is >> dc;
-		data = new FileSequenceAlignment(datafile,0,myid,false);
-		const TaxonSet* taxonset = data->GetTaxonSet();
-		tree = new Tree(taxonset);
+		if(!data)
+		{
+			data = new FileSequenceAlignment(datafile,0,myid,false);
+			const TaxonSet* taxonset = data->GetTaxonSet();
+			tree = new Tree(taxonset);
+		}
 		tree->ReadFromStream(is);
 	}
 

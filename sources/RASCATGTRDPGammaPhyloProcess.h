@@ -251,9 +251,12 @@ class RASCATGTRDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProcess
 		is >> rrtype;
 		is >> fixtopo;
 		is >> dc;
-		data = new FileSequenceAlignment(datafile,0,myid,false);
-		const TaxonSet* taxonset = data->GetTaxonSet();
-		tree = new Tree(taxonset);
+		if(!data)
+		{
+			data = new FileSequenceAlignment(datafile,0,myid,false);
+			const TaxonSet* taxonset = data->GetTaxonSet();
+			tree = new Tree(taxonset);
+		}
 		tree->ReadFromStream(is);
 	}
 

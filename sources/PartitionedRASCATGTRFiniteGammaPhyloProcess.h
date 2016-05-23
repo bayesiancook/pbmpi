@@ -289,9 +289,12 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 			NSPR = 10;
 			NNNI = 0;
 		}
-		data = new FileSequenceAlignment(datafile,0,myid,false);
-		const TaxonSet* taxonset = data->GetTaxonSet();
-		tree = new Tree(taxonset);
+		if(!data)
+		{
+			data = new FileSequenceAlignment(datafile,0,myid,false);
+			const TaxonSet* taxonset = data->GetTaxonSet();
+			tree = new Tree(taxonset);
+		}
 		tree->ReadFromStream(is);
 	}
 
