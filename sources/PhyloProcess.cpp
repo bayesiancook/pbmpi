@@ -2760,6 +2760,7 @@ void PhyloProcess::ReadSteppingStone(string name, int burnin, int every, int unt
 	is.clear();
 
 	double marginal = 0;
+	vector<double> effsizes;
 	for(int stone = 0; stone < num_stones; stone++)
 	{
 		stringstream ss;
@@ -2796,24 +2797,46 @@ void PhyloProcess::ReadSteppingStone(string name, int burnin, int every, int unt
 		}
 		is.close();
 
-		lnL = 0.0;
-		for(size_t i = 0; i < log_likes.size(); i++)
-		{
-			lnL += exp(log_likes[i] - max);
-		}
-		lnL = log(lnL) + max;
-		lnL -= log(log_likes.size());
+		if(log_likes.empty())
+                {
+                        cerr << "error: no samples after burnin\n";
+                        exit(1);
+                }
 
-		marginal += lnL;
+		// compute the log-sum-exp of the lnLs
+                lnL = 0.0;
+                for(size_t i = 0; i < log_likes.size(); i++)
+                {
+                        lnL += exp(log_likes[i] - max);
+                }
+                lnL = log(lnL) + max;
+
+                // now compute the effective sample size of this importance sampling estimate
+                double ess = 0;
+                for(size_t i = 0; i < log_likes.size(); i++)
+                {
+                        ess += exp(2*(log_likes[i] - lnL));
+                }
+                ess = 1.0 / ess;
+                effsizes.push_back(ess);
+
+                // now normalize the lnL and add to the marginal total
+                lnL -= log(log_likes.size());
+                marginal += lnL;
 	}
 	is.close();
 	is.clear();
 
 	ofstream os((name + ".ss").c_str());
-	os << "steppingstone marginal likelihood\n";
-	os << marginal << "\n";
-	cerr << "result of steppingstone analysis in " << name << ".ss\n";
-	os.close();
+        os << "steppingstone analysis\n";
+        os << "marginal lnL:\t" << marginal << "\n";
+        os << "effsizes:\n";
+        for(size_t i = 0; i < effsizes.size(); i++)
+        {
+                os << "ss" << i << "\t" << effsizes[i] << endl;
+        }
+        cerr << "result of steppingstone analysis in " << name << ".ss\n";
+        os.close();
 }
 
 void PhyloProcess::GlobalSetTestData()	{
