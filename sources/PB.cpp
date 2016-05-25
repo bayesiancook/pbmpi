@@ -97,7 +97,7 @@ int main(int argc, char* argv[])	{
 			if ((s == "-v") || (s == "--version"))	{
 				if (! myid)	{
 					cerr << "\n";
-					cerr << "pb_mpi version 1.7\n";
+					cerr << "pb_mpi version 1.5\n";
 					cerr << "\n";
 				}
 				MPI_Finalize();
@@ -567,14 +567,10 @@ int main(int argc, char* argv[])	{
 			// MPI master only
 			ofstream os((name + ".treelist").c_str());
 			ofstream tos((name + ".trace").c_str());
-			stringstream ss;
-			model->TraceHeader(ss);
-			tos << ss.str();
+			model->TraceHeader(tos);
 			tos.close();
 			ofstream pos((name + ".param").c_str());
-			ss.str("");
-			model->ToStream(ss,true);
-			pos << ss.str();
+			model->ToStream(pos,true);
 			pos.close();
 			if (saveall)	{
 				ofstream cos((name + ".chain").c_str());
@@ -583,31 +579,23 @@ int main(int argc, char* argv[])	{
 		}
 	}
 	else	{
-		model = new Model(name,myid,nprocs,true);
+		model = new Model(name,myid,nprocs);
 		if (until != -1)	{
 			model->until = until;
 		}
 	}
-	try
-	{
-		if (myid == 0) {
-			cerr << "run started\n";
-			cerr << '\n';
-			// model->Trace(cerr);
-			model->Run(burnin);
-			MESSAGE signal = KILL;
-			MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
-		}
-		else {
-			// MPI slave
-			model->WaitLoop();
-		}
 
+	if (myid == 0) {
+		cerr << "run started\n";
+		cerr << '\n';
+		// model->Trace(cerr);
+		model->Run(burnin);
+		MESSAGE signal = KILL;
+		MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 	}
-	catch(exception& e)
-	{
-		cerr << e.what() << endl;
-		exit(1);
+	else {
+		// MPI slave
+		model->WaitLoop();
 	}
 	MPI_Finalize();
 }

@@ -15,7 +15,7 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 
 #include "linalg.h"
 #include "SubMatrix.h"
-#include <stdexcept>
+
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
@@ -291,11 +291,10 @@ int SubMatrix::Diagonalise()	{
 	}
 
 	if (failed)	{
-		stringstream ss;
+		cerr << "error in SubMatrix::Diagonalise\n";
 		CheckReversibility();
-		ss << "error in SubMatrix::Diagonalise\n";
-		ToStream(ss);
-		throw runtime_error(ss.str());
+		ToStream(cerr);
+		exit(1);
 	}
 
 	diagflag = true;

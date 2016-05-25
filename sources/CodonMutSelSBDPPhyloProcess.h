@@ -277,12 +277,12 @@ class CodonMutSelSBDPPhyloProcess : public virtual CodonMutSelSBDPSubstitutionPr
 		chronosuffstat.Stop();
 
 		chronounfold.Start();
-		bool err = GlobalUnfold();
+		GlobalUnfold();
 		chronounfold.Stop();
 
 		chronototal.Stop();
 		//cerr << "ok\n";
-		return err;
+		return 1;
 	}
 
 

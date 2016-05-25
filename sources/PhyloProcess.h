@@ -38,7 +38,6 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	virtual void SlaveExecute(MESSAGE);
 
         virtual void SlaveRoot(int);
-        virtual void SlaveRootAt(int);
 	virtual void SlaveGibbsSPRScan(int,int);
 	virtual void SlaveLikelihood(int,int);
 	virtual void SlavePropose(int,double);
@@ -54,7 +53,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	// virtual void SlaveUpdate();
 
 	// default constructor: pointers set to nil
-	PhyloProcess() :  siteratesuffstatcount(0), siteratesuffstatbeta(0), branchlengthsuffstatcount(0), branchlengthsuffstatbeta(0), condflag(false), data(0), myid(-1), nprocs(0), size(0), version("1.7"), totaltime(0), dataclamped(1), rateprior(0), profileprior(0), rootprior(1), topoburnin(0) {}
+	PhyloProcess() :  siteratesuffstatcount(0), siteratesuffstatbeta(0), branchlengthsuffstatcount(0), branchlengthsuffstatbeta(0), condflag(false), data(0), myid(-1), nprocs(0), size(0), version("1.6"), totaltime(0), dataclamped(1), rateprior(0), profileprior(0), rootprior(1), topoburnin(0) {}
 	virtual ~PhyloProcess() {}
 
 	string GetVersion() {return version;}
@@ -163,7 +162,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 
 	const TaxonSet* GetTaxonSet() const {return data->GetTaxonSet();}
 
-	bool GlobalUpdateConditionalLikelihoods();
+	void GlobalUpdateConditionalLikelihoods();
 	double GlobalComputeNodeLikelihood(const Link* from, int auxindex = -1);
 
 	protected:
@@ -301,7 +300,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	}
 
 
-	virtual bool GlobalUnfold();
+	virtual void GlobalUnfold();
 	virtual void GlobalCollapse();
 
 
@@ -310,12 +309,11 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	void GlobalMultiplyByStationaries(const Link* from, bool condalloc = false);
 	void GlobalInitialize(const Link* from, const Link* link, bool condalloc = false);
 
-	bool GlobalPropagate(const Link* from, const Link* to, double time, bool condalloc = false);
+	void GlobalPropagate(const Link* from, const Link* to, double time, bool condalloc = false);
 	double GlobalProposeMove(const Branch* branch, double tuning);
 	void GlobalRestore(const Branch* branch);
 
-	bool GlobalRootAtRandom();
-	void GlobalRootAt(Link* newroot);
+	void GlobalRootAtRandom();
 	Link* GlobalDetach(Link* down, Link* up);
 	// void GlobalDetach(Link* down, Link* up);
 	void GlobalAttach(Link* down, Link* up, Link* fromdown, Link* fromup);
@@ -373,7 +371,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 
 	int GibbsSPR();
 	// double GibbsSPR();
-	bool GlobalGibbsSPRScan(Link* down, Link* up, double* loglarray);
+	void GlobalGibbsSPRScan(Link* down, Link* up, double* loglarray);
 	void RecursiveGibbsSPRScan(Link* from, Link* fromup, Link* down, Link* up, double* loglarray, int& n);
 	void RecursiveGibbsFillMap(Link* from, Link* fromup, map<pair<Link*,Link*>,double>& loglmap, double* loglarray, int& n);
 

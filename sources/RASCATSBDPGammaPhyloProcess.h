@@ -256,13 +256,12 @@ class RASCATSBDPGammaPhyloProcess : public virtual RASCATGammaPhyloProcess, publ
 			PoissonSBDPProfileProcess::Move(0.01,1,15);
 		}
 
-		bool err = GlobalUnfold();
-
+		GlobalUnfold();
 		chronototal.Stop();
 
 		// Trace(cerr);
 
-		return err;
+		return 1;
 	
 	}
 
