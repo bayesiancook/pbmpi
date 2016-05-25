@@ -203,7 +203,7 @@ void Correlation::getParameters(string filename, int start, int stop)
     else	{
 	    burnin=start;
     }
-    nbsample = stop-burnin;
+    nbsample = stop-start;
     if(nbsample<=0)
       {
 	cerr << "ERROR: in Correlation::getParameters, asking sampling from point " << start << " to point "<< stop <<", exiting\n";
@@ -224,8 +224,8 @@ void Correlation::getParameters(string filename, int start, int stop)
 
 	/*ALL*/
     iss1 >> strtmp;
-    //iss1 >> strtmp;
-    //iss1 >> strtmp;
+    iss1 >> strtmp;
+    iss1 >> strtmp;
 	/*ALL*/
 
     strtmp="null";
@@ -240,8 +240,8 @@ void Correlation::getParameters(string filename, int start, int stop)
 
 	/*ALL*/
     iss2 >> strtmp;
-    //iss2 >> strtmp;
-    //iss2 >> strtmp;
+    iss2 >> strtmp;
+    iss2 >> strtmp;
 	/*ALL*/
 
     for(int j=0;j<nbparameter;j++)
@@ -255,8 +255,8 @@ void Correlation::getParameters(string filename, int start, int stop)
 
 	/*ALL*/
 	*is >> tmp;
-	//*is >> tmp;
-	//*is >> tmp;
+	*is >> tmp;
+	*is >> tmp;
 	/*ALL*/
 
 	for(int j=0;j<nbparameter;j++)
