@@ -208,7 +208,7 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 	}
 
 	void TraceHeader(ostream& os)	{
-		os << "#iter\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
+		os << "iter\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
 		if (! fixrr)	{
 			os << "\trrent\trrmean";
 		}
@@ -220,7 +220,7 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 
 		UpdateOccupancyNumbers();
 
-		os << GetSize();
+		os << GetSize() - 1;
 		if (chronototal.GetTime())	{
 			os << '\t' << chronototal.GetTime() / 1000;
 			os << '\t' << ((int) (propchrono.GetTime() / chronototal.GetTime() * 100));
@@ -318,7 +318,7 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 
 		// chronounfold.Start();
 		// cerr << "unfold\n";
-		GlobalUnfold();
+		bool err = GlobalUnfold();
 		// cerr << "unfold ok\n";
 		// chronounfold.Stop();
 
@@ -326,7 +326,7 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 
 		// Trace(cerr);
 
-		return 1;
+		return err;
 	}
 
 	void ToStreamHeader(ostream& os)	{

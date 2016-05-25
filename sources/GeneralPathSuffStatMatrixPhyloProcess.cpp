@@ -45,7 +45,16 @@ void GeneralPathSuffStatMatrixPhyloProcess::Unfold()	{
 	CreateCondSiteLogL();
 	CreateConditionalLikelihoods();
 
-	UpdateConditionalLikelihoods();
+	MESSAGE signal = SUCCESS;
+	try
+	{
+		UpdateConditionalLikelihoods();
+	}
+	catch(...)
+	{
+		signal = FAILURE;
+	}
+	MPI_Send(&signal,1,MPI_INT,0,TAG1,MPI_COMM_WORLD);
 }
 
 void GeneralPathSuffStatMatrixPhyloProcess::Collapse()	{
@@ -67,7 +76,7 @@ void GeneralPathSuffStatMatrixPhyloProcess::Collapse()	{
 	CreateSuffStat();
 }
 
-void GeneralPathSuffStatMatrixPhyloProcess::GlobalUnfold()	{
+bool GeneralPathSuffStatMatrixPhyloProcess::GlobalUnfold()	{
 
 	assert(myid == 0);
 	DeleteSuffStat();
@@ -78,7 +87,24 @@ void GeneralPathSuffStatMatrixPhyloProcess::GlobalUnfold()	{
 	MESSAGE signal = UNFOLD;
 	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 
-	GlobalUpdateConditionalLikelihoods();
+	bool fail = false;
+	MPI_Status stat;
+	for(int i = 1; i < nprocs; i++)
+	{
+		MPI_Recv(&signal,1,MPI_INT,i,TAG1,MPI_COMM_WORLD,&stat);
+		fail = fail || (signal == FAILURE);
+	}
+
+	if(fail)
+	{
+		//cerr << "warning: numerical error in pruning likelihood\n";
+	}
+	else
+	{
+		GlobalUpdateConditionalLikelihoods();
+	}
+
+	return fail;
 }
 
 

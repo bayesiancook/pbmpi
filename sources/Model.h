@@ -35,6 +35,7 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 #include "Parallel.h"
 #include <iostream>
 #include <fstream>
+#include <limits>
 
 using namespace std;
 
@@ -181,9 +182,16 @@ class Model	{
 		}
 
 		process->SetTopoBurnin(topoburnin);
+		process->SetErrorHandling(true);
+
+		if(myid == 0 && nprocs > process->GetNsite())
+		{
+			cerr << "error: More processors than sites";
+			exit(1);
+		}
 	}
 
-	Model(string inname, int myid, int nprocs)	{
+	Model(string inname, int myid, int nprocs, bool catch_errors)	{
 
 		name = inname;
 
@@ -251,6 +259,13 @@ class Model	{
 		// cerr << "RESTORE SETSIZE\n";
 		process->SetSize(size);
 		// cerr << "reset size to " << process->GetSize() << '\n';
+		process->SetErrorHandling(catch_errors);
+
+		if(myid == 0 && nprocs > process->GetNsite())
+		{
+			cerr << "error: More processors than sites";
+			exit(1);
+		}
 	}
 
 	void ToStream(ostream& os, bool header)	{
@@ -271,12 +286,22 @@ class Model	{
 		process->WaitLoop();
 	}
 
-	double Move(double tuning, int nrep)	{
-		double total = 0;
+	void Move(double tuning, int nrep)	{
 		for (int rep=0; rep<nrep; rep++)	{
-			total += process->Move(tuning);
+			stringstream backup;
+			process->ToStream(backup);
+			while(process->Move(tuning))
+			{
+				//cerr << "warning: numerical error in move, retrying...\n";
+				backup.clear();
+				backup.seekg(0);
+				process->FromStream(backup);
+				MESSAGE signal = BCAST_TREE;
+				MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+				process->GlobalBroadcastTree();
+				process->GlobalUnfold();
+			}
 		}
-		return total / nrep;
 	}
 
 	int RunningStatus()	{
@@ -292,6 +317,7 @@ class Model	{
 	}
 
 	void Run(int burnin)	{
+		stringstream ss;
 
 		if (burnin != 0)	{
 			if (GetSize() < burnin)	{
@@ -299,7 +325,8 @@ class Model	{
 			}
 		}
 		ofstream ros((name + ".run").c_str());
-		ros << 1 << '\n';
+		ss << 1 << '\n';
+		ros << ss.str();
 		ros.close();
 	
 		while (RunningStatus() && ((until == -1) || (GetSize() < until)))	{
@@ -314,27 +341,37 @@ class Model	{
 			ofstream os((name + ".treelist").c_str(), ios_base::app);
 			process->SetNamesFromLengths();
 			process->RenormalizeBranchLengths();
-			GetTree()->ToStream(os);
+			ss.str("");
+			GetTree()->ToStream(ss);
 			process->DenormalizeBranchLengths();
+			os << ss.str();
 			os.close();
 
 			ofstream tos((name + ".trace").c_str(), ios_base::app);
-			Trace(tos);
+			ss.str("");
+			Trace(ss);
+			tos << ss.str();
 			tos.close();
 
 			ofstream mos((name + ".monitor").c_str());
-			process->Monitor(mos);
+			ss.str("");
+			process->Monitor(ss);
+			mos << ss.str();
 			mos.close();
 
 			ofstream pos((name + ".param").c_str());
-			pos.precision(12);
-			ToStream(pos,true);
+			pos.precision(numeric_limits<double>::digits10);
+			ss.str("");
+			ToStream(ss,true);
+			pos << ss.str();
 			pos.close();
 
 			if (saveall)	{
 				ofstream cos((name + ".chain").c_str(),ios_base::app);
-				cos.precision(12);
-				ToStream(cos,false);
+				cos.precision(numeric_limits<double>::digits10);
+				ss.str("");
+				ToStream(ss,false);
+				cos << ss.str();
 				cos.close();
 			}
 
