@@ -38,7 +38,7 @@ int main(int argc, char* argv[])	{
 
 	string name = argv[argc-1];
 	
-	Model* model = new Model(name,myid,nprocs,false);
+	Model* model = new Model(name,myid,nprocs);
 	if (myid == 0) {
 		model->ReadPB(argc,argv);
 		MESSAGE signal = KILL;

@@ -241,9 +241,9 @@ class AAMutSelDPPhyloProcess : public virtual AAMutSelDPSubstitutionProcess, pub
 		AAMutSelDPProfileProcess::Move(tuning,1,10);
 		chronototal.Stop();
 		chronosuffstat.Stop();
-		bool err = GlobalUnfold();
+		GlobalUnfold();
 		//cerr << "ok\n";
-		return err;
+		return 1;
 	}
 
 
