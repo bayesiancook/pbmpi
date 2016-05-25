@@ -579,7 +579,7 @@ class SequenceAlignment	{
 		return maxdist;
 	}
 
-	double ProportionWithinPartitionVariance(PartitionScheme scheme)   {
+	vector<double> PartitionComponentVariance(PartitionScheme scheme)   {
 
         int Nstate = GetNstate();
         double** sitefreq = new double*[Nsite];
@@ -702,7 +702,10 @@ class SequenceAlignment	{
         }
         delete[] sitefreq;
 
-        return SSwithin/(SSwithin + SSacross);
+	vector<double> var;
+	var.push_back(SSwithin);
+	var.push_back(SSacross);
+        return var;
     }
 
 	// data fields

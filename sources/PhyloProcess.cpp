@@ -1597,7 +1597,7 @@ bool PhyloProcess::GlobalGibbsSPRScan(Link* down, Link* up, double* loglarray)  
 	return fail;
 }
 
-void PhyloProcess::GlobalSetSteppingStone(int instone_index, int innum_stones)
+void PhyloProcess::GlobalSetSteppingStone(int instone_index, int innum_stones, double inalpha)
 {
     assert(myid == 0);
     stone_index = instone_index;
@@ -1614,6 +1614,7 @@ void PhyloProcess::GlobalSetSteppingStone(int instone_index, int innum_stones)
     args[0] = stone_index;
     args[1] = num_stones;
     MPI_Bcast(args,2,MPI_INT,0,MPI_COMM_WORLD);
+    MPI_Bcast(&inalpha,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
     sitemask_needs_updating = true;
 }
 
@@ -1621,10 +1622,13 @@ void PhyloProcess::SlaveSetSteppingStone()
 {
     assert(myid > 0);
     int args[2];
+    double inalpha;
     MPI_Bcast(args,2,MPI_INT,0,MPI_COMM_WORLD);
+    MPI_Bcast(&inalpha,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
 
     stone_index = args[0];
     num_stones = args[1];
+    ssalpha = inalpha;
     sitemask_needs_updating = true;
 }
 
@@ -2563,6 +2567,7 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 	SequenceAlignment* datacopy  = new SequenceAlignment(GetData());
 	double obs = 0;
 	double obs2 = 0;
+	double obs3 = 0;
 	if (ppredtype == 2)	{
 		obs = data->GetMeanDiversity();
 		// obs = GlobalGetMeanDiversity();
@@ -2571,8 +2576,10 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 		obs = GetObservedCompositionalHeterogeneity(obstaxstat,obs2);
 	}
 	else if (ppredtype == 4)    {
-		obs = GetObservedProportionWithinPartitionVariance(scheme);
-		obs = log(obs/(1.0-obs));
+		obs = GetObservedPartitionComponentVariance(scheme)[0];
+		obs2 = GetObservedPartitionComponentVariance(scheme)[1];
+	        obs3 = obs/(obs + obs2);
+		obs3 = log(obs3/(1.0 - obs3));
 	}
 
 	cerr << "burnin: " << burnin << '\n';
@@ -2590,6 +2597,9 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 	double meanstat2 = 0;
 	double varstat2 = 0;
 	double ppstat2 = 0;
+	double meanstat3 = 0;
+        double varstat3 = 0;
+        double ppstat3 = 0;
 	double* meantaxstat = new double[GetNtaxa()];
 	double* vartaxstat = new double[GetNtaxa()];
 	double* pptaxstat = new double[GetNtaxa()];
@@ -2626,6 +2636,7 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 		if (ppredtype > 1)	{
 			double stat = 0;
 			double stat2 = 0;
+			double stat3 = 0;
 			if (ppredtype == 2)	{
 				stat = data->GetMeanDiversity();
 			}
@@ -2641,8 +2652,10 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 			}
 			else if (ppredtype == 4)
 			{
-			    stat = GetProportionWithinPartitionVariance(scheme);
-			    stat = log(stat/(1.0-stat));
+				stat = GetPartitionComponentVariance(scheme)[0];
+				stat2 = GetPartitionComponentVariance(scheme)[1];
+				stat3 = stat/(stat + stat2);
+				stat3 = log(stat3/(1.0 - stat3));
 			}
 			meanstat += stat;
 			varstat += stat * stat;
@@ -2654,6 +2667,11 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 			if (stat2 < obs2)	{
 				ppstat2++;
 			}
+			meanstat3 += stat3;
+                        varstat3 += stat3 * stat3;
+                        if (stat3 < obs3)       {
+                                ppstat3++;
+                        }
 		}
 		else	{
 			// write datafile
@@ -2686,6 +2704,11 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 		varstat2 /= samplesize;
 		varstat2 -= meanstat2 * meanstat2;
 		ppstat2 /= samplesize;
+		
+		meanstat3 /= samplesize;
+                varstat3 /= samplesize;
+                varstat3 -= meanstat2 * meanstat2;
+                ppstat3 /= samplesize;
 	}
 
 	if (ppredtype == 1)	{
@@ -2730,13 +2753,24 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 		cerr << "result of compositional homogeneity test in " << name << ".comp\n";
 	}
 	else if (ppredtype == 4)    {
-	    ofstream os((name + ".var").c_str());
-        os << "within-partition variance test\n";
-        os << "obs var : " << obs << '\n';
-        os << "mean var: " << meanstat << " +/- " << sqrt(varstat) << '\n';
-        os << "z-score : " << (meanstat - obs) / sqrt(varstat) << '\n';
-        os << "pp      : " << ppstat << '\n';
-        cerr << "result of var test in " << name << ".var\n";
+		ofstream os((name + ".var").c_str());
+		os << "partion component variance test\n";
+		os << "within-partition variance:\n";
+		os << "obs varw : " << obs << '\n';
+		os << "mean varw: " << meanstat << " +/- " << sqrt(varstat) << '\n';
+		os << "z-score  : " << (meanstat - obs) / sqrt(varstat) << '\n';
+		os << "pp       : " << ppstat << endl << endl;
+		os << "between-partition variance:\n";
+                os << "obs varb : " << obs2 << '\n';
+                os << "mean varb: " << meanstat2 << " +/- " << sqrt(varstat2) << '\n';
+                os << "z-score  : " << (meanstat2 - obs2) / sqrt(varstat2) << '\n';
+                os << "pp       : " << ppstat2 << endl << endl;
+		os << "logit proportion within-partition variance:\n";
+                os << "obs varp : " << obs3 << '\n';
+                os << "mean varp: " << meanstat3 << " +/- " << sqrt(varstat3) << '\n';
+                os << "z-score  : " << (meanstat3 - obs3) / sqrt(varstat3) << '\n';
+                os << "pp       : " << ppstat3 << '\n';
+		cerr << "result of var test in " << name << ".var\n";
 	}
 	cerr << '\n';
 }

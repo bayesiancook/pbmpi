@@ -96,6 +96,7 @@ int main(int argc, char* argv[])	{
 	// Steppingstone params
 	size_t steppingstone_size = 1000;
 	size_t num_steppingstones = 0;
+	double alpha = 0.3;
 
 	try	{
 
@@ -442,6 +443,10 @@ int main(int argc, char* argv[])	{
 					i--;
 				}
 			}
+			else if (s == "-alpha")  {
+                                i++;
+                                alpha = atof(argv[i]);
+                        }
 			else if (s == "-uni")	{
 				type = Universal;
 			}
@@ -675,7 +680,7 @@ int main(int argc, char* argv[])	{
 		}
 	}
 	else	{
-		model = new Model(name,myid,nprocs,true,treefile,num_steppingstones,steppingstone_size);
+		model = new Model(name,myid,nprocs,true,treefile,num_steppingstones,steppingstone_size,alpha);
 		if (until != -1)	{
 			model->until = until;
 		}

@@ -78,8 +78,8 @@ class PoissonPhyloProcess : public virtual PhyloProcess, public virtual PoissonS
 		return truedata->CompositionalHeterogeneity(taxstat,0,meandist);
 	}
 
-	virtual double GetObservedProportionWithinPartitionVariance(PartitionScheme scheme) {
-                return truedata->ProportionWithinPartitionVariance(scheme);
+	virtual vector<double> GetObservedPartitionComponentVariance(PartitionScheme scheme) {
+                return truedata->PartitionComponentVariance(scheme);
         }
 
 	void RecursiveUnzipBranchSitePath(const Link* from);

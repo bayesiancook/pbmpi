@@ -176,6 +176,7 @@ class SubstitutionProcess : public virtual RateProcess, public virtual ProfilePr
 	vector<size_t> sitemask;
 	int stone_index;
 	int num_stones;
+	double ssalpha;
 	bool sitemask_needs_updating;
 	bool catch_errors;
 };

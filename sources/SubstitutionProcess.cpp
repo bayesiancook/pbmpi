@@ -68,7 +68,7 @@ void SubstitutionProcess::UpdateSiteMask(void)
 	size_t would_mask = 0;
 	for(size_t stone = 0; stone < num_stones; stone++)
 	{
-		double heat = pow(double(num_stones - stone - 1)/num_stones, 10.0 / 3.0);
+		double heat = pow(double(num_stones - stone - 1)/num_stones, 1.0 / ssalpha);
 
 		size_t masked = max(int(GetNsite() - ceil(GetNsite()*heat) - masked_prev), 1);
 		masked_prev += masked;
@@ -80,7 +80,7 @@ void SubstitutionProcess::UpdateSiteMask(void)
 	masked_prev = 0;
 	for(size_t stone = 0; stone <= stone_index; stone++)
 	{
-		double heat = pow(double(num_stones - stone - 1)/num_stones, 10.0 / 3.0);
+		double heat = pow(double(num_stones - stone - 1)/num_stones, 1.0 / ssalpha);
 
 		size_t to_mask = max(int(GetNsite() - ceil(GetNsite()*heat) - masked_prev), 1);
 		masked_prev += to_mask;

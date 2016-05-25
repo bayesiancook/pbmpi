@@ -166,7 +166,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	bool GlobalUpdateConditionalLikelihoods();
 	double GlobalComputeNodeLikelihood(const Link* from, int auxindex = -1);
 
-	void GlobalSetSteppingStone(int stone_index, int num_stones);
+	void GlobalSetSteppingStone(int stone_index, int num_stones, double alpha);
 	void SlaveSetSteppingStone(void);
 	void FixTopo(string treefile);
 
@@ -480,11 +480,11 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 		return data->CompositionalHeterogeneity(taxstat,0,meandist);
 	}
 
-	virtual double GetObservedProportionWithinPartitionVariance(PartitionScheme scheme) {
-		return data->ProportionWithinPartitionVariance(scheme);
+	virtual vector<double> GetObservedPartitionComponentVariance(PartitionScheme scheme) {
+		return data->PartitionComponentVariance(scheme);
 	}
-	virtual double GetProportionWithinPartitionVariance(PartitionScheme scheme) {
-		return data->ProportionWithinPartitionVariance(scheme);
+	virtual vector<double> GetPartitionComponentVariance(PartitionScheme scheme) {
+		return data->PartitionComponentVariance(scheme);
 	}
 
 	virtual int GetNprocs() {

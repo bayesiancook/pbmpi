@@ -60,6 +60,7 @@ class Model	{
 
 	int stone_index;
 	int num_stones;
+	double alpha;
 	stringstream ss_ext;
 
 	Model(string datafile, string treefile, string schemefile, bool inlinkgam, bool inunlinkgtr, bool inlinkmult,  int modeltype, int nratecat, int mixturetype, int ncat, GeneticCodeType codetype, int suffstat, int fixncomp, int empmix, string mixtype, string rrtype, int iscodon, int fixtopo, int NSPR, int NNNI, int fixcodonprofile, int fixomega, int fixbl, int omegaprior, int kappaprior, int dirweightprior, double mintotweight, int dc, int inevery, int inuntil, int insaveall, int inincinit, int topoburnin, string inname, int myid, int nprocs)	{
@@ -71,6 +72,7 @@ class Model	{
 		incinit = inincinit;
 		stone_index = -1;
 		num_stones = 0;
+		alpha = 0;
 
 		// 1 : CAT
 		// 2 : CATGTR
@@ -219,7 +221,7 @@ class Model	{
 		}
 	}
 
-	Model(string inname, int myid, int nprocs, bool catch_errors, string treefile = "None", int innum_stones = 0, int instone_size = -1) {
+	Model(string inname, int myid, int nprocs, bool catch_errors, string treefile = "None", int innum_stones = 0, int instone_size = -1, double inalpha = 0.3) {
 
 		name = inname;
 
@@ -233,7 +235,13 @@ class Model	{
 		int size;
 		is >> every >> until >> size;
 		is >> saveall;
-		is >> stone_index >> num_stones;
+		double a = 0;
+		is >> stone_index >> num_stones >> a;
+		
+		if(a > 0)
+			alpha = a;
+		else
+			alpha = inalpha;
 
 		// if we are elongating multiple stones
 		// begin with the first stone
@@ -361,7 +369,7 @@ class Model	{
 			// set stepping stone if elongating a single stone
 			if(innum_stones == 0)
 			{
-				process->GlobalSetSteppingStone(stone_index, num_stones);
+				process->GlobalSetSteppingStone(stone_index, num_stones, alpha);
 				process->GlobalFold();
 				process->GlobalUnfold();
 			}
@@ -373,7 +381,7 @@ class Model	{
 			os << type << '\n';
 			os << every << '\t' << until << '\t' << GetSize() << '\n';
 			os << saveall << '\n';
-			os << stone_index << '\t' << num_stones << '\n';
+			os << stone_index << '\t' << num_stones << '\t' << alpha << '\n';
 			process->ToStreamHeader(os);
 		}
 		process->ToStream(os);
@@ -482,7 +490,7 @@ class Model	{
 				{
 					// if not, reset the process and create new output files
 					process->SetSize(0);
-					process->GlobalSetSteppingStone(stone_index, num_stones);
+					process->GlobalSetSteppingStone(stone_index, num_stones, alpha);
 					process->GlobalFold();
 					process->GlobalUnfold();
 			
@@ -506,8 +514,15 @@ class Model	{
 					int unt;
 					is >> every >> unt >> size;
 					is >> saveall;
-					is >> stone_index >> num_stones;
+					double a;
+					is >> stone_index >> num_stones >> a;
 					saveall = false;
+					
+					if(a != alpha)
+					{
+						cerr << "error: input alpha (" << alpha << ") does not match alpha stored in chain file (" << a << ")\n";
+						exit(1);
+					}
 
 					process->FromStreamHeader(is);
 					process->FromStream(is);
@@ -515,7 +530,7 @@ class Model	{
 					MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 					process->GlobalBroadcastTree();
 					process->SetSize(size);
-					process->GlobalSetSteppingStone(stone_index, num_stones);
+					process->GlobalSetSteppingStone(stone_index, num_stones, alpha);
 					process->GlobalFold();
 					process->GlobalUnfold();
 
