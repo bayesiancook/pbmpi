@@ -41,7 +41,7 @@ ALL_SRCS=$(wildcard *.cpp)
 ALL_OBJS=$(patsubst %.cpp,%.o,$(ALL_SRCS))
 
 PROGSDIR=../data
-ALL= pb_mpi readpb_mpi tracecomp bpcomp 
+ALL= pb_mpi readpb_mpi tracecomp bpcomp cvrep
 PROGS=$(addprefix $(PROGSDIR)/, $(ALL))
 
 .PHONY: all clean
@@ -65,6 +65,9 @@ ifneq ($(MAKECMDGOALS),clean)
 endif
 
 # Targets
+
+$(PROGSDIR)/cvrep : CVrep.o $(OBJS)
+	$(CC) CVrep.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@
 
 $(PROGSDIR)/jackknife: JackKnife.o $(OBJS)
 	$(CC) JackKnife.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@
