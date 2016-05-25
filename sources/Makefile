@@ -33,8 +33,7 @@ SRCS=  TaxonSet.cpp Tree.cpp Random.cpp SequenceAlignment.cpp CodonSequenceAlign
 	AAMutSelSBDPPhyloProcess.cpp CodonMutSelSBDPPhyloProcess.cpp \
 	AACodonMutSelSBDPPhyloProcess.cpp MultiGeneMixture.cpp MultiGeneGTRSBDPMixture.cpp \
 	MultiGenePoissonSBDPMixture.cpp \
-	Bipartition.cpp BipartitionList.cpp Consensus.cpp TaxaParameters.cpp PBTree.cpp TreeList.cpp PolyNode.cpp correl.cpp correlation.cpp NNI.cpp \
-	BP2Stat.cpp BP2util.cpp
+	Bipartition.cpp BipartitionList.cpp Consensus.cpp TaxaParameters.cpp PBTree.cpp TreeList.cpp PolyNode.cpp correl.cpp correlation.cpp NNI.cpp
 
 
 OBJS=$(patsubst %.cpp,%.o,$(SRCS))
@@ -67,35 +66,20 @@ endif
 
 # Targets
 
-$(PROGSDIR)/missfrac: MissingFractionPerGene.o $(OBJS)
-	$(CC) MissingFractionPerGene.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@
-
 $(PROGSDIR)/jackknife: JackKnife.o $(OBJS)
 	$(CC) JackKnife.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@
-
-$(PROGSDIR)/simucodon: SimuCodon.o $(OBJS)
-	$(CC) SimuCodon.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@
 
 $(PROGSDIR)/readpb_mpi: ReadPB.o $(OBJS)
 	$(CC) ReadPB.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@
 
-$(PROGSDIR)/bpcomp2: BPcomp2.o $(OBJS)
-	$(CC) BPcomp2.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@
-
 $(PROGSDIR)/pb_mpi: PB.o $(OBJS)
 	$(CC) PB.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@
-
-$(PROGSDIR)/mpb_mpi: MultiGenePB.o $(OBJS)
-	$(CC) MultiGenePB.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@
 
 $(PROGSDIR)/tracecomp: TraceComp.o $(OBJS)
 	$(CC) TraceComp.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@
 
 $(PROGSDIR)/bpcomp: BPCompare.o $(OBJS)
 	$(CC) BPCompare.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@
-
-$(PROGSDIR)/woconst: woconst.o $(OBJS)
-	$(CC) woconst.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@
 
 clean:
 	-rm -f *.o *.d *.d.*
