@@ -25,91 +25,26 @@ void PartitionedRASCATGTRFiniteGammaPhyloProcess::Create(Tree* intree, SequenceA
 	PartitionedExpoConjugateGTRGammaPhyloProcess::Create(intree,indata,indata->GetNstate(),rrscheme,nratecat,inlinkmult,dgamscheme,insitemin,insitemax);
 	PartitionedExpoConjugateGTRFiniteProfileProcess::Create(indata->GetNstate(), rrscheme, ncat, infixncomp, inempmix, inmixtype);
 	GammaBranchProcess::Create(intree);
-
-	if (! partoccupancy)	{
-		partoccupancy = new int**[PartitionedDGamRateProcess::GetNpart()];
-		for (int d=0; d<PartitionedDGamRateProcess::GetNpart(); d++)	{
-			partoccupancy[d] = new int*[PartitionedGTRProfileProcess::GetNpart()];
-			for (int p=0; p<PartitionedGTRProfileProcess::GetNpart(); p++)	{
-				partoccupancy[d][p] = new int[GetNmodeMax()];
-			}
-		}
-	}
 }
 
 void PartitionedRASCATGTRFiniteGammaPhyloProcess::Delete() {
-	if (partoccupancy)	{
-		for (int d=0; d<PartitionedDGamRateProcess::GetNpart(); d++)	{
-			for (int p=0; p<PartitionedGTRProfileProcess::GetNpart(); p++)	{
-				delete [] partoccupancy[d][p];
-			}
-			delete [] partoccupancy[d];
-		}
-		delete [] partoccupancy;
-		partoccupancy = 0;
-	}
-
 	GammaBranchProcess::Delete();
 	PartitionedExpoConjugateGTRFiniteProfileProcess::Delete();
 	PartitionedExpoConjugateGTRGammaPhyloProcess::Delete();
 }
 
-void PartitionedRASCATGTRFiniteGammaPhyloProcess::UpdatePartOccupancyNumbers()
-{
-	for(int d = 0; d < PartitionedDGamRateProcess::GetNpart(); d++)
-	{
-		for (int p=0; p<PartitionedGTRProfileProcess::GetNpart(); p++)
-		{
-			for (int i=0; i<GetNcomponent(); i++)
-				partoccupancy[d][p][i] = 0;
-		}
-
-		vector<int> partsites = PartitionedDGamRateProcess::GetPartSites(d);
-
-		for (int i=0; i < partsites.size(); i++)	{
-			partoccupancy[d][PartitionedGTRProfileProcess::GetSitePart(partsites[i])][MixtureProfileProcess::alloc[partsites[i]]]++;
-		}
-	}
-}
-
-// Importantly, this assumes that DGam partitions are always sub-partitions of GTR partitions
 double PartitionedRASCATGTRFiniteGammaPhyloProcess::GetNormalizationFactor()
 {
-	if(occupancyNeedsUpdating)
+	double total = 0;
+	for (int site = 0; site < GetNsite(); site++)
 	{
-		UpdatePartOccupancyNumbers();
+		size_t dgampart = PartitionedDGamRateProcess::GetSitePart(site);
+		size_t rrpart = PartitionedGTRProfileProcess::GetSitePart(site);
 
-		double total = 0;
-		for (int dgampart=0; dgampart<PartitionedDGamRateProcess::GetNpart(); dgampart++)
-		{
-			vector<int> partsites = PartitionedDGamRateProcess::GetPartSites(dgampart);
-
-			size_t rrpart = PartitionedGTRProfileProcess::GetSitePart(partsites.front());
-
-			total += GetNormPartRate(dgampart, rrpart) * PartitionedDGamRateProcess::GetRateMultiplier(dgampart) * partsites.size();
-		}
-		normFactor = total / GetNsite();
-
-		occupancyNeedsUpdating = false;
+		total += GetNormRate(rrpart, FiniteProfileProcess::alloc[site]) * PartitionedDGamRateProcess::GetRateMultiplier(dgampart);
 	}
-
-	return normFactor;
+	return total / GetNsite();
 }
-
-double PartitionedRASCATGTRFiniteGammaPhyloProcess::GetNormPartRate(int d, int p)
-{
-		double norm = 0;
-		int tot = 0;
-		for (int k=0; k<GetNcomponent(); k++)	{
-			if (partoccupancy[d][p][k])	{
-				norm += (partoccupancy[d][p][k] + 1) * GetNormRate(p, k);
-				tot += partoccupancy[d][p][k] + 1;
-			}
-		}
-
-		norm /= tot;
-		return norm;
-	}
 
 void PartitionedRASCATGTRFiniteGammaPhyloProcess::GlobalUpdateParameters()	{
 	// MPI2

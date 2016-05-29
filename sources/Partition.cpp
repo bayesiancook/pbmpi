@@ -3,6 +3,7 @@
 #include "StringStreamUtils.h"
 #include <algorithm>
 #include <map>
+#include <cmath>
 
 using namespace std;
 
@@ -310,17 +311,18 @@ vector<PartitionScheme> PartitionProcess::ReadSchemes(string schemefile, int Nsi
 			max_count = std::max(stat_type_counts[t], max_count);
 		}
 
+		int w = (int) log10 ((double) max_count) + 1;
 		string s = "Relative rates: ";
 		for(map<string,size_t>::iterator it = rr_type_counts.begin(); it != rr_type_counts.end(); it++)
 		{
-			ss << right << setw(offset) << s << left << setw(max_label + 1) << it->first << setw(max_count + 1) << it->second << " partitions\n";
+			ss << right << setw(offset) << s << left << setw(max_label + 1) << it->first << setw(w) << it->second << " partitions\n";
 			if(it == rr_type_counts.begin())
 				s = "";
 		}
 		s = "Profiles: ";
 		for(map<string,size_t>::iterator it = stat_type_counts.begin(); it != stat_type_counts.end(); it++)
 		{
-			ss << right << setw(offset) << s << left << setw(max_label + 1) << it->first << setw(max_count + 1) << it->second << " partitions\n";
+			ss << right << setw(offset) << s << left << setw(max_label + 1) << it->first << setw(w) << it->second << " partitions\n";
 			if(it == stat_type_counts.begin())
 				s = "";
 		}

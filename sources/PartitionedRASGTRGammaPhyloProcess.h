@@ -342,14 +342,13 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 	// Importantly, this assumes that DGam partitions are always sub-partitions of GTR partitions
 	virtual double GetNormalizationFactor()	{
 		double total = 0;
-		for (int dgampart=0; dgampart<PartitionedDGamRateProcess::GetNpart(); dgampart++)
+		for (int site = 0; site < GetNsite(); site++)
 		{
-			vector<int> partsites = PartitionedDGamRateProcess::GetPartSites(dgampart);
+			size_t dgampart = PartitionedDGamRateProcess::GetSitePart(site);
+			size_t rrpart = PartitionedGTRProfileProcess::GetSitePart(site);
+			size_t statpart = PartitionedProfileProcess::GetSitePart(site);
 
-			size_t rrpart = PartitionedGTRProfileProcess::GetSitePart(partsites.front());
-			size_t statpart = PartitionedProfileProcess::GetSitePart(partsites.front());
-
-			total += PartitionedGTRPartitionedProfileProcess::GetNormRate(rrpart,statpart) * PartitionedDGamRateProcess::GetRateMultiplier(dgampart) * partsites.size();
+			total += PartitionedGTRPartitionedProfileProcess::GetNormRate(rrpart,statpart) * PartitionedDGamRateProcess::GetRateMultiplier(dgampart);
 		}
 		total /= GetNsite();
 		return total;
@@ -372,9 +371,9 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 
 		for(int p = 0; p < statscheme.Npart; p++)
 		{
-			int n = indata->GetNstate();
+			int n = 0;
 
-			partempfreq[p] = new double[n];
+			partempfreq[p] = new double[indata->GetNstate()];
 
 			for (int i=0; i<indata->GetNstate(); i++)	{
 				partempfreq[p][i] = 0;
@@ -387,6 +386,7 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 					}
 				}
 			}
+			if(n > 0)
 			for (int i=0; i<indata->GetNstate(); i++)	{
 				partempfreq[p][i] /= n;
 			}

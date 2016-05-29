@@ -34,8 +34,6 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 
 
 	PartitionedRASCATGTRFiniteGammaPhyloProcess(string indatafile, string treefile, string inschemefile, bool inlinkgam,bool inunlinkgtr,bool inlinkmult,string inrrtype,int nratecat, int ncat, int infixncomp, int inempmix, string inmixtype, int infixtopo, int inNSPR, int inNNNI, int me, int np)	{
-		partoccupancy = 0;
-		occupancyNeedsUpdating = true;
 
 		myid = me;
 		nprocs = np;
@@ -90,8 +88,6 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 	}
 
 	PartitionedRASCATGTRFiniteGammaPhyloProcess(istream& is, int me, int np)	{
-		partoccupancy = 0;
-		occupancyNeedsUpdating = true;
 
 		myid = me;
 		nprocs = np;
@@ -220,8 +216,6 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 		// GlobalUpdateParameters();
 		PartitionedExpoConjugateGTRFiniteProfileProcess::Move(1,1,10);
 
-		occupancyNeedsUpdating = true;
-
 		if (PartitionedGTRProfileProcess::GetNpart() == nfreerr){
 			LengthRelRateMove(1,10);
 			LengthRelRateMove(0.1,10);
@@ -325,9 +319,6 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 
 	// Importantly, this assumes that DGam partitions are always sub-partitions of GTR partitions
 	double GetNormalizationFactor();
-	double GetNormPartRate(int d, int p);
-
-	void UpdatePartOccupancyNumbers();
 
 	int NSPR;
 	int NNNI;
@@ -336,11 +327,6 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 	bool linkgam;
 	bool unlinkgtr;
 	string rrtype;
-
-	double normFactor;
-	bool occupancyNeedsUpdating;
-
-	int*** partoccupancy;
 };
 
 #endif
