@@ -149,7 +149,7 @@ class AAMutSelSBDPPhyloProcess : public virtual AAMutSelSBDPSubstitutionProcess,
 	}
 
 	void TraceHeader(ostream& os)	{
-		os << "#time\ttimeperccyle\tpruning\tlnL\tlength\talpha\tNmode\tstatent\tstatalpha\tnucsA\tnucsC\tnucsG\tnucsT\tnucrrAC\tnucrrAG\tnucrrAT\tnucrrCG\tnucrrCT\tnucrrGT";
+		os << "time\ttimeperccyle\tpruning\tlnL\tlength\talpha\tNmode\tstatent\tstatalpha\tnucsA\tnucsC\tnucsG\tnucsT\tnucrrAC\tnucrrAG\tnucrrAT\tnucrrCG\tnucrrCT\tnucrrGT";
 		os << '\n'; 
 		//os << "lnL\tlength\tNmode\tNocc\tnucsA\tnucsC\tnucsT\tnucsG\tnucrrAC\tnucrrAG\tnucrrAT\tnucrrCG\tnucrrCT\tnucrrGT\tstatent";
 		//os << "\ttotaltime";

@@ -2531,11 +2531,11 @@ void PhyloProcess::ReadCV(string testdatafile, string name, int burnin, int ever
 	cerr << "every " << every << " points until " << until << '\n';
 	int i=0;
 	while ((i < until) && (i < burnin))	{
-		cout << "before FromStream...\n";
-		cout.flush();
+		//cout << "before FromStream...\n";
+		//cout.flush();
 		FromStream(is);
-		cout << "after FromStream...\n";
-		cout.flush();
+		//cout << "after FromStream...\n";
+		//cout.flush();
 		i++;
 	}
 	int samplesize = 0;

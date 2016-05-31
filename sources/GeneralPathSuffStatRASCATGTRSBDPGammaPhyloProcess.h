@@ -178,7 +178,7 @@ class GeneralPathSuffStatRASCATGTRSBDPGammaPhyloProcess : public virtual General
 	}
 
 	void TraceHeader(ostream& os)	{
-		os << "#time\ttimeperccyle\ttopo\tlnL\tlength\talpha\tNmode\tstatent\tstatalpha";
+		os << "time\ttimeperccyle\ttopo\tlnL\tlength\talpha\tNmode\tstatent\tstatalpha";
 		if (! fixrr)	{
 			os << "\trrent\trrmean";
 		}

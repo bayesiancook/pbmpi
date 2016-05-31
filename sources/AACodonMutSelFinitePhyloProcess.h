@@ -184,7 +184,7 @@ class AACodonMutSelFinitePhyloProcess : public virtual AACodonMutSelFiniteSubsti
 	}
 
 	void TraceHeader(ostream& os)	{
-		os << "#iter\ttime\tpruning\tlnL\tlength\tcodonent\tomega\tNmode\tstatent\tstatalpha\tnucsA\tnucsC\tnucsG\tnucsT\tnucrrAC\tnucrrAG\tnucrrAT\tnucrrCG\tnucrrCT\tnucrrGT";
+		os << "iter\ttime\tpruning\tlnL\tlength\tcodonent\tomega\tNmode\tstatent\tstatalpha\tnucsA\tnucsC\tnucsG\tnucsT\tnucrrAC\tnucrrAG\tnucrrAT\tnucrrCG\tnucrrCT\tnucrrGT";
 		os << "\n";
 		//os << "lnL\tlength\tNmode\tNocc\tnucsA\tnucsC\tnucsT\tnucsG\tnucrrAC\tnucrrAG\tnucrrAT\tnucrrCG\tnucrrCT\tnucrrGT\tstatent";
 		//os << "\ttotaltime";
@@ -196,7 +196,7 @@ class AACodonMutSelFinitePhyloProcess : public virtual AACodonMutSelFiniteSubsti
 		UpdateOccupancyNumbers();
 
 		//os << ((int) (chronototal.GetTime() / 1000));
-		os << GetSize();
+		os << GetIndex();
 		if (chronototal.GetTime())	{
 			os << '\t' << chronototal.GetTime() / 1000;
 			os << '\t' << ((int) (propchrono.GetTime() / chronototal.GetTime() * 100));

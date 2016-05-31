@@ -91,13 +91,15 @@ class MultiGeneModel	{
 	}
 
 	void ToStream(ostream& os, bool header)	{
+		stringstream ss;
 		if (header)	{
-			os << type << '\n';
-			os << every << '\t' << until << '\t' << size << '\n';
-			os << saveall << '\n';
-			process->ToStreamHeader(os);
+			ss << type << '\n';
+			ss << every << '\t' << until << '\t' << size << '\n';
+			ss << saveall << '\n';
+			process->ToStreamHeader(ss);
 		}
-		process->ToStream(os);
+		process->ToStream(ss);
+		os << ss.str();
 	}
 
 	~MultiGeneModel()	{
@@ -168,11 +170,15 @@ class MultiGeneModel	{
 	}
 
 	void TraceHeader(ostream& os)	{
+		stringstream ss;
 		process->TraceHeader(os);
+		os << ss.str();
 	}
 
 	void Trace(ostream& os)	{
-		process->Trace(os);
+		stringstream ss;
+		process->Trace(ss);
+		os << ss.str();
 	}
 };
 

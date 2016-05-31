@@ -203,7 +203,7 @@ void Correlation::getParameters(string filename, int start, int stop)
     else	{
 	    burnin=start;
     }
-    nbsample = stop-start;
+    nbsample = stop-burnin;
     if(nbsample<=0)
       {
 	cerr << "ERROR: in Correlation::getParameters, asking sampling from point " << start << " to point "<< stop <<", exiting\n";

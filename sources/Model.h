@@ -35,6 +35,7 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 #include "Parallel.h"
 #include <iostream>
 #include <fstream>
+#include <limits>
 
 using namespace std;
 
@@ -254,13 +255,15 @@ class Model	{
 	}
 
 	void ToStream(ostream& os, bool header)	{
+		stringstream ss;
 		if (header)	{
-			os << type << '\n';
-			os << every << '\t' << until << '\t' << GetSize() << '\n';
-			os << saveall << '\n';
-			process->ToStreamHeader(os);
+			ss << type << '\n';
+			ss << every << '\t' << until << '\t' << GetSize() << '\n';
+			ss << saveall << '\n';
+			process->ToStreamHeader(ss);
 		}
-		process->ToStream(os);
+		process->ToStream(ss);
+		os << ss.str();
 	}
 
 	~Model()	{
@@ -290,16 +293,20 @@ class Model	{
 	int GetSize()	{
 		return process->GetSize();
 	}
+	
+	void IncSize()	{
+		process->IncSize();
+	}
 
 	void Run(int burnin)	{
-
 		if (burnin != 0)	{
 			if (GetSize() < burnin)	{
 				process->SetBurnin(true);
 			}
 		}
-		ofstream ros((name + ".run").c_str());
-		ros << 1 << '\n';
+		ofstream ros((name + ".run").c_str()); stringstream buf;
+		buf << 1 << '\n';
+		ros << buf.str();
 		ros.close();
 	
 		while (RunningStatus() && ((until == -1) || (GetSize() < until)))	{
@@ -312,10 +319,7 @@ class Model	{
 			process->IncSize();
 
 			ofstream os((name + ".treelist").c_str(), ios_base::app);
-			process->SetNamesFromLengths();
-			process->RenormalizeBranchLengths();
-			GetTree()->ToStream(os);
-			process->DenormalizeBranchLengths();
+			TreeTrace(os);
 			os.close();
 
 			ofstream tos((name + ".trace").c_str(), ios_base::app);
@@ -323,17 +327,17 @@ class Model	{
 			tos.close();
 
 			ofstream mos((name + ".monitor").c_str());
-			process->Monitor(mos);
+			Monitor(mos);
 			mos.close();
 
 			ofstream pos((name + ".param").c_str());
-			pos.precision(12);
+			pos.precision(numeric_limits<double>::digits10);
 			ToStream(pos,true);
 			pos.close();
 
 			if (saveall)	{
 				ofstream cos((name + ".chain").c_str(),ios_base::app);
-				cos.precision(12);
+				cos.precision(numeric_limits<double>::digits10);
 				ToStream(cos,false);
 				cos.close();
 			}
@@ -346,11 +350,30 @@ class Model	{
 	NewickTree* GetTree() {return process->GetLengthTree();}
 
 	void TraceHeader(ostream& os)	{
-		process->TraceHeader(os);
+		stringstream ss;
+		process->TraceHeader(ss);
+		os << ss.str();
 	}
 
 	void Trace(ostream& os)	{
-		process->Trace(os);
+		stringstream ss;
+		process->Trace(ss);
+		os << ss.str();
+	}
+	
+	void TreeTrace(ostream& os)	{
+		stringstream ss;
+		process->SetNamesFromLengths();
+		process->RenormalizeBranchLengths();
+		GetTree()->ToStream(ss);
+		process->DenormalizeBranchLengths();
+		os << ss.str();
+	}
+	
+	void Monitor(ostream& os)	{
+		stringstream ss;
+		process->Monitor(ss);
+		os << ss.str();
 	}
 
 	void ReadPB(int argc, char* argv[])	{

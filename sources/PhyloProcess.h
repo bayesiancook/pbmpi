@@ -53,7 +53,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	// virtual void SlaveUpdate();
 
 	// default constructor: pointers set to nil
-	PhyloProcess() :  siteratesuffstatcount(0), siteratesuffstatbeta(0), branchlengthsuffstatcount(0), branchlengthsuffstatbeta(0), condflag(false), data(0), myid(-1), nprocs(0), size(0), version("1.6"), totaltime(0), dataclamped(1), rateprior(0), profileprior(0), rootprior(1), topoburnin(0) {}
+	PhyloProcess() :  siteratesuffstatcount(0), siteratesuffstatbeta(0), branchlengthsuffstatcount(0), branchlengthsuffstatbeta(0), condflag(false), data(0), myid(-1), nprocs(0), size(0), version("1.7"), totaltime(0), dataclamped(1), rateprior(0), profileprior(0), rootprior(1), topoburnin(0) {}
 	virtual ~PhyloProcess() {}
 
 	string GetVersion() {return version;}
@@ -512,6 +512,14 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	void IncSize()	{size++;}
 	int GetSize() {return size;}
 	void SetSize(int insize) {size = insize;}
+	int GetIndex() {
+		// prior to version 1.7, samples are 1-indexed in trace files
+		if (atof(version.substr(0,3).c_str()) < 1.7)	{
+			return size;
+		}
+		// they are 0-indexed starting with version 1.7
+		return size - 1;
+	}
 
 	void SetTopoBurnin(int intopoburnin)	{
 		topoburnin = intopoburnin;

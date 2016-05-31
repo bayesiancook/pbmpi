@@ -172,7 +172,7 @@ class CodonMutSelFinitePhyloProcess : public virtual CodonMutSelFiniteSubstituti
 	}
 
 	void TraceHeader(ostream& os)	{
-		os << "#iter\ttime\tpruning\tlnL\tlength\tNmode\tstatent\tstatalpha\tnucsA\tnucsC\tnucsG\tnucsT\tnucrrAC\tnucrrAG\tnucrrAT\tnucrrCG\tnucrrCT\tnucrrGT";
+		os << "iter\ttime\tpruning\tlnL\tlength\tNmode\tstatent\tstatalpha\tnucsA\tnucsC\tnucsG\tnucsT\tnucrrAC\tnucrrAG\tnucrrAT\tnucrrCG\tnucrrCT\tnucrrGT";
 		os << "\n";
 		//os << "\ttotaltime";
 		//os << "\tpruning\tsuffstat\tunfold\tcollapse";
@@ -183,7 +183,7 @@ class CodonMutSelFinitePhyloProcess : public virtual CodonMutSelFiniteSubstituti
 		UpdateOccupancyNumbers();
 
 		//os << ((int) (chronototal.GetTime() / 1000));
-		os << GetSize();
+		os << GetIndex();
 		if (chronototal.GetTime())	{
 			os << '\t' << chronototal.GetTime() / 1000;
 			os << '\t' << ((int) (propchrono.GetTime() / chronototal.GetTime() * 100));

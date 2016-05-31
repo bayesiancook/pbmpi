@@ -61,7 +61,7 @@ class MultiGenePoissonSBDPMixture : public virtual PoissonSBDPProfileProcess, pu
 	}
 
 	void TraceHeader(ostream& os) {
-		os << "#time\ttimeinmix\tprop\tlnL\tlength\talpha\tNmode\tstatent\tstatalpha";
+		os << "time\ttimeinmix\tprop\tlnL\tlength\talpha\tNmode\tstatent\tstatalpha";
 		os << '\n'; 
 	}
 

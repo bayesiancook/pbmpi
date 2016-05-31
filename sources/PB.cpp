@@ -564,16 +564,27 @@ int main(int argc, char* argv[])	{
 			// cerr << "create files\n";
 			cerr << '\n';
 			cerr << "chain name : " << name << '\n';
+			
+			model->IncSize(); // count the starting state
+			
 			// MPI master only
 			ofstream os((name + ".treelist").c_str());
+			model->TreeTrace(os);
+			os.close();
+			
 			ofstream tos((name + ".trace").c_str());
 			model->TraceHeader(tos);
+			model->Trace(tos);
 			tos.close();
+						
 			ofstream pos((name + ".param").c_str());
 			model->ToStream(pos,true);
 			pos.close();
+			
 			if (saveall)	{
 				ofstream cos((name + ".chain").c_str());
+				model->ToStream(cos,false);
+				cos.close();
 			}
 			// cerr << "create files ok\n";
 		}

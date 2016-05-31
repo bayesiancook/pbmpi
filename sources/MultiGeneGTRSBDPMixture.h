@@ -65,7 +65,7 @@ class MultiGeneGTRSBDPMixture : public virtual ExpoConjugateGTRSBDPProfileProces
 	}
 
 	void TraceHeader(ostream& os) {
-		os << "#time\ttimeinmix\tprop\tlnL\tlength\talpha\tNmode\tstatent\tstatalpha";
+		os << "time\ttimeinmix\tprop\tlnL\tlength\talpha\tNmode\tstatent\tstatalpha";
 		if (! fixrr)	{
 			os << "\trrent\trrmean";
 		}
