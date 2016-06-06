@@ -216,8 +216,10 @@ class RASCATSBDPGammaPhyloProcess : public virtual RASCATGammaPhyloProcess, publ
 	virtual double Move(double tuning = 1.0)	{
 		chronototal.Start();
 		propchrono.Start();
-		BranchLengthMove(tuning);
-		BranchLengthMove(0.1 * tuning);
+		if (! fixbl)	{
+			BranchLengthMove(tuning);
+			BranchLengthMove(0.1 * tuning);
+		}
 		if (! fixtopo)	{
 			MoveTopo(NSPR,NNNI);
 		}
@@ -236,7 +238,9 @@ class RASCATSBDPGammaPhyloProcess : public virtual RASCATGammaPhyloProcess, publ
 
 		GlobalCollapse();
 
-		GammaBranchProcess::Move(tuning,10);
+		if (! fixbl)	{
+			GammaBranchProcess::Move(tuning,10);
+		}
 
 		// this one is important 
 		GlobalUpdateParameters();

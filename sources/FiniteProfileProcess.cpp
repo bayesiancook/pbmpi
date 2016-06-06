@@ -616,6 +616,26 @@ void FiniteProfileProcess::ReadStatFix(string filename)	{
 			empweight[i] = C60StatWeight[i];
 		}
 	}
+	else if ((filename == "lg") || (filename == "LG"))	{
+		Ncat = 1;
+		statfix = new double*[Ncat];
+		empweight = new double[Ncat];
+		for (int i=0; i<Ncat; i++)	{
+			statfix[i] = new double[Nstate];
+			double total = 0;
+			for (int k=0; k<Nstate; k++)	{
+				statfix[i][k] = LG_Stat[k];
+				if (statfix[i][k]<stateps)	{
+					statfix[i][k] = stateps;
+				}
+				total += statfix[i][k];
+			}
+			for (int k=0; k<Nstate; k++)	{
+				statfix[i][k] /= total;
+			}
+			empweight[i] = 1.0;
+		}
+	}
 	else if ((filename == "uniform") || (filename == "Uniform"))	{
 		Ncat = 1;
 		statfix = new double*[Ncat];

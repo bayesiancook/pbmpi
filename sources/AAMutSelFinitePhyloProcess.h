@@ -301,7 +301,6 @@ class AAMutSelFinitePhyloProcess : public virtual AAMutSelFiniteSubstitutionProc
 
 	int dc;
 	int fixtopo;
-	int fixbl;
 	GeneticCodeType codetype;
 	CodonStateSpace* statespace;
 

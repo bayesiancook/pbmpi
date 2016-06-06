@@ -305,7 +305,6 @@ class AAMutSelSBDPPhyloProcess : public virtual AAMutSelSBDPSubstitutionProcess,
 	GeneticCodeType codetype;
 	CodonStateSpace* statespace;
 	int fixtopo;
-	int fixbl;
 	int dc;
 
 	Chrono chronopruning;

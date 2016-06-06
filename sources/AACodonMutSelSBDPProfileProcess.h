@@ -366,7 +366,6 @@ class AACodonMutSelSBDPProfileProcess : public virtual MatrixSBDPProfileProcess,
 	GeneticCodeType codetype;
 	int fixcodonprofile;
 	int fixomega;
-	int fixbl;
 
 };
 

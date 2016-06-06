@@ -181,6 +181,7 @@ class Model	{
 			
 		}
 
+		process->SetFixBL(fixbl);
 		process->SetTopoBurnin(topoburnin);
 	}
 

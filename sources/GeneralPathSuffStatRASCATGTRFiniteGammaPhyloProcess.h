@@ -222,46 +222,37 @@ class GeneralPathSuffStatRASCATGTRFiniteGammaPhyloProcess : public virtual Gener
 		chronototal.Start();
 
 		propchrono.Start();
-		// cerr << "BL move\n";
-		BranchLengthMove(tuning);
-		BranchLengthMove(0.1 * tuning);
-		// cerr << "gibbs\n";
+		if (! fixbl)	{
+			BranchLengthMove(tuning);
+			BranchLengthMove(0.1 * tuning);
+		}
 		if (!fixtopo)	{
 			MoveTopo(10,0);
 		}
 		propchrono.Stop();
 
-		// MPI2: reactivate this in order to test the suff stat code
-		// cerr << "collapse\n";
 		GlobalCollapse();
 
-		// cerr << "branch process move\n";
-		GammaBranchProcess::Move(tuning,10);
+		if (! fixbl)	{
+			GammaBranchProcess::Move(tuning,10);
+		}
 
-		// cerr << "rates \n";
 		GlobalUpdateParameters();
 		DGamRateProcess::Move(0.3*tuning,10);
 		DGamRateProcess::Move(0.03*tuning,10);
 
-		// cerr << "profiles\n";
-		// GlobalUpdateParameters();
 		GeneralPathSuffStatGTRFiniteProfileProcess::Move(1,1,5);
 
-		if (! fixrr)	{
+		if ((! fixrr) && (! fixbl))	{
 			LengthRelRateMove(1,10);
 			LengthRelRateMove(0.1,10);
 			LengthRelRateMove(0.01,10);
 		}
 
 
-		// cerr << "unfold\n";
 		GlobalUnfold();
-		// cerr << "unfold ok\n";
 
 		chronototal.Stop();
-
-		// Trace(cerr);
-
 		return 1;
 	}
 

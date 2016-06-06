@@ -231,8 +231,10 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 
 		chronototal.Start();
 		propchrono.Start();
-		BranchLengthMove(tuning);
-		BranchLengthMove(0.1 * tuning);
+		if (! fixbl)	{
+			BranchLengthMove(tuning);
+			BranchLengthMove(0.1 * tuning);
+		}
 		if (! fixtopo)	{
 			MoveTopo(NSPR,NNNI);
 		}
@@ -240,7 +242,9 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 
 		GlobalCollapse();
 
-		GammaBranchProcess::Move(tuning,10);
+		if (! fixbl)	{
+			GammaBranchProcess::Move(tuning,10);
+		}
 
 		// this one is important 
 		GlobalUpdateParameters();
@@ -258,8 +262,6 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 
 		GlobalUnfold();
 		chronototal.Stop();
-
-		// Trace(cerr);
 
 		return 1;
 	

@@ -291,22 +291,16 @@ class AACodonMutSelSBDPPhyloProcess : public virtual AACodonMutSelSBDPSubstituti
 	// primary scheduler
 
 	double Move(double tuning = 1.0)	{
-		//cerr << "unfold\n";
 		chronototal.Start();
 		propchrono.Start();
-		//chronopruning.Start();
-		//cerr << "bl\n";
 		if (! fixbl)	{
 			BranchLengthMove(0.1 * tuning);
 			BranchLengthMove(tuning);
 		}
-		//cerr << "gspr\n";
 		if (! fixtopo)	{
 			//GibbsSPR(50);
 			MoveTopo(NSPR,NNNI);
 		}
-		//cerr << "collapse\n";
-		//chronopruning.Stop();
 		propchrono.Stop();
 
 		chronosuffstat.Start();
@@ -314,25 +308,20 @@ class AACodonMutSelSBDPPhyloProcess : public virtual AACodonMutSelSBDPSubstituti
 		chronocollapse.Start();
 		GlobalCollapse();
 		chronocollapse.Stop();
-		//cerr << "branch\n";
 		if (! fixbl)	{
 			GammaBranchProcess::Move(0.1 * tuning,10);
 			GammaBranchProcess::Move(tuning,10);
 		}
 
 		GlobalUpdateParameters();
-		//cerr << "AACodonMutSelSBDPProfileProcess\n";
 		AACodonMutSelSBDPProfileProcess::Move(tuning,1,15);
 		chronosuffstat.Stop();
 
-		//cerr << "GlobalUnfold\n";
-		//cerr.flush();
 		chronounfold.Start();
 		GlobalUnfold();
 		chronounfold.Stop();
 
 		chronototal.Stop();
-		//cerr << "ok\n";
 		return 1;
 	}
 
@@ -367,7 +356,6 @@ class AACodonMutSelSBDPPhyloProcess : public virtual AACodonMutSelSBDPSubstituti
 	GeneticCodeType codetype;
 	CodonStateSpace* statespace;
 	int fixtopo;
-	int fixbl;
 	int NSPR;
 	int NNNI;
 	int fixcodonprofile;

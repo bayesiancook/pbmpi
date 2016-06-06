@@ -177,7 +177,6 @@ class AACodonMutSelGenePhyloProcess : public virtual GeneralPathSuffStatMatrixPh
 	GeneticCodeType codetype;
 	CodonStateSpace* statespace;
 	int fixtopo;
-	int fixbl;
 	int fixcodonprofile;
 	int fixomega;
 	int kappaprior;

@@ -279,7 +279,6 @@ class AAMutSelDPPhyloProcess : public virtual AAMutSelDPSubstitutionProcess, pub
 	CodonStateSpace* statespace;
 	int dc;
 	int fixtopo;
-	int fixbl;
 
 	Chrono chronopruning;
 	Chrono chronosuffstat;
