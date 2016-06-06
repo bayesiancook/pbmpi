@@ -270,6 +270,7 @@ void AACodonMutSelFinitePhyloProcess::ReadPB(int argc, char* argv[])	{
 	int rateprior = 0;
 	int profileprior = 0;
 	int rootprior = 1;
+	int savetrees = 0;
 
 	try	{
 
@@ -336,6 +337,9 @@ void AACodonMutSelFinitePhyloProcess::ReadPB(int argc, char* argv[])	{
 					throw(0);
 				}
 			}
+			else if (s == "-savetrees")	{
+				savetrees = 1;
+			}
 			else if ( (s == "-x") || (s == "-extract") )	{
 				i++;
 				if (i == argc) throw(0);
@@ -388,7 +392,7 @@ void AACodonMutSelFinitePhyloProcess::ReadPB(int argc, char* argv[])	{
 	//	ReadSDistributions(name,burnin,every,until);
 	//}
 	else if (ppred)	{
-		PostPred(ppred,name,burnin,every,until,rateprior,profileprior,rootprior);
+		PostPred(ppred,name,burnin,every,until,rateprior,profileprior,rootprior,savetrees);
 	}
 	else	{
 		Read(name,burnin,every,until);

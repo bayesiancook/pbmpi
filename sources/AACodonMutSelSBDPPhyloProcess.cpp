@@ -400,6 +400,7 @@ void AACodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
 	int rateprior = 0;
 	int profileprior = 0;
 	int rootprior = 1;
+	int savetrees = 0;
 
 	try	{
 
@@ -469,6 +470,9 @@ void AACodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
 					throw(0);
 				}
 			}
+			else if (s == "-savetrees")	{
+				savetrees = 1;
+			}
 			else if (s == "-div")	{
 				ppred = 2;
 			}
@@ -527,7 +531,7 @@ void AACodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
 		ReadMapStats(name,burnin,every,until);
 	}
 	else if (ppred)	{
-		PostPred(ppred,name,burnin,every,until,rateprior,profileprior,rootprior);
+		PostPred(ppred,name,burnin,every,until,rateprior,profileprior,rootprior,savetrees);
 	}
 	else	{
 		Read(name,burnin,every,until);

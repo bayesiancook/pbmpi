@@ -372,12 +372,6 @@ void CodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
 	if (map)	{
 		ReadMap(name,burnin,every,until);
 	}
-	//if (sel)	{
-	//	ReadSDistributions(name,burnin,every,until);
-	//}
-	//else if (ppred)	{
-	//	PostPred(ppred,name,burnin,every,until);
-	//}
 	else	{
 		Read(name,burnin,every,until);
 	}

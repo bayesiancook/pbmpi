@@ -248,13 +248,5 @@ void CodonMutSelFinitePhyloProcess::ReadPB(int argc, char* argv[])	{
 		until = GetSize();
 	}
 
-	//if (sel)	{
-	//	ReadSDistributions(name,burnin,every,until);
-	//}
-	//else if (ppred)	{
-	//	PostPred(ppred,name,burnin,every,until);
-	//}
-	//else	{
 		Read(name,burnin,every,until);
-	//}
 }

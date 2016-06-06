@@ -2058,6 +2058,7 @@ void PhyloProcess::ReadPB(int argc, char* argv[])	{
 	int rateprior = 0;
 	int profileprior = 0;
 	int rootprior = 1;
+	int savetrees = 0;
 
 	// 1 : plain ppred (outputs simulated data)
 	// 2 : diversity statistic
@@ -2126,6 +2127,9 @@ void PhyloProcess::ReadPB(int argc, char* argv[])	{
 					throw(0);
 				}
 			}
+			else if (s == "-savetrees")	{
+				savetrees = 1;
+			}
 			else if (s == "-cv")	{
 				cv = 1;
 				i++;
@@ -2183,7 +2187,7 @@ void PhyloProcess::ReadPB(int argc, char* argv[])	{
 	}
 
 	if (ppred)	{
-		PostPred(ppred,name,burnin,every,until,rateprior,profileprior,rootprior);
+		PostPred(ppred,name,burnin,every,until,rateprior,profileprior,rootprior,savetrees);
 	}
 	else if (cv)	{
 		ReadCV(testdatafile,name,burnin,every,until);
@@ -2308,7 +2312,7 @@ void PhyloProcess::ReadSiteRates(string name, int burnin, int every, int until)	
 
 }
 
-void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, int until, int inrateprior, int inprofileprior, int inrootprior)	{
+void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, int until, int inrateprior, int inprofileprior, int inrootprior, int savetrees)	{
 
 	GlobalSetRatePrior(inrateprior);
 	GlobalSetProfilePrior(inprofileprior);
@@ -2362,15 +2366,17 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 		FromStream(is);
 		i++;
 
-		// output tree
-		ostringstream s;
-		s << name << "_ppred" << samplesize << ".tree";
-		ofstream os(s.str().c_str());
-		SetNamesFromLengths();
-		RenormalizeBranchLengths();
-		GetTree()->ToStream(os);
-		DenormalizeBranchLengths();
-		os.close();
+		if (savetrees)	{
+			// output tree
+			ostringstream s;
+			s << name << "_ppred" << samplesize << ".tree";
+			ofstream os(s.str().c_str());
+			SetNamesFromLengths();
+			RenormalizeBranchLengths();
+			GetTree()->ToStream(os);
+			DenormalizeBranchLengths();
+			os.close();
+		}
 
 		MPI_Status stat;
 		MESSAGE signal = BCAST_TREE;

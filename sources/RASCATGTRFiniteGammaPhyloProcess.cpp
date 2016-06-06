@@ -197,6 +197,7 @@ void RASCATGTRFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	int rateprior = 0;
 	int profileprior = 0;
 	int rootprior = 1;
+	int savetrees = 0;
 
 	int rr = 0;
 	int ss = 0;
@@ -260,6 +261,9 @@ void RASCATGTRFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 					cerr << "error after ppredroot: should be prior or posterior\n";
 					throw(0);
 				}
+			}
+			else if (s == "-savetrees")	{
+				savetrees = 1;
 			}
 			else if (s == "-ss")	{
 				ss = 1;
@@ -348,7 +352,7 @@ void RASCATGTRFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 		ReadSiteRates(name,burnin,every,until);
 	}
 	else if (ppred)	{
-		PostPred(ppred,name,burnin,every,until,rateprior,profileprior,rootprior);
+		PostPred(ppred,name,burnin,every,until,rateprior,profileprior,rootprior,savetrees);
 	}
 	else if (map)	{
 		ReadMap(name,burnin,every,until);
