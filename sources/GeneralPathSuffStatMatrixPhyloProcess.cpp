@@ -57,6 +57,12 @@ void GeneralPathSuffStatMatrixPhyloProcess::Collapse()	{
 	DrawAllocations();
 	SampleNodeStates();
 	if (! dataclamped)	{
+		if (rateprior)	{
+			DrawAllocationsFromPrior();
+		}
+		if (profileprior)	{
+			DrawProfileFromPrior();
+		}
 		SimulateForward();
 	}
 	DeleteCondSiteLogL();
