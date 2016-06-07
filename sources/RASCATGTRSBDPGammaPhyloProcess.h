@@ -119,6 +119,11 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 		}
 
 		Create(tree,plaindata,nratecat,inrrtype,insitemin,insitemax);
+		/*
+		if (fixbl)	{
+			SetLengthsFromNames();
+		}
+		*/
 		if (myid == 0)	{
 			Sample();
 			GlobalUnfold();

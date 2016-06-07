@@ -182,6 +182,10 @@ class Model	{
 		}
 
 		process->SetFixBL(fixbl);
+		if (fixbl && (! myid))	{
+			cerr << "set lengths from tree file\n";
+			process->SetLengthsFromNames();
+		}
 		process->SetTopoBurnin(topoburnin);
 	}
 
