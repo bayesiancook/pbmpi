@@ -78,7 +78,8 @@ void ExpoConjugateGTRPhyloProcess::UpdateRRSuffStat()	{
 		rrsuffstatbeta[k] = 0;
 	}
 	for (int j=1; j<GetNbranch(); j++)	{
-		AddRRSuffStat(rrsuffstatcount,rrsuffstatbeta,submap[j],blarray[j]);
+		// AddRRSuffStat(rrsuffstatcount,rrsuffstatbeta,submap[j],blarray[j]);
+		AddRRSuffStat(rrsuffstatcount,rrsuffstatbeta,submap[j],blarray[j],missingmap[j]);
 	}
 }
 
@@ -90,7 +91,8 @@ void ExpoConjugateGTRPhyloProcess::UpdateSiteRateSuffStat()	{
 		siteratesuffstatbeta[i] = 0;
 	}
 	for (int j=1; j<GetNbranch(); j++)	{
-		AddSiteRateSuffStat(siteratesuffstatcount,siteratesuffstatbeta,submap[j],blarray[j]);
+		// AddSiteRateSuffStat(siteratesuffstatcount,siteratesuffstatbeta,submap[j],blarray[j]);
+		AddSiteRateSuffStat(siteratesuffstatcount,siteratesuffstatbeta,submap[j],blarray[j],missingmap[j]);
 	}
 }
 
@@ -104,7 +106,8 @@ void ExpoConjugateGTRPhyloProcess::UpdateBranchLengthSuffStat()	{
 		double& beta = branchlengthsuffstatbeta[j];
 		count = 0;
 		beta = 0;
-		AddBranchLengthSuffStat(count,beta,submap[j]);
+		// AddBranchLengthSuffStat(count,beta,submap[j]);
+		AddBranchLengthSuffStat(count,beta,submap[j],missingmap[j]);
 	}
 }
 
@@ -117,7 +120,8 @@ void ExpoConjugateGTRPhyloProcess::UpdateSiteProfileSuffStat()	{
 		}
 	}
 	for (int j=0; j<GetNbranch(); j++)	{
-		AddSiteProfileSuffStat(siteprofilesuffstatcount,siteprofilesuffstatbeta,submap[j],blarray[j], (j == 0));
+		// AddSiteProfileSuffStat(siteprofilesuffstatcount,siteprofilesuffstatbeta,submap[j],blarray[j], (j == 0));
+		AddSiteProfileSuffStat(siteprofilesuffstatcount,siteprofilesuffstatbeta,submap[j],blarray[j],missingmap[j]);
 	}
 }
 

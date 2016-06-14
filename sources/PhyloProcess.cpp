@@ -65,6 +65,7 @@ void PhyloProcess::Collapse()	{
 	DeleteCondSiteLogL();
 	DeleteConditionalLikelihoods();
 	InactivateSumOverRateAllocations(ratealloc);
+	FillMissingMap();
 	SampleSubstitutionMappings(GetRoot());
 	CreateSuffStat();
 }
@@ -938,6 +939,7 @@ void PhyloProcess::Create(Tree* intree, SequenceAlignment* indata,int indim)	{
 			nodestate = new int*[GetNnode()];
 			condlmap = new double***[GetNlink()];
 			CreateNodeStates();
+			CreateMissingMap();
 			CreateMappings();
 			condflag = false;
 		}
@@ -951,6 +953,93 @@ void PhyloProcess::Create(Tree* intree, SequenceAlignment* indata,int indim)	{
 
 	if (mintotweight == -1)	{
 		mintotweight = ((double) GetDim()) / 4;
+	}
+}
+
+void PhyloProcess::CreateMissingMap()	{
+
+	missingmap = new int*[GetNbranch()];
+	for (int j=0; j<GetNnode(); j++)	{
+		missingmap[j] = new int[GetNsite()];
+		for (int i=0; i<GetNsite(); i++)	{
+			missingmap[j][i] = -1;
+		}
+	}
+}
+
+void PhyloProcess::DeleteMissingMap()	{
+
+	for (int j=0; j<GetNbranch(); j++)	{
+		delete[] missingmap[j];
+	}
+	delete[] missingmap;
+}
+
+void PhyloProcess::FillMissingMap()	{
+	BackwardFillMissingMap(GetRoot());
+	ForwardFillMissingMap(GetRoot(),GetRoot());
+}
+
+void PhyloProcess::BackwardFillMissingMap(const Link* from)	{
+
+	int index = GetBranchIndex(from->GetBranch());
+	for (int i=GetSiteMin(); i<GetSiteMax(); i++)	{
+		missingmap[index][i] = 0;
+	}
+	if (from->isLeaf())	{
+		for (int i=GetSiteMin(); i<GetSiteMax(); i++)	{
+			int state = GetData(from)[i];
+			if (state != -1)	{
+				missingmap[index][i] = 1;
+			}
+		}
+	}
+	else	{
+		for (const Link* link=from->Next(); link!=from; link=link->Next())	{
+			BackwardFillMissingMap(link->Out());
+			int j = GetBranchIndex(link->Out()->GetBranch());
+			for (int i=GetSiteMin(); i<GetSiteMax(); i++)	{
+				if (missingmap[j][i])	{
+					missingmap[index][i] ++;
+				}
+			}
+		}
+	}
+}
+
+void PhyloProcess::ForwardFillMissingMap(const Link* from, const Link* up)	{
+
+	int index = GetBranchIndex(from->GetBranch());
+	int upindex = GetBranchIndex(up->GetBranch());
+	if (from->isRoot())	{
+		for (int i=GetSiteMin(); i<GetSiteMax(); i++)	{
+			if (missingmap[index][i] <= 1)	{
+				missingmap[index][i] = 0;
+			}
+			else	{
+				missingmap[index][i] = 2;
+			}
+		}
+	}
+	else	{
+		for (int i=GetSiteMin(); i<GetSiteMax(); i++)	{
+			if (missingmap[index][i] > 0)	{
+				if (missingmap[upindex][i])	{
+					missingmap[index][i] = 1;
+				}
+				else	{
+					if (missingmap[index][i] > 1)	{
+						missingmap[index][i] = 2;
+					}
+					else	{
+						missingmap[index][i] = 0;
+					}
+				}
+			}
+		}
+	}
+	for (const Link* link=from->Next(); link!=from; link=link->Next())	{
+		ForwardFillMissingMap(link->Out(),from);
 	}
 }
 

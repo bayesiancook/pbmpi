@@ -68,6 +68,7 @@ void GeneralPathSuffStatMatrixPhyloProcess::Collapse()	{
 	DeleteCondSiteLogL();
 	DeleteConditionalLikelihoods();
 	InactivateSumOverRateAllocations(ratealloc);
+	FillMissingMap();
 	SampleSubstitutionMappings(GetRoot());
 	// DeleteMatrices();
 	CreateSuffStat();
@@ -125,7 +126,8 @@ void GeneralPathSuffStatMatrixPhyloProcess::UpdateSiteProfileSuffStat()	{
 	}
 
 	for (int j=0; j<GetNbranch(); j++)	{
-		AddSiteProfileSuffStat(siterootstate,sitepaircount,sitewaitingtime,submap[j],blarray[j],(j == 0));
+		// AddSiteProfileSuffStat(siterootstate,sitepaircount,sitewaitingtime,submap[j],blarray[j],(j == 0));
+		AddSiteProfileSuffStat(siterootstate,sitepaircount,sitewaitingtime,submap[j],blarray[j],missingmap[j]);
 	}
 }
 
@@ -138,7 +140,8 @@ void GeneralPathSuffStatMatrixPhyloProcess::UpdateSiteRateSuffStat()	{
 	}
 
 	for (int j=1; j<GetNbranch(); j++)	{
-		AddSiteRateSuffStat(siteratesuffstatcount,siteratesuffstatbeta,submap[j],blarray[j]);
+		// AddSiteRateSuffStat(siteratesuffstatcount,siteratesuffstatbeta,submap[j],blarray[j]);
+		AddSiteRateSuffStat(siteratesuffstatcount,siteratesuffstatbeta,submap[j],blarray[j],missingmap[j]);
 	}
 }
 
@@ -151,7 +154,8 @@ void GeneralPathSuffStatMatrixPhyloProcess::UpdateBranchLengthSuffStat()	{
 		double& beta = branchlengthsuffstatbeta[j];
 		count = 0;
 		beta = 0;
-		AddBranchLengthSuffStat(count,beta,submap[j]);
+		// AddBranchLengthSuffStat(count,beta,submap[j]);
+		AddBranchLengthSuffStat(count,beta,submap[j],missingmap[j]);
 	}
 }
 

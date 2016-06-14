@@ -223,47 +223,32 @@ class RASCATSBDPGammaPhyloProcess : public virtual RASCATGammaPhyloProcess, publ
 		if (! fixtopo)	{
 			MoveTopo(NSPR,NNNI);
 		}
-		//raph
-		/*
-		if (! fixtopo)	{
-			cout << "SPR " << GibbsSPR(4)<<'\n';	
-			for(int i=0; i<1; i++){
-				cout << "NNI"<<i<<' '<< GibbsNNI(0.1,1)<<'\n';
-			}
-
-		}
-		*/
 		propchrono.Stop();
 
 
-		GlobalCollapse();
+		for (int rep=0; rep<5; rep++)	{
+			GlobalCollapse();
 
-		if (! fixbl)	{
-			GammaBranchProcess::Move(tuning,10);
+			if (! fixbl)	{
+				GammaBranchProcess::Move(tuning,10);
+				GammaBranchProcess::Move(0.1*tuning,10);
+			}
+
+			GlobalUpdateParameters();
+			DGamRateProcess::Move(tuning,10);
+			DGamRateProcess::Move(0.3*tuning,10);
+			DGamRateProcess::Move(0.03*tuning,10);
+
+			PoissonSBDPProfileProcess::Move(1,1,1);
+			if (iscodon)	{
+				PoissonSBDPProfileProcess::Move(0.1,1,3);
+				PoissonSBDPProfileProcess::Move(0.01,1,3);
+			}
+			GlobalUpdateParameters();
+
+			GlobalUnfold();
 		}
-
-		// this one is important 
-		GlobalUpdateParameters();
-		DGamRateProcess::Move(0.3*tuning,10);
-		DGamRateProcess::Move(0.03*tuning,10);
-		// RASCATSubstitutionProcess::MoveRate(tuning);
-
-		// this one is not useful
-		// because uniformized process:
-		// conditional on discrete substitution mapping
-		// profiles do not depend on branch lengths and site rates
-		// GlobalUpdateParameters();
-
-		PoissonSBDPProfileProcess::Move(1,1,5);
-		if (iscodon)	{
-			PoissonSBDPProfileProcess::Move(0.1,1,15);
-			PoissonSBDPProfileProcess::Move(0.01,1,15);
-		}
-
-		GlobalUnfold();
 		chronototal.Stop();
-
-		// Trace(cerr);
 
 		return 1;
 	

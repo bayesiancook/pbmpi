@@ -55,6 +55,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	// default constructor: pointers set to nil
 	PhyloProcess() :  siteratesuffstatcount(0), siteratesuffstatbeta(0), branchlengthsuffstatcount(0), branchlengthsuffstatbeta(0), condflag(false), data(0), myid(-1), nprocs(0), size(0), version("1.7"), totaltime(0), dataclamped(1), rateprior(0), profileprior(0), rootprior(1), topoburnin(0) {
 		fixbl = 0;
+		sitesuffstat = 1;
 	}
 	virtual ~PhyloProcess() {}
 
@@ -149,8 +150,11 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 
 	int GetBranchIndex(const Branch* branch)	{
 		if (! branch)	{
+			return 0;
+			/*
 			cerr << "error in get branch index\n";
 			exit(1);
+			*/
 		}
 		return branch->GetIndex();
 	}
@@ -438,6 +442,14 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	void CreateNodeStates();
 	void DeleteNodeStates();
 	
+	void CreateMissingMap();
+	void DeleteMissingMap();
+	void FillMissingMap();
+	void BackwardFillMissingMap(const Link* from);
+	void ForwardFillMissingMap(const Link* from, const Link* up);
+
+	int** missingmap;
+
 	// sufficient statistics for rates and branch lengths (do not depend on the model)
 	int GetSiteRateSuffStatCount(int site) {return siteratesuffstatcount[site];}
 	double GetSiteRateSuffStatBeta(int site) {return siteratesuffstatbeta[site];}
@@ -548,6 +560,8 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 
 	int topoburnin;
 	int fixbl;
+
+	int sitesuffstat;
 };
 
 

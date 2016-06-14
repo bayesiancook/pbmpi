@@ -22,6 +22,34 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 //-------------------------------------------------------------------------
 //-------------------------------------------------------------------------
 
+void GeneralPathSuffStatMatrixSubstitutionProcess::AddBranchLengthSuffStat(int& count, double& beta, BranchSitePath** patharray, int* nonmissing)	{
+	for (int i=GetSiteMin(); i<GetSiteMax(); i++)	{
+		if (nonmissing[i] == 1)	{
+			patharray[i]->AddGeneralPathRateSuffStat(count,beta,GetRate(i),GetMatrix(i));
+		}
+	}
+}
+
+void GeneralPathSuffStatMatrixSubstitutionProcess::AddSiteRateSuffStat(int* siteratesuffstatcount, double* siteratesuffstatbeta, BranchSitePath** patharray, double branchlength, int* nonmissing)	{
+	for (int i=GetSiteMin(); i<GetSiteMax(); i++)	{
+		if (nonmissing[i] == 1)	{
+			patharray[i]->AddGeneralPathRateSuffStat(siteratesuffstatcount[i],siteratesuffstatbeta[i],branchlength,GetMatrix(i));
+		}
+	}
+}
+
+void GeneralPathSuffStatMatrixSubstitutionProcess::AddSiteProfileSuffStat(int* siterootstate, map<pair<int,int>, int>* sitepaircount, map<int,double>* sitewaitingtime, BranchSitePath** patharray, double branchlength, int* nonmissing)	{
+	for (int i=GetSiteMin(); i<GetSiteMax(); i++)	{
+		if (nonmissing[i] == 1)	{
+			patharray[i]->AddGeneralPathSuffStat(sitepaircount[i],sitewaitingtime[i],GetRate(i)*branchlength);
+		}
+		else if (nonmissing[i] == 2)	{
+			siterootstate[i] = patharray[i]->GetFinalState();
+		}
+	}
+}
+
+/*
 void GeneralPathSuffStatMatrixSubstitutionProcess::AddBranchLengthSuffStat(int& count, double& beta, BranchSitePath** patharray)	{
 	for (int i=sitemin; i<sitemax; i++)	{
 	// for (int i=0; i<GetNsite(); i++)	{
@@ -54,3 +82,4 @@ void GeneralPathSuffStatMatrixSubstitutionProcess::AddSiteProfileSuffStat(int* s
 	}
 }
 
+*/

@@ -33,6 +33,43 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 //-------------------------------------------------------------------------
 
 
+void ExpoConjugateGTRSubstitutionProcess::AddRRSuffStat(int* rrsuffstatcount, double* rrsuffstatbeta, BranchSitePath** patharray, double branchlength, int* nonmissing)	{
+	for (int i=GetSiteMin(); i<GetSiteMax(); i++)	{
+		if (nonmissing[i] == 1)	{
+			patharray[i]->AddRRSuffStat(rrsuffstatcount,rrsuffstatbeta,GetRate(i)*branchlength,GetProfile(i),GetNstate(i));
+		}
+	}
+}
+
+void ExpoConjugateGTRSubstitutionProcess::AddSiteRateSuffStat(int* siteratesuffstatcount, double* siteratesuffstatbeta, BranchSitePath** patharray, double branchlength, int* nonmissing)	{
+	for (int i=GetSiteMin(); i<GetSiteMax(); i++)	{
+		if (nonmissing[i] == 1)	{
+			patharray[i]->AddRateSuffStat(siteratesuffstatcount[i],siteratesuffstatbeta[i],branchlength,GetRR(),GetProfile(i),GetNstate(i));
+		}
+	}
+}
+
+void ExpoConjugateGTRSubstitutionProcess::AddBranchLengthSuffStat(int& count, double& beta, BranchSitePath** patharray, int* nonmissing)	{
+	for (int i=GetSiteMin(); i<GetSiteMax(); i++)	{
+		if (nonmissing[i] == 1)	{
+			patharray[i]->AddRateSuffStat(count,beta,GetRate(i),GetRR(),GetProfile(i),GetNstate(i));
+		}
+	}
+}
+
+void ExpoConjugateGTRSubstitutionProcess::AddSiteProfileSuffStat(int** siteprofilesuffstatcount, double** siteprofilesuffstatbeta, BranchSitePath** patharray, double branchlength, int* nonmissing)	{
+
+	for (int i=GetSiteMin(); i<GetSiteMax(); i++)	{
+		if (nonmissing[i] == 1)	{
+			patharray[i]->AddProfileSuffStat(siteprofilesuffstatcount[i],siteprofilesuffstatbeta[i],GetRate(i)*branchlength,GetRR(),GetNstate(i));
+		}
+		else if (nonmissing[i] == 2)	{
+			siteprofilesuffstatcount[i][patharray[i]->GetFinalState()]++;
+		}
+	}
+}
+
+/*
 void ExpoConjugateGTRSubstitutionProcess::AddRRSuffStat(int* rrsuffstatcount, double* rrsuffstatbeta, BranchSitePath** patharray, double branchlength)	{
 	for (int i=sitemin; i<sitemax; i++)	{
 	// for (int i=0; i<GetNsite(); i++)	{
@@ -71,4 +108,4 @@ void ExpoConjugateGTRSubstitutionProcess::AddSiteProfileSuffStat(int** siteprofi
 	}
 }
 
-
+*/
