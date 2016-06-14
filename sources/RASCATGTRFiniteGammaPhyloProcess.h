@@ -244,12 +244,14 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 		GlobalCollapse();
 
 		if (! fixbl)	{
-			GammaBranchProcess::Move(tuning,10);
+			GammaBranchProcess::Move(tuning,50);
+			GammaBranchProcess::Move(0.1*tuning,50);
 		}
 
 		GlobalUpdateParameters();
-		DGamRateProcess::Move(0.3*tuning,10);
-		DGamRateProcess::Move(0.03*tuning,10);
+		DGamRateProcess::Move(tuning,50);
+		DGamRateProcess::Move(0.3*tuning,50);
+		DGamRateProcess::Move(0.03*tuning,50);
 
 		ExpoConjugateGTRFiniteProfileProcess::Move(1,1,10);
 

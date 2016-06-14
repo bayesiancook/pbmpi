@@ -273,28 +273,35 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 		propchrono.Stop();
 
 		
-		GlobalCollapse();
+		for (int rep=0; rep<5; rep++)	{
+			GlobalCollapse();
 
-		GammaBranchProcess::Move(tuning,10);
+			if (! fixbl)	{
+				GammaBranchProcess::Move(tuning,10);
+				GammaBranchProcess::Move(0.1*tuning,10);
+			}
 
-		GlobalUpdateParameters();
-		DGamRateProcess::Move(0.3*tuning,10);
-		DGamRateProcess::Move(0.03*tuning,10);
+			GlobalUpdateParameters();
+			DGamRateProcess::Move(tuning,10);
+			DGamRateProcess::Move(0.3*tuning,10);
+			DGamRateProcess::Move(0.03*tuning,10);
 
-		GlobalUpdateParameters();
-		ExpoConjugateGTRSBDPProfileProcess::Move(1,1,10);
-		if (iscodon){
-			ExpoConjugateGTRSBDPProfileProcess::Move(0.1,1,15);
-			ExpoConjugateGTRSBDPProfileProcess::Move(0.01,1,15);
+			GlobalUpdateParameters();
+			ExpoConjugateGTRSBDPProfileProcess::Move(1,1,2);
+			if (iscodon){
+				ExpoConjugateGTRSBDPProfileProcess::Move(0.1,1,3);
+				ExpoConjugateGTRSBDPProfileProcess::Move(0.01,1,3);
+			}
+			GlobalUpdateParameters();
+
+			if ((! fixrr) && (! fixbl)){
+				LengthRelRateMove(1,10);
+				LengthRelRateMove(0.1,10);
+				LengthRelRateMove(0.01,10);
+			}
+
+			GlobalUnfold();
 		}
-
-		if ((! fixrr) && (! fixbl)){
-			LengthRelRateMove(1,10);
-			LengthRelRateMove(0.1,10);
-			LengthRelRateMove(0.01,10);
-		}
-
-		GlobalUnfold();
 
 		chronototal.Stop();
 
