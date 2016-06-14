@@ -93,8 +93,10 @@ void PhyloProcess::DeleteMappings()	{
 void PhyloProcess::CreateSuffStat()	{
 
 	if (! siteratesuffstatcount)	{
-		siteratesuffstatcount = new int[GetNsite()];
-		siteratesuffstatbeta = new double[GetNsite()];
+		if (GetMyid())	{
+			siteratesuffstatcount = new int[GetNsite()];
+			siteratesuffstatbeta = new double[GetNsite()];
+		}
 	}
 	if (! branchlengthsuffstatcount)	{
 		branchlengthsuffstatcount = new int[GetNbranch()];
@@ -105,10 +107,12 @@ void PhyloProcess::CreateSuffStat()	{
 
 void PhyloProcess::DeleteSuffStat()	{
 
-	delete[] siteratesuffstatcount;
-	delete[] siteratesuffstatbeta;
-	siteratesuffstatcount = 0;
-	siteratesuffstatbeta = 0;
+	if (GetMyid())	{
+		delete[] siteratesuffstatcount;
+		delete[] siteratesuffstatbeta;
+		siteratesuffstatcount = 0;
+		siteratesuffstatbeta = 0;
+	}
 	delete[] branchlengthsuffstatcount;
 	delete[] branchlengthsuffstatbeta;
 	branchlengthsuffstatcount = 0;
@@ -1815,14 +1819,6 @@ void PhyloProcess::SlaveAttach(int n,int m,int p,int q) {
 
 void PhyloProcess::GlobalUpdateBranchLengthSuffStat()	{
 
-	// MPI2
-	// should send message to slaves for updating their siteprofilesuffstats
-	// by calling UpdateSiteProfileSuffStat()
-	// then collect all suff stats
-	//
-	// suff stats are contained in 2 arrays
-	// int* branchlengthsuffstatcount
-	// double* branchlengthsuffstatbeta
 	assert(myid == 0);
 	int i,j,nbranch = GetNbranch();
 	MPI_Status stat;
@@ -1834,33 +1830,11 @@ void PhyloProcess::GlobalUpdateBranchLengthSuffStat()	{
 		branchlengthsuffstatcount[i] = 0;
 		branchlengthsuffstatbeta[i] = 0.0;
 	}
-	#ifdef BYTE_COM
-	// should be summed over all slaves (reduced)
-	int k,l;
-	double x;
-	unsigned char* bvector = new unsigned char[nbranch*(sizeof(int)+sizeof(double))];
 
-	for(i=1; i<nprocs; ++i) {
-		MPI_Recv(bvector,nbranch*(sizeof(int)+sizeof(double)),MPI_UNSIGNED_CHAR,i,TAG1,MPI_COMM_WORLD,&stat);
-		for(j=0; j<nbranch; ++j) {
-			l = 0;
-			for(k=sizeof(int)-1; k>=0; --k) {
-				l = (l << 8) + bvector[sizeof(int)*j+k]; 
-			}
-			branchlengthsuffstatcount[j] += l;
-		}
-		for(j=0; j<nbranch; ++j) {
-			memcpy(&x,&bvector[sizeof(int)*nbranch+sizeof(double)*j],sizeof(double));
-			branchlengthsuffstatbeta[j] += x;
-		}
-	}
-	delete[] bvector;
-	#else
 	int ivector[nbranch];
 	double dvector[nbranch];
 	for(i=1; i<nprocs; ++i) {
 		MPI_Recv(ivector,nbranch,MPI_INT,i,TAG1,MPI_COMM_WORLD,&stat);
-		// MPI_Recv(ivector,nbranch,MPI_INT,MPI_ANY_SOURCE,TAG1,MPI_COMM_WORLD,&stat);
 		for(j=0; j<nbranch; ++j) {
 			branchlengthsuffstatcount[j] += ivector[j];
 		}
@@ -1868,7 +1842,6 @@ void PhyloProcess::GlobalUpdateBranchLengthSuffStat()	{
 	MPI_Barrier(MPI_COMM_WORLD);
 	for(i=1; i<nprocs; ++i) {
 		MPI_Recv(dvector,nbranch,MPI_DOUBLE,i,TAG1,MPI_COMM_WORLD,&stat);
-		// MPI_Recv(dvector,nbranch,MPI_DOUBLE,MPI_ANY_SOURCE,TAG1,MPI_COMM_WORLD,&stat);
 		for(j=0; j<nbranch; ++j) {
 			branchlengthsuffstatbeta[j] += dvector[j];
 		}
@@ -1882,12 +1855,6 @@ void PhyloProcess::GlobalUpdateBranchLengthSuffStat()	{
 		cerr << "error at root\n";
 		cerr << branchlengthsuffstatbeta[0] << '\n';
 	}
-	// finally, sync all processes on same suffstat values 
-	/*
-	MPI_Bcast(branchlengthsuffstatcount,GetNbranch(),MPI_INT,0,MPI_COMM_WORLD);
-	MPI_Bcast(branchlengthsuffstatbeta,GetNbranch(),MPI_DOUBLE,0,MPI_COMM_WORLD);
-	*/
-	#endif
 }
 
 void PhyloProcess::SlaveUpdateBranchLengthSuffStat()	{
@@ -1901,171 +1868,21 @@ void PhyloProcess::SlaveUpdateBranchLengthSuffStat()	{
 		cerr << "error at root in slave " << GetMyid() << "\n";
 		cerr << branchlengthsuffstatbeta[0] << '\n';
 	}
-	int workload = GetNbranch();
-	#ifdef BYTE_COM
-	int i,n = 0;
-	unsigned int j;
-	unsigned char el_int[sizeof(int)],el_dbl[sizeof(double)];
-	unsigned char* bvector = new unsigned char[workload*(sizeof(int)+sizeof(double))];
-	for(i=0; i<workload; ++i) {
-		convert(el_int,branchlengthsuffstatcount[i]);
-		for(j=0; j<sizeof(int); ++j) {
-			bvector[n] = el_int[j]; n++;
-		}
-	}
-	for(i=0; i<workload; ++i) {
-		convert(el_dbl,branchlengthsuffstatbeta[i]);
-		for(j=0; j<sizeof(double); ++j) {
-			bvector[n] = el_dbl[j]; n++;
-		}
-	}
-	MPI_Send(bvector,workload*(sizeof(int)+sizeof(double)),MPI_UNSIGNED_CHAR,0,TAG1,MPI_COMM_WORLD);
-	delete[] bvector;
-	#else
-	MPI_Send(branchlengthsuffstatcount,workload,MPI_INT,0,TAG1,MPI_COMM_WORLD);
+	MPI_Send(branchlengthsuffstatcount,GetNbranch(),MPI_INT,0,TAG1,MPI_COMM_WORLD);
 	MPI_Barrier(MPI_COMM_WORLD);
-	MPI_Send(branchlengthsuffstatbeta,workload,MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
-
-	// finally, sync all processes on same suffstat values 
-	/*
-	MPI_Bcast(branchlengthsuffstatcount,GetNbranch(),MPI_INT,0,MPI_COMM_WORLD);
-	MPI_Bcast(branchlengthsuffstatbeta,GetNbranch(),MPI_DOUBLE,0,MPI_COMM_WORLD);
-	*/
-	#endif
+	MPI_Send(branchlengthsuffstatbeta,GetNbranch(),MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
 }
 
 void PhyloProcess::GlobalUpdateSiteRateSuffStat()	{
 
-	// MPI2
-	// ask slaves to update siteratesuffstat
-	// slaves should call UpdateSiteRateSuffStat()
-	// then collect all suff stats
-	// suff stats are contained in 2 arrays
-	// int* siteratesuffstatcount
-	// double* siteratesuffstatbeta
-	// [site]
-	assert(myid == 0);
-	//cerr << "global update site rate\n";
-	// each slave computes its array for sitemin <= site < sitemax
-	// thus, one just needs to gather all arrays into the big master array 0 <= site < Nsite
-	// (gather)
-	int i,j,k,width,nalloc,smin[nprocs-1],smax[nprocs-1],workload[nprocs-1];
 	MPI_Status stat;
 	MESSAGE signal = UPDATE_SRATE;
-
 	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
-
-	width = GetNsite()/(nprocs-1);
-	nalloc = 0;
-	for(i=0; i<nprocs-1; ++i) {
-		smin[i] = width*i;
-		smax[i] = width*(1+i);
-		if (i == (nprocs-2)) smax[i] = GetNsite();
-		workload[i] = smax[i] - smin[i];
-		if (workload[i] > nalloc) nalloc = workload[i];
-	}
-	#ifdef BYTE_COM
-	unsigned char* bvector = new unsigned char[nalloc*(sizeof(int)+sizeof(double))];
-	int l,n;
-	double x;
-	for(i=1; i<nprocs; ++i) {
-		MPI_Recv(bvector,workload[i-1]*(sizeof(int)+sizeof(double)),MPI_UNSIGNED_CHAR,i,TAG1,MPI_COMM_WORLD,&stat);
-		n = 0;
-		for(j=smin[i-1]; j<smax[i-1]; ++j) {
-			l = 0;
-			for(k=sizeof(int)-1; k>=0; --k) {
-				l = (l << 8) + bvector[sizeof(int)*n+k]; 
-			}
-			siteratesuffstatcount[j] = l; n++;			
-		}
-		n = 0;
-		for(j=smin[i-1]; j<smax[i-1]; ++j) {
-			memcpy(&x,&bvector[workload[i-1]*sizeof(int)+n*sizeof(double)],sizeof(double));
-			siteratesuffstatbeta[j] = x; n++;			
-		}
-	}
-	delete[] bvector;
-	#else
-	int ivector[nalloc];
-	double dvector[nalloc];
-	for(i=1; i<nprocs; ++i) {
-		MPI_Recv(ivector,workload[i-1],MPI_INT,i,TAG1,MPI_COMM_WORLD,&stat);
-		k = 0;
-		for(j=smin[i-1]; j<smax[i-1]; ++j) {
-			siteratesuffstatcount[j] = ivector[k]; k++;
-			
-		}
-	}
-	for(i=1; i<nprocs; ++i) {
-		MPI_Recv(dvector,workload[i-1],MPI_DOUBLE,i,TAG1,MPI_COMM_WORLD,&stat);
-		k = 0;
-		for(j=smin[i-1]; j<smax[i-1]; ++j) {
-			siteratesuffstatbeta[j] = dvector[k]; k++;
-		}
-	}
-
-
-	// finally, sync all processes on same suffstat values 
-	// but this seems to corrupt something somewhere
-	// I have tried to put this barrier, but to no avail
-	// MPI_Barrier(MPI_COMM_WORLD);
-
-	// activate these two lines, and the problem will appear
-	/*
-	MPI_Bcast(siteratesuffstatcount,GetNsite(),MPI_INT,0,MPI_COMM_WORLD);
-	MPI_Bcast(siteratesuffstatbeta,GetNsite(),MPI_DOUBLE,0,MPI_COMM_WORLD);
-	*/
-	#endif
 }
 
 void PhyloProcess::SlaveUpdateSiteRateSuffStat()	{
 
 	UpdateSiteRateSuffStat();
-	int i,workload = sitemax - sitemin;
-	#ifdef BYTE_COM
-	unsigned char* bvector = new unsigned char[workload*(sizeof(int)+sizeof(double))];
-	unsigned char el_int[sizeof(int)],el_dbl[sizeof(double)];
-	unsigned int j,n = 0;
-
-	for(i=sitemin; i<sitemax; ++i) {
-		convert(el_int,siteratesuffstatcount[i]);
-		for(j=0; j<sizeof(int); ++j) {
-			bvector[n] = el_int[j]; n++;
-		}
-	}
-	for(i=sitemin; i<sitemax; ++i) {
-		convert(el_dbl,siteratesuffstatbeta[i]);
-		for(j=0; j<sizeof(double); ++j) {
-			bvector[n] = el_dbl[j]; n++;
-		}
-	}		
-	MPI_Send(bvector,workload*(sizeof(int)+sizeof(double)),MPI_UNSIGNED_CHAR,0,TAG1,MPI_COMM_WORLD);
-	delete[] bvector;		
-	#else
-	int j = 0,ivector[workload];
-	for(i=sitemin; i<sitemax; ++i) {
-		ivector[j] = siteratesuffstatcount[i]; j++;
-	}
-	double dvector[workload];
-	MPI_Send(siteratesuffstatcount,workload,MPI_INT,0,TAG1,MPI_COMM_WORLD);
-	j = 0;
-	for(i=sitemin; i<sitemax; ++i) {
-		dvector[j] = siteratesuffstatbeta[i]; j++;
-	}
-	MPI_Send(siteratesuffstatbeta,workload,MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
-
-
-	// finally, sync all processes on same suffstat values 
-	// but this seems to corrupt something somewhere
-	// I have tried to put this barrier, but to no avail
-	// MPI_Barrier(MPI_COMM_WORLD);
-
-	// activate these two lines, and the problem will appear
-	/*
-	MPI_Bcast(siteratesuffstatcount,GetNsite(),MPI_INT,0,MPI_COMM_WORLD);
-	MPI_Bcast(siteratesuffstatbeta,GetNsite(),MPI_DOUBLE,0,MPI_COMM_WORLD);
-	*/
-	#endif
 }
 
 void PhyloProcess::GlobalGetMeanSiteRate()	{
