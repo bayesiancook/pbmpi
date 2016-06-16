@@ -17,7 +17,7 @@ SRCS=  TaxonSet.cpp Tree.cpp Random.cpp SequenceAlignment.cpp CodonSequenceAlign
 	GeneralPathSuffStatGTRSBDPProfileProcess.cpp DPProfileProcess.cpp SBDPProfileProcess.cpp \
 	PoissonDPProfileProcess.cpp PoissonSBDPProfileProcess.cpp MatrixDPProfileProcess.cpp \
 	MatrixSBDPProfileProcess.cpp FiniteProfileProcess.cpp PoissonFiniteProfileProcess.cpp \
-	MatrixFiniteProfileProcess.cpp AAMutSelProfileProcess.cpp CodonMutSelProfileProcess.cpp \
+	MatrixFiniteProfileProcess.cpp CodonMutSelProfileProcess.cpp \
 	AACodonMutSelProfileProcess.cpp SubstitutionProcess.cpp Propagate.cpp \
 	PoissonSubstitutionProcess.cpp MatrixSubstitutionProcess.cpp \
 	ExpoConjugateGTRSubstitutionProcess.cpp GeneralPathSuffStatMatrixSubstitutionProcess.cpp \
@@ -28,11 +28,9 @@ SRCS=  TaxonSet.cpp Tree.cpp Random.cpp SequenceAlignment.cpp CodonSequenceAlign
 	RASCATGTRDPGammaPhyloProcess.cpp RASCATGTRSBDPGammaPhyloProcess.cpp \
 	GeneralPathSuffStatRASCATGTRFiniteGammaPhyloProcess.cpp \
 	GeneralPathSuffStatRASCATGTRDPGammaPhyloProcess.cpp \
-	GeneralPathSuffStatRASCATGTRSBDPGammaPhyloProcess.cpp AAMutSelFinitePhyloProcess.cpp AACodonMutSelFinitePhyloProcess.cpp CodonMutSelFinitePhyloProcess.cpp\
-	AAMutSelSiteSpecificPhyloProcess.cpp AAMutSelDPPhyloProcess.cpp \
-	AAMutSelSBDPPhyloProcess.cpp CodonMutSelSBDPPhyloProcess.cpp \
-	AACodonMutSelSBDPPhyloProcess.cpp MultiGeneMixture.cpp MultiGeneGTRSBDPMixture.cpp \
-	MultiGenePoissonSBDPMixture.cpp \
+	GeneralPathSuffStatRASCATGTRSBDPGammaPhyloProcess.cpp AACodonMutSelFinitePhyloProcess.cpp CodonMutSelFinitePhyloProcess.cpp\
+	CodonMutSelSBDPPhyloProcess.cpp \
+	AACodonMutSelSBDPPhyloProcess.cpp \
 	Bipartition.cpp BipartitionList.cpp Consensus.cpp TaxaParameters.cpp PBTree.cpp TreeList.cpp PolyNode.cpp correl.cpp correlation.cpp NNI.cpp
 
 

@@ -24,14 +24,10 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 #include "RASCATFiniteGammaPhyloProcess.h"
 #include "RASCATSBDPGammaPhyloProcess.h"
 #include "GeneralPathSuffStatRASCATGTRFiniteGammaPhyloProcess.h"
-#include "AAMutSelFinitePhyloProcess.h"
+#include "AACodonMutSelSBDPPhyloProcess.h"
 #include "AACodonMutSelFinitePhyloProcess.h"
-#include "AAMutSelSBDPPhyloProcess.h"
-#include "AAMutSelSiteSpecificPhyloProcess.h"
-#include "AAMutSelDPPhyloProcess.h"
 #include "CodonMutSelFinitePhyloProcess.h"
 #include "CodonMutSelSBDPPhyloProcess.h"
-#include "AACodonMutSelSBDPPhyloProcess.h"
 #include "Parallel.h"
 #include <iostream>
 #include <fstream>
@@ -129,22 +125,6 @@ class Model	{
 		else if (modeltype == 3)	{
 			cerr << "deprecated.\n";
 			exit(1);
-			if (mixturetype == 1)	{
-				type = "AAMUTSELFINITE";
-				process = new AAMutSelFinitePhyloProcess(datafile,treefile,codetype,ncat,fixncomp,empmix,mixtype,fixtopo,fixbl,dc,myid,nprocs);
-			}
-			else if (mixturetype == 2)	{
-				type = "AAMUTSELDP";
-				process = new AAMutSelDPPhyloProcess(datafile,treefile,codetype,fixtopo,fixbl,kappaprior,dc,myid,nprocs);
-			}
-			else if (mixturetype == 3)	{
-				type = "AAMUTSELSBDP";
-				process = new AAMutSelSBDPPhyloProcess(datafile,treefile,codetype,fixtopo,fixbl,kappaprior,dc,myid,nprocs);
-			}
-			else	{
-				cerr << "mixture type " << mixturetype << " not recognized\n";
-				exit(1);
-			}
 		}
 		
 
@@ -228,17 +208,8 @@ class Model	{
 		else if (type == "GPSSCATGTRFINITE")	{
 			process = new GeneralPathSuffStatRASCATGTRFiniteGammaPhyloProcess(is,myid,nprocs); 
 		}
-		else if (type == "AAMUTSELFINITE")	{
-			process = new AAMutSelFinitePhyloProcess(is,myid,nprocs);
-		}
 		else if (type == "AACODONMUTSELFINITE")	{
 			process = new AACodonMutSelFinitePhyloProcess(is,myid,nprocs);
-		}
-		else if (type == "AAMUTSELSBDP")	{
-			process = new AAMutSelSBDPPhyloProcess(is,myid,nprocs);
-		}
-		else if (type == "AAMUTSELDP")	{
-			process = new AAMutSelDPPhyloProcess(is,myid,nprocs);
 		}
 		else if (type == "CODONMUTSELFINITE")	{
 			process = new CodonMutSelFinitePhyloProcess(is,myid,nprocs);
