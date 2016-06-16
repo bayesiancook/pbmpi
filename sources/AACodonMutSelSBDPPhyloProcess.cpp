@@ -26,8 +26,6 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 // should be implemented in .cpp file
 void AACodonMutSelSBDPPhyloProcess::SlaveUpdateParameters()	{
 
-	// SlaveBroadcastTree();
-
 	int i,j,L1,L2,ni,nd,nbranch = GetNbranch(),nnucrr = GetNnucrr(),nnucstat = 4;
 	L1 = GetNmodeMax();
 	L2 = GetDim();
@@ -100,56 +98,6 @@ void AACodonMutSelSBDPPhyloProcess::SlaveUpdateParameters()	{
 	// and also deletes those that are now obsolete
 	CreateMatrices();
 	UpdateMatrices();
-
-	/*
-	SlaveBroadcastTree();
-
-	int i,j,L1,L2,ni,nd,nbranch = GetNbranch(),nnucrr = GetNnucrr(),nnucstat = 4,k = 0;
-	L1 = GetNmodeMax();
-	L2 = GetDim();
-	nd = nbranch + nnucrr + nnucstat + L2 + L1*(L2+1); // check if these last terms are correct in this context...
-	ni = 1 + ProfileProcess::GetNsite();
-	int* ivector = new int[ni];
-	double* dvector = new double[nd];
-	MPI_Bcast(ivector,ni,MPI_INT,0,MPI_COMM_WORLD);
-	MPI_Bcast(dvector,nd,MPI_DOUBLE,0,MPI_COMM_WORLD);
-	for(i=0; i<nbranch; ++i) {
-		blarray[i] = dvector[i];
-	}
-	for(i=0; i<nnucrr; ++i) {
-		nucrr[i] = dvector[nbranch+i];
-	}
-	for(i=0; i<nnucstat; ++i) {
-		nucstat[i] = dvector[nbranch+nnucrr+i];
-	}
-	for (int i=0; i<GetDim(); i++)	{
-		dirweight[i] = dvector[1+nbranch+nnucrr+nnucstat+i];
-	}
-	for(i=0; i<L1; ++i) {
-		for(j=0; j<L2; ++j) {
-			profile[i][j] = dvector[nbranch+nnucrr+nnucstat+L2+k];
-			k++;
-		}
-		weight[i] = dvector[nbranch+nnucrr+nnucstat+L2+k];
-		k++;
-	}
-	Ncomponent = ivector[0];
-	for(i=0; i<ProfileProcess::GetNsite(); ++i) {
-		SBDPProfileProcess::alloc[i] = ivector[1+i];
-	}
-	//GetBranchLengthsFromArray();
-	delete[] dvector;
-	delete[] ivector;
-	// this one is really important
-	// in those cases where new components have appeared, or some old ones have disappeared
-	// during allocation move on the master node.
-	// 
-	// note that CreateMatrices() in fact creates only those that are not yet allocated
-	// and also deletes those that are now obsolete
-	CreateMatrices();
-	UpdateMatrices();
-	*/
-
 }
 
 
@@ -159,11 +107,6 @@ void AACodonMutSelSBDPPhyloProcess::SlaveExecute(MESSAGE signal)	{
 
 	switch(signal) {
 
-	/*
-	case PRINT_TREE:
-		SlavePrintTree();
-		break;
-	*/
 	case REALLOC_MOVE:
 		SlaveIncrementalDPMove();
 		break;
@@ -258,75 +201,9 @@ void AACodonMutSelSBDPPhyloProcess::GlobalUpdateParameters() {
 	// Now send out the doubles and ints over the wire...
 	MPI_Bcast(ivector,ni,MPI_INT,0,MPI_COMM_WORLD);
 	MPI_Bcast(dvector,nd,MPI_DOUBLE,0,MPI_COMM_WORLD);
-	/*
-	// MPI2
-	// should send the slaves the relevant information
-	// about model parameters
-	// for this model, should broadcast
-	// (but should first call PutBranchLengthsIntoArray())
-	// 
-	// upon receiving this information
-	// slave should 
-	// store it in the local copies of the variables
-	// and then call
-	// SetBranchLengthsFromArray()
-	assert(myid == 0);
-	int i,j,nnucrr,nnucstat,nbranch = GetNbranch(),ni,nd,L1,L2,k = 0;
-	nnucrr = GetNnucrr();
-	nnucstat = 4;	
-	L1 = GetNmodeMax();
-	L2 = GetDim();
-	nd = nbranch + nnucrr + nnucstat + L2 + L1*(L2+1);  // check if these last terms are correct in this context...
-	ni = 1 + ProfileProcess::GetNsite(); // 1 for the number of componenets, and the rest for allocations
-	int ivector[ni];
-	double dvector[nd]; 
-	MESSAGE signal = PARAMETER_DIFFUSION;
-	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
-	
-	GlobalBroadcastTree();
-	// First we assemble the vector of doubles for distribution
-	for(i=0; i<nbranch; ++i) {
-		dvector[i] = blarray[i];
-	}
-
-	for(i=0; i<nnucrr; ++i) {
-		dvector[nbranch+i] = nucrr[i];
-	}
-	for(i=0; i<nnucstat; ++i) {
-		dvector[nbranch+nnucrr+i] = nucstat[i];
-	}
-
-	for (int i=0; i<GetDim(); i++)	{
-		dvector[nbranch+nnucrr+nnucstat+i] = dirweight[i];
-	}
-
-	for(i=0; i<L1; ++i) {
-		for(j=0; j<L2; ++j) {
-			dvector[nbranch+nnucrr+nnucstat+L2+k] = profile[i][j];
-			k++;
-		}
-		dvector[nbranch+nnucrr+nnucstat+L2+k] = weight[i];
-		k++;
-	}
-
-	// Now the vector of ints
-	ivector[0] = GetNcomponent();
-	for(i=0; i<ProfileProcess::GetNsite(); ++i) {
-		ivector[1+i] = SBDPProfileProcess::alloc[i];
-	}
-
-	// Now send out the doubles and ints over the wire...
-	MPI_Bcast(ivector,ni,MPI_INT,0,MPI_COMM_WORLD);
-	MPI_Bcast(dvector,nd,MPI_DOUBLE,0,MPI_COMM_WORLD);
-	*/
 }
 
 void AACodonMutSelSBDPPhyloProcess::SlaveComputeCVScore()	{
-
-	//if (! SumOverRateAllocations())	{
-	//	cerr << "rate error\n";
-	//	exit(1);
-	//}
 
 	sitemax = sitemin + testsitemax - testsitemin;
 	double** sitelogl = new double*[ProfileProcess::GetNsite()];
@@ -339,14 +216,8 @@ void AACodonMutSelSBDPPhyloProcess::SlaveComputeCVScore()	{
 			AACodonMutSelSBDPProfileProcess::alloc[i] = k;
 			//UpdateMatrix(i);
 		}
-		//cerr << "before UpdateMatrix\n";
-		//cerr.flush();
 		UpdateMatrix(k);
-		//cerr << "after UpdateMatrix, before UpdateConditionalLikelihoods\n";
-		//cerr.flush();
 		UpdateConditionalLikelihoods();
-		//cerr << "after UpdateCondtionalLikelihoods\n";
-		//cerr.flush();
 		for (int i=sitemin; i<sitemax; i++)	{
 			sitelogl[i][k] = sitelogL[i];
 		}
@@ -402,6 +273,10 @@ void AACodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
 	int rootprior = 1;
 	int savetrees = 0;
 
+	int sitelogl = 0;
+
+	int ancstatepostprobs = 0;
+
 	try	{
 
 		if (argc == 1)	{
@@ -413,12 +288,6 @@ void AACodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
 			string s = argv[i];
 			if (s == "-sel")	{
 				sel = 1;
-			}
-			else if (s == "-map")	{
-				map = 1;
-			}
-			else if (s == "-mapstats")	{
-				mapstats = 1;
 			}
 			else if (s == "-cv")	{
 				cv = 1;
@@ -476,6 +345,24 @@ void AACodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
 			else if (s == "-div")	{
 				ppred = 2;
 			}
+			else if (s == "-comp")	{
+				ppred = 3;
+			}
+
+			else if (s == "-anc")	{
+				ancstatepostprobs = 1;
+			}
+			else if (s == "-map")	{
+				map = 1;
+			}
+			else if (s == "-mapstats")	{
+				mapstats = 1;
+			}
+
+			else if (s == "-sitelogl")	{
+				sitelogl = 1;
+			}
+
 			else if ( (s == "-x") || (s == "-extract") )	{
 				i++;
 				if (i == argc) throw(0);
@@ -524,7 +411,13 @@ void AACodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
 	else if (cv)	{
 		ReadCV(testdatafile,name,burnin,every,until,1,codetype);
 	}
-	//if (sel)	{
+	else if (ancstatepostprobs)	{
+		ReadAncestral(name,burnin,every,until);
+	}
+	else if (sitelogl)	{
+		ReadSiteLogL(name,burnin,every,until);
+	}
+	//else if (sel)	{
 	//	ReadSDistributions(name,burnin,every,until);
 	//}
 	else if (mapstats)	{
@@ -1183,28 +1076,6 @@ int AACodonMutSelSBDPPhyloProcess::CountNonSynMapping()	{
 	}
 	return total;
 }
-
-/*
-int AACodonMutSelSBDPPhyloProcess::CountNonSynMapping(const Link* from, int i)	{
-	int count = 0;
-	if(!from->isLeaf()){
-		for (const Link* link=from->Next(); link!=from; link=link->Next()){
-			count += CountNonSynMapping(link->Out(), i);
-		}
-	}
-	if(!from->isRoot()){
-		BranchSitePath* mybsp = PhyloProcess::submap[GetBranchIndex(from->GetBranch())][i];
-		Plink* plink = mybsp->Init();
-		while (plink != mybsp->Last())	{
-			if (! AACodonMutSelProfileProcess::statespace->Synonymous(plink->GetState(), plink->Next()->GetState()) )	{
-				count++;
-			}
-			plink = plink->Next();
-		}
-	}
-	return count;
-}
-*/
 
 int AACodonMutSelSBDPPhyloProcess::CountNonSynMapping(int i)	{
 	int count = 0;

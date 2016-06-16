@@ -88,11 +88,6 @@ void CodonMutSelFinitePhyloProcess::SlaveExecute(MESSAGE signal)	{
 
 	switch(signal) {
 
-	/*
-	case PRINT_TREE:
-		SlavePrintTree();
-		break;
-	*/
 	case REALLOC_MOVE:
 		SlaveIncrementalFiniteMove();
 		break;
@@ -176,9 +171,6 @@ void CodonMutSelFinitePhyloProcess::GlobalUpdateParameters() {
 
 void CodonMutSelFinitePhyloProcess::ReadPB(int argc, char* argv[])	{
 
-
-	// Needs updating!
-
 	string name = "";
 
 	int burnin = 0;
@@ -189,7 +181,18 @@ void CodonMutSelFinitePhyloProcess::ReadPB(int argc, char* argv[])	{
 	// 2 : diversity statistic
 	// 3 : compositional statistic
 
+	int cv = 0;
 	int sel = 0;
+	int map = 0;
+	string testdatafile = "";
+	int rateprior = 0;
+	int profileprior = 0;
+	int rootprior = 1;
+	int savetrees = 0;
+
+	int sitelogl = 0;
+
+	int ancstatepostprobs = 0;
 
 	try	{
 
@@ -203,9 +206,77 @@ void CodonMutSelFinitePhyloProcess::ReadPB(int argc, char* argv[])	{
 			if (s == "-sel")	{
 				sel = 1;
 			}
-			//else if (s == "-ppred")	{
-			//	ppred = 1;
-			//}
+			else if (s == "-cv")	{
+				cv = 1;
+				i++;
+				testdatafile = argv[i];
+			}
+			else if (s == "-ppred")	{
+				ppred = 1;
+			}
+			else if (s == "-ppredrate")	{
+				i++;
+				string tmp = argv[i];
+				if (tmp == "prior")	{
+					rateprior = 1;
+				}
+				else if ((tmp == "posterior") || (tmp == "post"))	{
+					rateprior = 0;
+				}
+				else	{
+					cerr << "error after ppredrate: should be prior or posterior\n";
+					throw(0);
+				}
+			}
+			else if (s == "-ppredprofile")	{
+				i++;
+				string tmp = argv[i];
+				if (tmp == "prior")	{
+					profileprior = 1;
+				}
+				else if ((tmp == "posterior") || (tmp == "post"))	{
+					profileprior = 0;
+				}
+				else	{
+					cerr << "error after ppredprofile: should be prior or posterior\n";
+					throw(0);
+				}
+			}
+			else if (s == "-ppredroot")	{
+				i++;
+				string tmp = argv[i];
+				if (tmp == "prior")	{
+					rootprior = 1;
+				}
+				else if ((tmp == "posterior") || (tmp == "post"))	{
+					rootprior = 0;
+				}
+				else	{
+					cerr << "error after ppredroot: should be prior or posterior\n";
+					throw(0);
+				}
+			}
+			else if (s == "-savetrees")	{
+				savetrees = 1;
+			}
+			else if (s == "-div")	{
+				ppred = 2;
+			}
+			else if (s == "-comp")	{
+				ppred = 3;
+			}
+
+			else if (s == "-anc")	{
+				ancstatepostprobs = 1;
+			}
+			else if (s == "-map")	{
+				map = 1;
+			}
+
+			else if (s == "-sitelogl")	{
+				sitelogl = 1;
+			}
+
 			else if ( (s == "-x") || (s == "-extract") )	{
 				i++;
 				if (i == argc) throw(0);
@@ -248,5 +319,31 @@ void CodonMutSelFinitePhyloProcess::ReadPB(int argc, char* argv[])	{
 		until = GetSize();
 	}
 
+	if (map)	{
+		ReadMap(name,burnin,every,until);
+	}
+	else if (cv)	{
+		ReadCV(testdatafile,name,burnin,every,until,1,codetype);
+	}
+	else if (ancstatepostprobs)	{
+		ReadAncestral(name,burnin,every,until);
+	}
+	else if (sitelogl)	{
+		ReadSiteLogL(name,burnin,every,until);
+	}
+	/*
+	else if (sel)	{
+		ReadSDistributions(name,burnin,every,until);
+	}
+	else if (mapstats)	{
+		ReadMapStats(name,burnin,every,until);
+	}
+	*/
+	else if (ppred)	{
+		PostPred(ppred,name,burnin,every,until,rateprior,profileprior,rootprior,savetrees);
+	}
+	else	{
 		Read(name,burnin,every,until);
+	}
 }
+
