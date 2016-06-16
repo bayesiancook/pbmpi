@@ -32,6 +32,8 @@ class PoissonSubstitutionProcess : public virtual SubstitutionProcess, public vi
 	const double* GetStationary(int site) {return zipstat[site];}
 	int GetNstate(int site) {return GetZipSize(site);}
 
+	virtual void ConditionalLikelihoodsToStatePostProbs(double*** aux,double*** statepostprob, int nodelabel, bool condalloc = false);
+
 	protected:
 
 	// CPU Level 3: implementations of likelihood propagation and substitution mapping methods
@@ -73,6 +75,7 @@ class PoissonSubstitutionProcess : public virtual SubstitutionProcess, public vi
 
 	void ChooseTrueStates(BranchSitePath** patharray, int* nodestateup, int* nodestatedown, bool root);
 	void ChooseRootTrueStates(int* nodestate);
+	void ZipToTruePostProbs(double*** statepostprob, int nodelabel);
 
 	private:
 

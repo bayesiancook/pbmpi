@@ -619,10 +619,7 @@ void AACodonMutSelSBDPPhyloProcess::Read(string name, int burnin, int every, int
 		cerr << "error: did not find " << name << ".chain\n";
 		exit(1);
 	}
-	//cerr << "In AACodonMutSelDPPhyloProcess. GetDim() is : " << GetDim() << "\n";
-	int Nstate = AACodonMutSelSBDPSubstitutionProcess::GetNstate();
-	//cerr << "Nstate is: " << Nstate << "\n";
-	//cerr.flush();
+	int Nstate = GetGlobalNstate();
 	double TOOSMALL = 1e-20;
 	int Ncat = 241;
 	double min = -30;
@@ -1211,11 +1208,9 @@ int AACodonMutSelSBDPPhyloProcess::CountNonSynMapping(const Link* from, int i)	{
 
 int AACodonMutSelSBDPPhyloProcess::CountNonSynMapping(int i)	{
 	int count = 0;
-	for(int k=0; k<GetNstate(); ++k) {
-		for(int l=0; l<GetNstate(); ++l) {
-		// 	if (!AACodonMutSelProfileProcess::statespace->Synonymous(k, l)) {
-				count+=sitepaircount[i][pair<int,int>(k,l)];
-		//	}
+	for(int k=0; k<GetGlobalNstate(); ++k) {
+		for(int l=0; l<GetGlobalNstate(); ++l) {
+			count+=sitepaircount[i][pair<int,int>(k,l)];
 		}
 	}
 	return count;

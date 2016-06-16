@@ -406,10 +406,7 @@ void AACodonMutSelFinitePhyloProcess::Read(string name, int burnin, int every, i
 		cerr << "error: did not find " << name << ".chain\n";
 		exit(1);
 	}
-	//cerr << "In AACodonMutSelDPPhyloProcess. GetDim() is : " << GetDim() << "\n";
-	int Nstate = AACodonMutSelFiniteSubstitutionProcess::GetNstate();
-	//cerr << "Nstate is: " << Nstate << "\n";
-	//cerr.flush();
+	int Nstate = GetGlobalNstate();
 	double TOOSMALL = 1e-20;
 	int Ncat = 241;
 	double min = -30;

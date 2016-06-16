@@ -1694,6 +1694,9 @@ void PhyloProcess::SlaveExecute(MESSAGE signal)	{
 	case SITELOGL:
 		SlaveComputeSiteLogL();
 		break;
+	case STATEPOSTPROBS:
+		SlaveComputeStatePostProbs();
+		break;
 	case SITERATE:
 		SlaveSendMeanSiteRate();
 		break;
@@ -2501,6 +2504,209 @@ void PhyloProcess::ReadCV(string testdatafile, string name, int burnin, int ever
 	ofstream os((name + ".cv").c_str());
 	os << meanscore << '\n';
 	cerr << meanscore << '\n';
+}
+
+void PhyloProcess::ReadAncestral(string name, int burnin, int every, int until)	{
+
+	ifstream is((name + ".chain").c_str());
+	if (!is)	{
+		cerr << "error: no .chain file found\n";
+		exit(1);
+	}
+
+	cerr << "burnin: " << burnin << '\n';
+	cerr << "every " << every << " points until " << until << '\n';
+	int i=0;
+	while ((i < until) && (i < burnin))	{
+		FromStream(is);
+		i++;
+	}
+	int samplesize = 0;
+
+	double* allocmeanstatepostprob = new double[GetNsite()*GetNnode()*GetGlobalNstate()];
+	double* allocstatepostprob = new double[GetNsite()*GetNnode()*GetGlobalNstate()];
+
+	double*** meanstatepostprob = new double**[GetNsite()];
+	double*** statepostprob = new double**[GetNsite()];
+	for (int i=0; i<GetNsite(); i++)	{
+		meanstatepostprob[i] = new double*[GetNnode()];
+		statepostprob[i] = new double*[GetNnode()];
+		for (int j=0; j<GetNnode(); j++)	{
+			meanstatepostprob[i][j] = allocmeanstatepostprob + (i*GetNnode() + j)*GetGlobalNstate();
+			statepostprob[i][j] = allocstatepostprob + (i*GetNnode() + j)*GetGlobalNstate();
+			for (int k=0; k<GetGlobalNstate(); k++)	{
+				meanstatepostprob[i][j][k] = 0;
+			}
+		}
+	}
+
+	int width = GetNsite()/(GetNprocs()-1);
+	int smin[GetNprocs()-1];
+	int smax[GetNprocs()-1];
+	int maxwidth = 0;
+	for(int i=0; i<GetNprocs()-1; ++i) {
+		smin[i] = width*i;
+		smax[i] = width*(1+i);
+		if (i == (GetNprocs()-2)) smax[i] = GetNsite();
+		if (maxwidth < (smax[i] - smin[i]))	{
+			maxwidth = smax[i] - smin[i];
+		}
+	}
+
+	while (i < until)	{
+		cerr << ".";
+		samplesize++;
+		FromStream(is);
+		i++;
+		QuickUpdate();
+		MPI_Status stat;
+		MESSAGE signal = STATEPOSTPROBS;
+		MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+
+		double total = 0;
+		for(int proc=1; proc<GetNprocs(); proc++) {
+			MPI_Recv(allocstatepostprob+smin[proc-1]*GetNnode()*GetGlobalNstate(),(smax[proc-1]-smin[proc-1])*GetNnode()*GetGlobalNstate(),MPI_DOUBLE,proc,TAG1,MPI_COMM_WORLD,&stat);
+			for (int i=smin[proc-1]; i<smax[proc-1]; i++)	{
+				for (int j=0; j<GetNnode(); j++)	{
+					for (int k=0; k<GetGlobalNstate(); k++)	{
+						meanstatepostprob[i][j][k] += statepostprob[i][j][k];
+					}
+				}
+			}
+		}
+		
+		int nrep = 1;
+		while ((i<until) && (nrep < every))	{
+			FromStream(is);
+			i++;
+			nrep++;
+		}
+	}
+
+	for (int i=0; i<GetNsite(); i++)	{
+		for (int j=0; j<GetNnode(); j++)	{
+			for (int k=0; k<GetGlobalNstate(); k++)	{
+				meanstatepostprob[i][j][k] /= samplesize;
+			}
+		}
+	}
+
+	WriteStatePostProbs(meanstatepostprob,name,GetRoot());
+	cerr << '\n';
+	cerr << "ancestral state posterior probabilities in " << name << "_nodelabel_taxon1_taxon2_.ancstatepostprob\n";
+	cerr << "for MRCA of taxon1 and taxon2\n";
+	cerr << '\n';
+
+	for (int i=0; i<GetNsite(); i++)	{
+		delete[] meanstatepostprob[i];
+		delete[] statepostprob[i];
+	}
+	delete[] meanstatepostprob;
+	delete[] statepostprob;
+	delete[] allocmeanstatepostprob;
+	delete[] allocstatepostprob;
+}
+
+void PhyloProcess::SlaveComputeStatePostProbs()	{
+
+	UpdateConditionalLikelihoods();
+
+	// allocate arrays
+	double* allocstatepostprob = new double[(GetSiteMax() - GetSiteMin())*GetNnode()*GetGlobalNstate()];
+	double*** statepostprob = new double**[GetNsite()];
+	for (int i=GetSiteMin(); i<GetSiteMax(); i++)	{
+		statepostprob[i] = new double*[GetNnode()];
+		for (int j=0; j<GetNnode(); j++)	{
+			statepostprob[i][j] = allocstatepostprob + ((i-GetSiteMin())*GetNnode() + j)*GetGlobalNstate();
+		}
+	}
+
+	RecursiveComputeStatePostProbs(statepostprob,GetRoot(),0);
+
+	// send
+	MPI_Send(allocstatepostprob,(GetSiteMax()-GetSiteMin())*GetNnode()*GetGlobalNstate(),MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
+
+	// delete
+	for (int i=GetSiteMin(); i<GetSiteMax(); i++)	{
+		delete[] statepostprob[i];
+	}
+	delete[] statepostprob;
+	delete[] allocstatepostprob;
+}
+
+void PhyloProcess::ComputeStatePostProbs(double*** statepostprob, const Link* from, int auxindex)	{
+
+	if (! myid)	{
+		cerr << "error : master doing slave's work\n";
+		exit(1);
+	}
+	double*** aux = 0;
+	bool localaux = false;
+	if (auxindex != -1)	{
+		aux = condlmap[auxindex];
+	}
+	else	{
+		localaux = true;
+		aux = CreateConditionalLikelihoodVector();
+	}
+
+	if (from->isLeaf())	{
+		Initialize(aux,GetData(from));
+	}
+	else	{
+		Reset(aux);
+	}
+	if (! from->isRoot())	{
+		Multiply(GetConditionalLikelihoodVector(from),aux);
+	}
+	for (const Link* link=from->Next(); link!=from; link=link->Next())	{
+		if (! link->isRoot())	{
+			Multiply(GetConditionalLikelihoodVector(link),aux);
+		}
+	}
+	MultiplyByStationaries(aux);
+	int j = GetNodeIndex(from->GetNode());
+	ConditionalLikelihoodsToStatePostProbs(aux,statepostprob,j);
+	if (localaux)	{
+		DeleteConditionalLikelihoodVector(aux);
+	}
+}
+
+void PhyloProcess::RecursiveComputeStatePostProbs(double*** statepostprob, const Link* from, int auxindex)	{
+
+	ComputeStatePostProbs(statepostprob,from,auxindex);
+	for (const Link* link=from->Next(); link!=from; link=link->Next())	{
+		// WARNING: preorder pruning does not update leaf condtional likelihood vectors (not necessary in the present case)
+		// so the following will issue an error message if tried on leaf
+		if (! link->Out()->isLeaf())	{
+			RecursiveComputeStatePostProbs(statepostprob,link->Out(),auxindex);
+		}
+	}
+}
+
+void PhyloProcess::WriteStatePostProbs(double*** statepostprob, string name, const Link* from)	{
+
+	ostringstream s;
+	int nodelabel = GetNodeIndex(from->GetNode());
+	s << name << "_" << nodelabel << "_" << GetLeftMost(from) << "_" << GetRightMost(from) << ".ancstatepostprob";
+	ofstream os(s.str().c_str());
+
+	os << GetNsite() << '\t' << GetGlobalNstate();
+	for (int k=0; k<GetGlobalNstate(); k++)	{
+		os << '\t' << GetStateSpace()->GetState(k);
+	}
+	os << '\n';
+	for (int i=0; i<GetNsite(); i++)	{
+		os << i+1;
+		for (int k=0; k<GetGlobalNstate(); k++)	{
+			os << '\t' << statepostprob[i][nodelabel][k];
+		}
+		os << '\n';
+	}
+
+	for (const Link* link=from->Next(); link!=from; link=link->Next()){
+		WriteStatePostProbs(statepostprob,name,link->Out());
+	}
 }
 
 void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until)	{

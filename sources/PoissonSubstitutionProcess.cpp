@@ -262,6 +262,43 @@ void PoissonSubstitutionProcess::ChooseRootTrueStates(int* nodestate)	{
 	}
 }
 
+void PoissonSubstitutionProcess::ConditionalLikelihoodsToStatePostProbs(double*** aux,double*** statepostprob, int nodelabel, bool condalloc)	{
+
+	SubstitutionProcess::ConditionalLikelihoodsToStatePostProbs(aux,statepostprob,nodelabel,condalloc);
+	ZipToTruePostProbs(statepostprob,nodelabel);
+}
+
+void PoissonSubstitutionProcess::ZipToTruePostProbs(double*** statepostprob, int nodelabel)	{
+
+	double tmp[GetGlobalNstate()];
+	for (int i=sitemin; i<sitemax; i++)	{
+		double* s = statepostprob[i][nodelabel];
+		double* pi = GetProfile(i);
+		double total = 0;
+		for (int k=0; k<GetOrbitSize(i); k++)	{
+			tmp[k] = s[GetStateFromZip(i,k)];
+			total += zipstat[i][k];
+		}
+		if (GetZipSize(i) > GetOrbitSize(i))	{
+			double s0 = s[GetOrbitSize(i)];
+			for (int k=0; k<GetGlobalNstate(); k++)	{
+				if (! InOrbit(i,k))	{
+					tmp[k] = s0 * pi[k] / (1 - total);
+				}
+			}
+		}
+		double totprob = 0;
+		for (int k=0; k<GetGlobalNstate(); k++)	{
+			s[k] = tmp[k];
+			totprob += tmp[k];
+		}
+		if (fabs(totprob - 1) > 1e-7)	{
+			cerr << "error in PoissonSubstitutionProcess::ZipToTruePostProbs: total is not 1\n";
+			exit(1);
+		}
+	}
+}
+
 //-------------------------------------------------------------------------
 //	* recomputing the equilibrium frequency profiles of the recoded process
 //
@@ -297,8 +334,6 @@ void PoissonSubstitutionProcess::UpdateZip(int i)	{
 		double total = 0;
 		double* pi = GetProfile(i);
 		for (int k=0; k<GetOrbitSize(i); k++)	{
-			int n = GetStateFromZip(i,k);
-			zipstat[i][k] = 0;
 			zipstat[i][k] = pi[GetStateFromZip(i,k)];
 			total += zipstat[i][k];
 		}

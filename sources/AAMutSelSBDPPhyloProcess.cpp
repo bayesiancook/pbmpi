@@ -384,10 +384,7 @@ void AAMutSelSBDPPhyloProcess::Read(string name, int burnin, int every, int unti
 		cerr << "error: did not find " << name << ".chain\n";
 		exit(1);
 	}
-	//cerr << "In AAMutSelDPPhyloProcess. GetDim() is : " << GetDim() << "\n";
-	int Nstate = AAMutSelSBDPSubstitutionProcess::GetNstate();
-	//cerr << "Nstate is: " << Nstate << "\n";
-	//cerr.flush();
+	int Nstate = GetGlobalNstate();
 	double TOOSMALL = 1e-10;
 
 	double meanlength = 0;

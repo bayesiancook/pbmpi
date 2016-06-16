@@ -28,7 +28,7 @@ class MatrixSubstitutionProcess : public virtual SubstitutionProcess, public vir
 	virtual ~MatrixSubstitutionProcess() {}
 
 	virtual int GetNstate(int site) {return GetMatrix(site)->GetNstate();}
-	virtual int GetNstate() {return GetMatrix(0)->GetNstate();}
+	// virtual int GetNstate() {return GetMatrix(0)->GetNstate();}
 
 	virtual const double* GetStationary(int site)	{
 		return GetMatrix(site)->GetStationary();

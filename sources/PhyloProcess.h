@@ -178,7 +178,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 
 	SequenceAlignment* GetData() {return data;}
 	StateSpace* GetStateSpace() {return data->GetStateSpace();}
-	//virtual int GetNstate() {return data->GetNstate();}
+	virtual int GetGlobalNstate() {return GetStateSpace()->GetNstate();}
 
 	// returns total number of taxa in the analysis
 	int GetNtaxa()	{
@@ -265,6 +265,12 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	void GlobalSetNodeStates();
 	void SlaveSetNodeStates();
 	void WriteNodeStates(ostream& os, const Link* from);
+
+	void ReadAncestral(string name, int burnin, int every, int until);
+	void SlaveComputeStatePostProbs();
+	void ComputeStatePostProbs(double*** statepostprobs, const Link* from, int auxindex);
+	void RecursiveComputeStatePostProbs(double*** statepostprob, const Link* from, int auxindex);
+	void WriteStatePostProbs(double*** statepostprob, string name, const Link* from);
 
 	virtual void ReadPB(int argc, char* argv[]);
 	virtual void Read(string name, int burnin, int every, int until);

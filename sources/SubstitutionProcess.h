@@ -78,7 +78,8 @@ class SubstitutionProcess : public virtual RateProcess, public virtual ProfilePr
 	int GetDim() {return ProfileProcess::GetDim();}
 	// those two accessors are abstract: what they return depends on whether we use recoded Poisson or GTR substitution processes
 	virtual int GetNstate(int site) = 0;
-	//virtual int GetNstate() = 0;
+	virtual int GetGlobalNstate()  = 0;
+
 	virtual const double* GetStationary(int site) = 0;
 
 	int GetSiteMin() { return sitemin;}
@@ -126,6 +127,8 @@ class SubstitutionProcess : public virtual RateProcess, public virtual ProfilePr
 
 	// CPU : level 2
 	double ComputeLikelihood(double*** aux, bool condalloc = false);
+
+	virtual void ConditionalLikelihoodsToStatePostProbs(double*** aux,double*** statepostprob, int nodelabel, bool condalloc = false);
 
 	// CPU : level 3
 	// implemented in GTR or POisson Substitution process

@@ -219,6 +219,8 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	int testprofile = 0;
 	double tuning = 1;
 
+	int ancstatepostprobs = 0;
+
 	try	{
 
 		if (argc == 1)	{
@@ -281,6 +283,9 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 			}
 			else if (s == "-savetrees")	{
 				savetrees = 1;
+			}
+			else if (s == "-anc")	{
+				ancstatepostprobs = 1;
 			}
 			else if (s == "-sitelogl")	{
 				sitelogl = 1;
@@ -373,6 +378,9 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	}
 	else if (rates)	{
 		ReadSiteRates(name,burnin,every,until);
+	}
+	else if (ancstatepostprobs)	{
+		ReadAncestral(name,burnin,every,until);
 	}
 	else if (sitelogl)	{
 		ReadSiteLogL(name,burnin,every,until);

@@ -202,6 +202,8 @@ void RASCATGTRFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	int rr = 0;
 	int ss = 0;
 
+	int ancstatepostprobs = 0;
+
 	try	{
 
 		if (argc == 1)	{
@@ -264,6 +266,9 @@ void RASCATGTRFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 			}
 			else if (s == "-savetrees")	{
 				savetrees = 1;
+			}
+			else if (s == "-anc")	{
+				ancstatepostprobs = 1;
 			}
 			else if (s == "-ss")	{
 				ss = 1;
@@ -341,6 +346,9 @@ void RASCATGTRFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	}
 	else if (sitelogl)	{
 		ReadSiteLogL(name,burnin,every,until);
+	}
+	else if (ancstatepostprobs)	{
+		ReadAncestral(name,burnin,every,until);
 	}
 	else if (ss)	{
 		ReadSiteProfiles(name,burnin,every,until);

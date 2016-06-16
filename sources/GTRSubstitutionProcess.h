@@ -40,8 +40,8 @@ class GTRSubstitutionProcess : public virtual MatrixSubstitutionProcess, public 
 		GTRProfileProcess::Delete();
 	}
 
-	int GetNstate(int site) {return GetDim();}
-	int GetNstate() {return GetDim();}
+	// int GetNstate(int site) {return GetDim();}
+	// int GetNstate() {return GetDim();}
 
 	/*
 	double* GetStationary(int site)	{

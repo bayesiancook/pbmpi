@@ -384,10 +384,7 @@ void CodonMutSelSBDPPhyloProcess::Read(string name, int burnin, int every, int u
 		cerr << "error: did not find " << name << ".chain\n";
 		exit(1);
 	}
-	//cerr << "In CodonMutSelDPPhyloProcess. GetDim() is : " << GetDim() << "\n";
-	int Nstate = CodonMutSelSBDPSubstitutionProcess::GetNstate();
-	//cerr << "Nstate is: " << Nstate << "\n";
-	//cerr.flush();
+	int Nstate = GetGlobalNstate();
 	double TOOSMALL = 1e-20;
 	int Ncat = 241;
 	double min = -30;
