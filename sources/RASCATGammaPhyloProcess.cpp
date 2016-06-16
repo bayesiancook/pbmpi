@@ -99,11 +99,6 @@ void RASCATGammaPhyloProcess::SlaveExecute(MESSAGE signal)	{
 
 	switch(signal) {
 
-	/*
-	case PRINT_TREE:
-		SlavePrintTree();
-		break;
-	*/
 	case UPDATE_RATE:
 		SlaveUpdateRateSuffStat();
 		break;
@@ -192,6 +187,7 @@ void RASCATGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 		int i = 1;
 		while (i < argc)	{
 			string s = argv[i];
+
 			if (s == "-div")	{
 				ppred = 2;
 			}
@@ -243,29 +239,33 @@ void RASCATGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 					throw(0);
 				}
 			}
-			else if (s == "-anc")	{
-				ancstatepostprobs = 1;
-			}
 			else if (s == "-savetrees")	{
 				savetrees = 1;
 			}
+
+			else if (s == "-cv")	{
+				cv = 1;
+				i++;
+				testdatafile = argv[i];
+			}
+
+			else if (s == "-anc")	{
+				ancstatepostprobs = 1;
+			}
+			else if (s == "-map")	{
+				map = 1;
+			}
+
 			else if (s == "-sitelogl")	{
 				sitelogl = 1;
 			}
 			else if (s == "-r")	{
 				rates = 1;
 			}
-			else if (s == "-cv")	{
-				cv = 1;
-				i++;
-				testdatafile = argv[i];
-			}
 			else if (s == "-ss")	{
 				ss = 1;
 			}
-			else if (s == "-map")	{
-				map = 1;
-			}
+
 			else if ( (s == "-x") || (s == "-extract") )	{
 				i++;
 				if (i == argc) throw(0);

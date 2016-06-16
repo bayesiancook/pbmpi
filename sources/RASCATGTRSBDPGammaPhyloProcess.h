@@ -348,14 +348,10 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 	}
 
 	virtual void ReadPB(int argc, char* argv[]);
-	void ReadNocc(string name, int burnin, int every, int until);
 	void ReadRelRates(string name, int burnin, int every, int until);
 	void ReadSiteProfiles(string name, int burnin, int every, int until);
 	void SlaveComputeCVScore();
 	void SlaveComputeSiteLogL();
-
-	double ProfileProposal(double* profile, int cat, double tuning);
-	void ReadTestProfile(string name, int nrep, double tuning, int burnin, int every, int until);
 
 	protected:
 

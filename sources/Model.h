@@ -15,19 +15,16 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 
 
 #include "CodonSequenceAlignment.h"
+
 #include "RASCATGTRFiniteGammaPhyloProcess.h"
 #include "RASCATGTRSBDPGammaPhyloProcess.h"
-#include "GeneralPathSuffStatRASCATGTRDPGammaPhyloProcess.h"
-#include "GeneralPathSuffStatRASCATGTRSBDPGammaPhyloProcess.h"
-#include "RASCATGTRDPGammaPhyloProcess.h"
-#include "RASCATGammaPhyloProcess.h"
 #include "RASCATFiniteGammaPhyloProcess.h"
 #include "RASCATSBDPGammaPhyloProcess.h"
-#include "GeneralPathSuffStatRASCATGTRFiniteGammaPhyloProcess.h"
 #include "AACodonMutSelSBDPPhyloProcess.h"
 #include "AACodonMutSelFinitePhyloProcess.h"
 #include "CodonMutSelFinitePhyloProcess.h"
 #include "CodonMutSelSBDPPhyloProcess.h"
+
 #include "Parallel.h"
 #include <iostream>
 #include <fstream>
@@ -184,29 +181,17 @@ class Model	{
 		is >> every >> until >> size;
 		is >> saveall;
 		
-		if (type == "CATDP")	{
-			process = new RASCATGammaPhyloProcess(is,myid,nprocs); 
-		}
-		else if (type == "CATSBDP")	{
+		if (type == "CATSBDP")	{
 			process = new RASCATSBDPGammaPhyloProcess(is,myid,nprocs); 
 		}
 		else if (type == "CATFINITE")	{
 			process = new RASCATFiniteGammaPhyloProcess(is,myid,nprocs); 
 		}
-		else if (type == "CATGTRDP")	{
-			process = new RASCATGTRDPGammaPhyloProcess(is,myid,nprocs); 
-		}
 		else if (type == "CATGTRSBDP")	{
 			process = new RASCATGTRSBDPGammaPhyloProcess(is,myid,nprocs); 
 		}
-		else if (type == "GPSSCATGTRSBDP")	{
-			process = new GeneralPathSuffStatRASCATGTRSBDPGammaPhyloProcess(is,myid,nprocs); 
-		}
 		else if (type == "CATGTRFINITE")	{
 			process = new RASCATGTRFiniteGammaPhyloProcess(is,myid,nprocs); 
-		}
-		else if (type == "GPSSCATGTRFINITE")	{
-			process = new GeneralPathSuffStatRASCATGTRFiniteGammaPhyloProcess(is,myid,nprocs); 
 		}
 		else if (type == "AACODONMUTSELFINITE")	{
 			process = new AACodonMutSelFinitePhyloProcess(is,myid,nprocs);
@@ -225,9 +210,7 @@ class Model	{
 			exit(1);
 		}
 
-		// cerr << "RESTORE SETSIZE\n";
 		process->SetSize(size);
-		// cerr << "reset size to " << process->GetSize() << '\n';
 	}
 
 	void ToStream(ostream& os, bool header)	{

@@ -196,6 +196,7 @@ void RASCATFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 		int i = 1;
 		while (i < argc)	{
 			string s = argv[i];
+
 			if (s == "-div")	{
 				ppred = 2;
 			}
@@ -250,6 +251,7 @@ void RASCATFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 			else if (s == "-savetrees")	{
 				savetrees = 1;
 			}
+
 			else if (s == "-anc")	{
 				ancstatepostprobs = 1;
 			}
