@@ -8,13 +8,12 @@ SRCS=  TaxonSet.cpp Tree.cpp Random.cpp SequenceAlignment.cpp CodonSequenceAlign
 	OneProfileProcess.cpp MatrixProfileProcess.cpp MatrixOneProfileProcess.cpp \
 	GTRProfileProcess.cpp ExpoConjugateGTRProfileProcess.cpp \
 	ExpoConjugateGTRDPProfileProcess.cpp ExpoConjugateGTRSBDPProfileProcess.cpp \
-	ExpoConjugateGTRFiniteProfileProcess.cpp GeneralPathSuffStatGTRProfileProcess.cpp \
-	GeneralPathSuffStatMatrixOneProfileProcess.cpp MixtureProfileProcess.cpp \
+	ExpoConjugateGTRFiniteProfileProcess.cpp \
+	MixtureProfileProcess.cpp \
 	PoissonMixtureProfileProcess.cpp MatrixMixtureProfileProcess.cpp \
 	GTRMixtureProfileProcess.cpp ExpoConjugateGTRMixtureProfileProcess.cpp \
 	GeneralPathSuffStatMatrixMixtureProfileProcess.cpp \
-	GeneralPathSuffStatGTRFiniteProfileProcess.cpp GeneralPathSuffStatGTRDPProfileProcess.cpp \
-	GeneralPathSuffStatGTRSBDPProfileProcess.cpp DPProfileProcess.cpp SBDPProfileProcess.cpp \
+	DPProfileProcess.cpp SBDPProfileProcess.cpp \
 	PoissonDPProfileProcess.cpp PoissonSBDPProfileProcess.cpp MatrixDPProfileProcess.cpp \
 	MatrixSBDPProfileProcess.cpp FiniteProfileProcess.cpp PoissonFiniteProfileProcess.cpp \
 	MatrixFiniteProfileProcess.cpp CodonMutSelProfileProcess.cpp \
@@ -26,9 +25,7 @@ SRCS=  TaxonSet.cpp Tree.cpp Random.cpp SequenceAlignment.cpp CodonSequenceAlign
 	RASCATGammaPhyloProcess.cpp RASCATSBDPGammaPhyloProcess.cpp \
 	RASCATFiniteGammaPhyloProcess.cpp RASCATGTRFiniteGammaPhyloProcess.cpp \
 	RASCATGTRDPGammaPhyloProcess.cpp RASCATGTRSBDPGammaPhyloProcess.cpp \
-	GeneralPathSuffStatRASCATGTRFiniteGammaPhyloProcess.cpp \
-	GeneralPathSuffStatRASCATGTRDPGammaPhyloProcess.cpp \
-	GeneralPathSuffStatRASCATGTRSBDPGammaPhyloProcess.cpp AACodonMutSelFinitePhyloProcess.cpp CodonMutSelFinitePhyloProcess.cpp\
+	AACodonMutSelFinitePhyloProcess.cpp CodonMutSelFinitePhyloProcess.cpp\
 	CodonMutSelSBDPPhyloProcess.cpp \
 	AACodonMutSelSBDPPhyloProcess.cpp \
 	Bipartition.cpp BipartitionList.cpp Consensus.cpp TaxaParameters.cpp PBTree.cpp TreeList.cpp PolyNode.cpp correl.cpp correlation.cpp NNI.cpp
