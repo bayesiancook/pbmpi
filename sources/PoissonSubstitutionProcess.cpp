@@ -274,9 +274,10 @@ void PoissonSubstitutionProcess::ZipToTruePostProbs(double*** statepostprob, int
 	for (int i=sitemin; i<sitemax; i++)	{
 		double* s = statepostprob[i][nodelabel];
 		double* pi = GetProfile(i);
+	
 		double total = 0;
 		for (int k=0; k<GetOrbitSize(i); k++)	{
-			tmp[k] = s[GetStateFromZip(i,k)];
+			tmp[GetStateFromZip(i,k)] = s[k];
 			total += zipstat[i][k];
 		}
 		if (GetZipSize(i) > GetOrbitSize(i))	{
@@ -294,6 +295,7 @@ void PoissonSubstitutionProcess::ZipToTruePostProbs(double*** statepostprob, int
 		}
 		if (fabs(totprob - 1) > 1e-7)	{
 			cerr << "error in PoissonSubstitutionProcess::ZipToTruePostProbs: total is not 1\n";
+			cerr << totprob << '\n';
 			exit(1);
 		}
 	}

@@ -2276,6 +2276,9 @@ void PhyloProcess::SlaveSetTestData()	{
 
 void PhyloProcess::ReadCV(string testdatafile, string name, int burnin, int every, int until, int iscodon, GeneticCodeType codetype)	{
 	
+	cerr << "in ReadCV: currently not working\n";
+	exit(1);
+
 	ifstream is((name + ".chain").c_str());
 	if (!is)	{
 		cerr << "error: no .chain file found\n";
@@ -2297,6 +2300,7 @@ void PhyloProcess::ReadCV(string testdatafile, string name, int burnin, int ever
 	while ((i < until) && (i < burnin))	{
 		//cout << "before FromStream...\n";
 		//cout.flush();
+		cerr << '.';
 		FromStream(is);
 		//cout << "after FromStream...\n";
 		//cout.flush();
@@ -2304,10 +2308,12 @@ void PhyloProcess::ReadCV(string testdatafile, string name, int burnin, int ever
 	}
 	int samplesize = 0;
 	vector<double> scorelist;
+	cerr << '\n';
 
 
 	while (i < until)	{
 		cerr << ".";
+		cerr << GetNsite() << '\n';
 		samplesize++;
 		FromStream(is);
 		i++;
@@ -2417,9 +2423,18 @@ void PhyloProcess::ReadAncestral(string name, int burnin, int every, int until)	
 			MPI_Recv(allocstatepostprob+smin[proc-1]*GetNnode()*GetGlobalNstate(),(smax[proc-1]-smin[proc-1])*GetNnode()*GetGlobalNstate(),MPI_DOUBLE,proc,TAG1,MPI_COMM_WORLD,&stat);
 			for (int i=smin[proc-1]; i<smax[proc-1]; i++)	{
 				for (int j=0; j<GetNnode(); j++)	{
+					double tot = 0;
 					for (int k=0; k<GetGlobalNstate(); k++)	{
 						meanstatepostprob[i][j][k] += statepostprob[i][j][k];
+						tot += statepostprob[i][j][k];
 					}
+					/*
+					if (fabs(tot-1) > 1e-6)	{
+						cerr << "error in receive post probs\n";
+						cerr << tot << '\n';
+						exit(1);
+					}
+					*/
 				}
 			}
 		}
@@ -2471,6 +2486,21 @@ void PhyloProcess::SlaveComputeStatePostProbs()	{
 	}
 
 	RecursiveComputeStatePostProbs(statepostprob,GetRoot(),0);
+	/*
+	for (int i=GetSiteMin(); i<GetSiteMax(); i++)	{
+		for (int j=0; j<GetNnode(); j++)	{
+			double tot = 0;
+			for (int k=0; k<GetGlobalNstate(); k++)	{
+				tot += statepostprob[i][j][k];
+			}
+			if (fabs(tot-1) > 1e-6)	{
+				cerr << "error in send post probs\n";
+				cerr << tot << '\n';
+				exit(1);
+			}
+		}
+	}
+	*/
 
 	// send
 	MPI_Send(allocstatepostprob,(GetSiteMax()-GetSiteMin())*GetNnode()*GetGlobalNstate(),MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
@@ -2554,7 +2584,9 @@ void PhyloProcess::WriteStatePostProbs(double*** statepostprob, string name, con
 	}
 
 	for (const Link* link=from->Next(); link!=from; link=link->Next()){
-		WriteStatePostProbs(statepostprob,name,link->Out());
+		if (! link->Out()->isLeaf())	{
+			WriteStatePostProbs(statepostprob,name,link->Out());
+		}
 	}
 }
 
