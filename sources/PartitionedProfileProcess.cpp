@@ -132,7 +132,8 @@ void PartitionedProfileProcess::SampleProfile()	{
 
 void PartitionedProfileProcess::SampleStat()	{
 	for (int i=0; i<GetNpart(); i++)	{
-		SampleStat(profile[i]);
+		if(!fixstat[i])
+			SampleStat(profile[i]);
 	}
 }
 
