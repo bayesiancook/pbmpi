@@ -360,30 +360,6 @@ void PartitionedDGamRateProcess::GlobalUpdateRateSuffStat()	{
 			ratesuffstatbeta[i][j] = 0.0;
 		}
 	}
-#ifdef BYTE_COM
-	int k,l;
-	double x;
-	unsigned char* bvector = new unsigned char[workload*GetNpart()*(sizeof(int)+sizeof(double))];
-
-	for(p=1; p<nprocs; ++p) {
-		MPI_Recv(bvector,workload*GetNpart()*(sizeof(int)+sizeof(double)),MPI_UNSIGNED_CHAR,MPI_ANY_SOURCE,TAG1,MPI_COMM_WORLD,&stat);
-		for(i=0; i<GetNpart(); ++i) {
-			for(j=0; j<workload; ++j) {
-				l = 0;
-				for(k=sizeof(int)-1; k>=0; --k) {
-					l = (l << 8) + bvector[sizeof(int)*(i*workload + j)+k];
-				}
-				ratesuffstatcount[i][j] += l;
-			}
-
-			for(j=0; j<workload; ++j) {
-				memcpy(&x,&bvector[sizeof(int)*workload*GetNpart()+sizeof(double)*(i*workload + j)],sizeof(double));
-				ratesuffstatbeta[i][j] += x;
-			}
-		}
-	}
-	delete[] bvector;
-#else
 	int ivector[workload*GetNpart()];
 	double dvector[workload*GetNpart()];
 	for(p=1; p<nprocs; ++p) {
@@ -403,7 +379,6 @@ void PartitionedDGamRateProcess::GlobalUpdateRateSuffStat()	{
 				}
 			}
 	}
-#endif
 }
 
 void PartitionedDGamRateProcess::UpdateRateSuffStat()	{
@@ -426,30 +401,6 @@ void PartitionedDGamRateProcess::SlaveUpdateRateSuffStat()	{
 
 	UpdateRateSuffStat();
 
-#ifdef BYTE_COM
-	int n = 0;
-	unsigned int j;
-	unsigned char el_int[sizeof(int)],el_dbl[sizeof(double)];
-	unsigned char* bvector = new unsigned char[GetNcat()*GetNpart()*(sizeof(int)+sizeof(double))];
-
-	for(int p=0; p<GetNpart(); ++p)
-		for(int i=0; i<GetNcat(); ++i) {
-			convert(el_int,ratesuffstatcount[p][i]);
-			for(j=0; j<sizeof(int); ++j) {
-				bvector[n] = el_int[j]; n++;
-			}
-		}
-
-	for(int p=0; p<GetNpart(); ++p)
-		for(int i=0; i<GetNcat(); ++i) {
-			convert(el_dbl,ratesuffstatbeta[p][i]);
-			for(j=0; j<sizeof(double); ++j) {
-				bvector[n] = el_dbl[j]; n++;
-			}
-		}
-	MPI_Send(bvector,GetNcat()*GetNpart()*(sizeof(int)+sizeof(double)),MPI_UNSIGNED_CHAR,0,TAG1,MPI_COMM_WORLD);
-	delete[] bvector;
-#else
 	int ivector[GetNcat()*GetNpart()];
 	double dvector[GetNcat()*GetNpart()];
 
@@ -461,5 +412,4 @@ void PartitionedDGamRateProcess::SlaveUpdateRateSuffStat()	{
 	MPI_Send(ivector,GetNcat()*GetNpart(),MPI_INT,0,TAG1,MPI_COMM_WORLD);
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Send(dvector,GetNcat()*GetNpart(),MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
-#endif
 }

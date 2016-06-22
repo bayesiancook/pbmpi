@@ -132,7 +132,8 @@ BranchSitePath** PoissonSubstitutionProcess::SampleRootPaths(int* state)	{
 	// BranchSitePath** patharray = new BranchSitePath*[sitemax - sitemin];
 	BranchSitePath** patharray = new BranchSitePath*[GetNsite()];
 	for (int i=sitemin; i<sitemax; i++)	{
-		patharray[i] = new BranchSitePath(0,state[i]);
+		if(sitemask[i] == 0)
+			patharray[i] = new BranchSitePath(0,state[i]);
 	}
 	return patharray;
 }
@@ -141,43 +142,46 @@ BranchSitePath** PoissonSubstitutionProcess::SampleRootPaths(int* state)	{
 BranchSitePath** PoissonSubstitutionProcess::SamplePaths(int* stateup, int* statedown, double time) 	{
 	BranchSitePath** patharray = new BranchSitePath*[GetNsite()];
 	for (int i=sitemin; i<sitemax; i++)	{
-		const double* stat = GetStationary(i);
-		double rate = GetRate(i);
-		double l = rate * time;
-		int dup = stateup[i];
-		int ddown = statedown[i];
-		double pi = stat[ddown];
+		if(sitemask[i] == 0)
+		{
+			const double* stat = GetStationary(i);
+			double rate = GetRate(i);
+			double l = rate * time;
+			int dup = stateup[i];
+			int ddown = statedown[i];
+			double pi = stat[ddown];
 
-		int m = 0;
-		int mmax = 1000;
+			int m = 0;
+			int mmax = 1000;
 
-		if (dup == ddown)	{
-			double fact = pi * exp(-l);
-			double total = exp(-l);
-			double q = rnd::GetRandom().Uniform() * (exp(-l) * (1 - pi) + pi);
-			while ((m<mmax) && (total < q))	{
-				m++;
-				fact *= l / m;
-				total += fact;
+			if (dup == ddown)	{
+				double fact = pi * exp(-l);
+				double total = exp(-l);
+				double q = rnd::GetRandom().Uniform() * (exp(-l) * (1 - pi) + pi);
+				while ((m<mmax) && (total < q))	{
+					m++;
+					fact *= l / m;
+					total += fact;
+				}
+				if (m == mmax)	{
+					suboverflowcount ++;
+				}
 			}
-			if (m == mmax)	{
-				suboverflowcount ++;
+			else	{
+				double fact = pi * exp(-l);
+				double total = 0;
+				double q = rnd::GetRandom().Uniform() * (1 - exp(-l)) * pi;
+				while ((m<mmax) && (total < q))	{
+					m++;
+					fact *= l / m;
+					total += fact;
+				}
+				if (m == mmax)	{
+					suboverflowcount ++;
+				}
 			}
+			patharray[i] = new BranchSitePath(m,ddown);
 		}
-		else	{
-			double fact = pi * exp(-l);
-			double total = 0;
-			double q = rnd::GetRandom().Uniform() * (1 - exp(-l)) * pi;
-			while ((m<mmax) && (total < q))	{
-				m++;
-				fact *= l / m;
-				total += fact;
-			}
-			if (m == mmax)	{
-				suboverflowcount ++;
-			}
-		}
-		patharray[i] = new BranchSitePath(m,ddown);
 	}
 	return patharray;
 }
@@ -190,7 +194,7 @@ BranchSitePath** PoissonSubstitutionProcess::SamplePaths(int* stateup, int* stat
 
 void PoissonSubstitutionProcess::AddSiteRateSuffStat(int* siteratesuffstatcount, double* siteratesuffstatbeta, double branchlength, BranchSitePath** patharray, int* nonmissing)	{
 	for (int i=GetSiteMin(); i<GetSiteMax(); i++)	{
-		if (nonmissing[i] == 1)	{
+		if (nonmissing[i] == 1 && sitemask[i] == 0)	{
 			siteratesuffstatcount[i] += patharray[i]->GetNsub();
 			siteratesuffstatbeta[i] += branchlength;
 		}
@@ -200,7 +204,7 @@ void PoissonSubstitutionProcess::AddSiteRateSuffStat(int* siteratesuffstatcount,
 
 void PoissonSubstitutionProcess::AddBranchLengthSuffStat(int& count, double& beta, BranchSitePath** patharray, int* nonmissing)	{
 	for (int i=GetSiteMin(); i<GetSiteMax(); i++)	{
-		if (nonmissing[i] == 1)	{
+		if (nonmissing[i] == 1 && sitemask[i] == 0)	{
 			count += patharray[i]->GetNsub();
 			beta += GetRate(i);
 		}
@@ -406,48 +410,51 @@ int PoissonSubstitutionProcess::GetRandomStateFromZip(int site, int zipstate)	{
 
 void PoissonSubstitutionProcess::UnzipBranchSitePath(BranchSitePath** patharray, int* nodestateup, int* nodestatedown){
 	for (int i=sitemin; i<sitemax; i++)	{
-		int nsub = patharray[i]->GetNsub();
-		patharray[i]->nsub=0;
-		double* times = new double[nsub+1];
-		for(int j = 0; j < nsub; j++){
-			times[j] = rnd::GetRandom().Uniform();
-			for(int k = 0; k < j; k++){
-				if(times[k]>times[j]	){
-					times[nsub] = times[k];
-					times[k] = times[j];
-					times[j] = times[nsub];
+		if(sitemask[i] == 0)
+		{
+			int nsub = patharray[i]->GetNsub();
+			patharray[i]->nsub=0;
+			double* times = new double[nsub+1];
+			for(int j = 0; j < nsub; j++){
+				times[j] = rnd::GetRandom().Uniform();
+				for(int k = 0; k < j; k++){
+					if(times[k]>times[j]	){
+						times[nsub] = times[k];
+						times[k] = times[j];
+						times[j] = times[nsub];
+					}
 				}
 			}
-		}
-		double mem = 0;
-		for(int j = 0; j < nsub; j++){
-			times[nsub] = times[j];
-			times[j] = times[j] - mem;
-			mem = times[nsub];
-		}
-		times[nsub]=1-mem;
+			double mem = 0;
+			for(int j = 0; j < nsub; j++){
+				times[nsub] = times[j];
+				times[j] = times[j] - mem;
+				mem = times[nsub];
+			}
+			times[nsub]=1-mem;
 
-		int previousstate = nodestateup[i];
-		patharray[i]->Init()->SetState(previousstate);
-		double* pi = GetProfile(i);
-		for(int j = 0; j < nsub-1; j++){
-			int newstate = rnd::GetRandom().DrawFromDiscreteDistribution(pi, GetDim());
-			if(newstate != previousstate){
-			      patharray[i]->Append(newstate, times[j]);
-			      previousstate=newstate;
+			int previousstate = nodestateup[i];
+			patharray[i]->Init()->SetState(previousstate);
+			double* pi = GetProfile(i);
+			for(int j = 0; j < nsub-1; j++){
+				int newstate = rnd::GetRandom().DrawFromDiscreteDistribution(pi, GetDim());
+				if(newstate != previousstate){
+					  patharray[i]->Append(newstate, times[j]);
+					  previousstate=newstate;
+				}
+				else{
+					  times[j+1]+=times[j];
+				}
+			}
+			if(previousstate == nodestatedown[i]){
+				times[nsub] += times[nsub-1];
 			}
 			else{
-			      times[j+1]+=times[j];
+				patharray[i]->Append(nodestatedown[i], times[nsub-1]);
 			}
+			patharray[i]->Last()->SetRelativeTime(times[nsub]);
+			delete[] times;
 		}
-		if(previousstate == nodestatedown[i]){
-			times[nsub] += times[nsub-1];
-		}
-		else{
-			patharray[i]->Append(nodestatedown[i], times[nsub-1]);
-		}
-		patharray[i]->Last()->SetRelativeTime(times[nsub]);
-		delete[] times;
 	}
 }
 

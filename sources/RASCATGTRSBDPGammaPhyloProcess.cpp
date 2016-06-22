@@ -297,7 +297,6 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 			else if (s == "-map")	{
 				map = 1;
 			}
-
 			else if (s == "-cv")	{
 				cv = 1;
 				i++;
