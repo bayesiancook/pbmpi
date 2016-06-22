@@ -48,6 +48,36 @@ class SequenceAlignment	{
 		BKData = 0;
 	}
 	
+	SequenceAlignment(SequenceAlignment* from, int* mask)	{
+
+		Ntaxa = from->Ntaxa;
+		Nsite = 0;
+		for (int i=0; i<from->GetNsite(); i++)	{
+			if (mask[i])	{
+				Nsite++;
+			}
+		}
+		taxset = from->taxset;
+		statespace = from->statespace;
+
+		Data = new int*[Ntaxa];
+		for (int i=0; i<Ntaxa; i++)	{
+			Data[i] = new int[Nsite];
+			int k = 0;
+			for (int j=0; j<from->GetNsite(); j++)	{
+				if (mask[j])	{
+					if (k >= Nsite)	{
+						cerr << "error in SequenceAlignment(from,mask)\n";
+						exit(1);
+					}
+					Data[i][k] = from->Data[i][j];
+					k++;
+				}
+			}
+		}
+		BKData = 0;
+	}
+	
 	SequenceAlignment(SequenceAlignment* from, int start, int length)	{
 
 		Ntaxa = from->Ntaxa;

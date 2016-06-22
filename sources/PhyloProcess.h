@@ -54,7 +54,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	// virtual void SlaveUpdate();
 
 	// default constructor: pointers set to nil
-	PhyloProcess() :  siteratesuffstatcount(0), siteratesuffstatbeta(0), branchlengthsuffstatcount(0), branchlengthsuffstatbeta(0), condflag(false), data(0), myid(-1), nprocs(0), size(0), version("1.7"), totaltime(0), dataclamped(1), rateprior(0), profileprior(0), rootprior(1), topoburnin(0), fixtopo(false), loglarray(0) {}
+	PhyloProcess() :  siteratesuffstatcount(0), siteratesuffstatbeta(0), branchlengthsuffstatcount(0), branchlengthsuffstatbeta(0), condflag(false), data(0), myid(-1), nprocs(0), size(0), version("1.7"), totaltime(0), dataclamped(1), rateprior(0), profileprior(0), rootprior(1), topoburnin(0), fixtopo(false), fixbl(false), loglarray(0), sitesuffstat(1) {}
 	virtual ~PhyloProcess() {}
 
 	string GetVersion() {return version;}
@@ -67,6 +67,9 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	// returns average success rate
 	virtual double Move(double tuning = 1.0) = 0;
 
+	void SetFixBL(int in)	{
+		fixbl = in;
+	}
 
 	// sample from prior
 	virtual void Sample()	{
@@ -145,8 +148,11 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 
 	int GetBranchIndex(const Branch* branch)	{
 		if (! branch)	{
+			return 0;
+			/*
 			cerr << "error in get branch index\n";
 			exit(1);
+			*/
 		}
 		return branch->GetIndex();
 	}
@@ -174,7 +180,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 
 	SequenceAlignment* GetData() {return data;}
 	StateSpace* GetStateSpace() {return data->GetStateSpace();}
-	//virtual int GetNstate() {return data->GetNstate();}
+	virtual int GetGlobalNstate() {return GetStateSpace()->GetNstate();}
 
 	// returns total number of taxa in the analysis
 	int GetNtaxa()	{
@@ -263,11 +269,17 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	void SlaveSetNodeStates();
 	void WriteNodeStates(ostream& os, const Link* from);
 
+	void ReadAncestral(string name, int burnin, int every, int until);
+	void SlaveComputeStatePostProbs();
+	void ComputeStatePostProbs(double*** statepostprobs, const Link* from, int auxindex);
+	void RecursiveComputeStatePostProbs(double*** statepostprob, const Link* from, int auxindex);
+	void WriteStatePostProbs(double*** statepostprob, string name, const Link* from);
+
 	virtual void ReadPB(int argc, char* argv[]);
 	virtual void Read(string name, int burnin, int every, int until);
 	virtual void ReadSiteLogL(string name, int burnin, int every, int until);
 	virtual void ReadCV(string testdatafile, string name, int burnin, int every, int until, int iscodon = 0, GeneticCodeType codetype = Universal);
-	virtual void PostPred(int ppredtype, string name, int burnin, int every, int until, int rateprior, int profileprior, int rootprior, std::string schemefile = "");
+	virtual void PostPred(int ppredtype, string name, int burnin, int every, int until, int rateprior, int profileprior, int rootprior, std::string schemefile = "", int savetrees = 0);
 	virtual void ReadSteppingStone(string name, int burnin, int every, int until);
 
 	void ReadSiteRates(string name, int burnin, int every, int until);
@@ -445,6 +457,14 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	void CreateNodeStates();
 	void DeleteNodeStates();
 	
+	void CreateMissingMap();
+	void DeleteMissingMap();
+	void FillMissingMap();
+	void BackwardFillMissingMap(const Link* from);
+	void ForwardFillMissingMap(const Link* from, const Link* up);
+
+	int** missingmap;
+
 	// sufficient statistics for rates and branch lengths (do not depend on the model)
 	int GetSiteRateSuffStatCount(int site) {return siteratesuffstatcount[site];}
 	double GetSiteRateSuffStatBeta(int site) {return siteratesuffstatbeta[site];}
@@ -531,6 +551,14 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	void IncSize()	{size++;}
 	int GetSize() {return size;}
 	void SetSize(int insize) {size = insize;}
+	int GetIndex() {
+		// prior to version 1.7, samples are 1-indexed in trace files
+		if (atof(version.substr(0,3).c_str()) < 1.7)	{
+			return size;
+		}
+		// they are 0-indexed starting with version 1.7
+		return size - 1;
+	}
 
 	void SetTopoBurnin(int intopoburnin)	{
 		topoburnin = intopoburnin;
@@ -554,6 +582,9 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 
 	int topoburnin;
 	bool fixtopo;
+	bool fixbl;
+
+	int sitesuffstat;
 };
 
 

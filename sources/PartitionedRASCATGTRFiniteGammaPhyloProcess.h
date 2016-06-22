@@ -191,32 +191,31 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 		chronototal.Start();
 
 		propchrono.Start();
-		BranchLengthMove(tuning);
-		BranchLengthMove(0.1 * tuning);
+		if (! fixbl)	{
+			BranchLengthMove(tuning);
+			BranchLengthMove(0.1 * tuning);
+		}
 		if (! fixtopo)	{
 			MoveTopo(NSPR,NNNI);
 		}
 
 		propchrono.Stop();
 
-		
-		// MPI2: reactivate this in order to test the suff stat code
-		// chronocollapse.Start();
 		GlobalCollapse();
-		// chronocollapse.Stop();
-
-		// chronosuffstat.Start();
-		GammaBranchProcess::Move(tuning,10);
+		
+		if (! fixbl)	{
+			GammaBranchProcess::Move(tuning,50);
+			GammaBranchProcess::Move(0.1*tuning,50);
+		}
 
 		GlobalUpdateParameters();
-		PartitionedDGamRateProcess::Move(0.3*tuning,15);
-		PartitionedDGamRateProcess::Move(0.03*tuning,15);
+		PartitionedDGamRateProcess::Move(tuning,50);
+		PartitionedDGamRateProcess::Move(0.3*tuning,50);
+		PartitionedDGamRateProcess::Move(0.03*tuning,50);
 
-		// is called inside ExpoConjugateGTRSBDPProfileProcess::Move(1,1,10);
-		// GlobalUpdateParameters();
 		PartitionedExpoConjugateGTRFiniteProfileProcess::Move(1,1,10);
 
-		if (PartitionedGTRProfileProcess::GetNpart() == nfreerr){
+		if (PartitionedGTRProfileProcess::GetNpart() == nfreerr && !fixbl){
 			LengthRelRateMove(1,10);
 			LengthRelRateMove(0.1,10);
 			LengthRelRateMove(0.01,10);
@@ -224,9 +223,12 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 
 		if(PartitionedDGamRateProcess::GetNpart() > 1 && !LinkedMultipliers())
 		{
-			LengthMultiplierMove(1,10);
-			LengthMultiplierMove(0.1,10);
-			LengthMultiplierMove(0.01,10);
+			if(!fixbl)
+			{
+				LengthMultiplierMove(1,10);
+				LengthMultiplierMove(0.1,10);
+				LengthMultiplierMove(0.01,10);
+			}
 
 			if(nfreerr > 0)
 			{
@@ -236,15 +238,9 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 			}
 		}
 
-		// chronosuffstat.Stop();
-
-		// chronounfold.Start();
 		bool err = GlobalUnfold();
-		// chronounfold.Stop();
 
 		chronototal.Stop();
-
-		// Trace(cerr);
 
 		return err;
 	}

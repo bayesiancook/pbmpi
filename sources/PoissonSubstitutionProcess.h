@@ -32,6 +32,8 @@ class PoissonSubstitutionProcess : public virtual SubstitutionProcess, public vi
 	const double* GetStationary(int site) {return zipstat[site];}
 	int GetNstate(int site) {return GetZipSize(site);}
 
+	virtual void ConditionalLikelihoodsToStatePostProbs(double*** aux,double*** statepostprob, int nodelabel, bool condalloc = false);
+
 	protected:
 
 	// CPU Level 3: implementations of likelihood propagation and substitution mapping methods
@@ -43,9 +45,15 @@ class PoissonSubstitutionProcess : public virtual SubstitutionProcess, public vi
 	void SimuPropagateZip(int* stateup, int* statedown, double time);
 
 	// CPU Level 1: gathering sufficient statistics from substitution mappings
+	void AddSiteRateSuffStat(int* siteratesuffstatcount, double* siteratesuffstatbeta, double branchlength, BranchSitePath** patharray, int* nonmissing);
+	void AddBranchLengthSuffStat(int& count, double& beta, BranchSitePath** patharray, int* nonmissing);
+	void AddSiteProfileSuffStat(int** siteprofilesuffstatcount, BranchSitePath** patharray, bool root);
+
+	/*
 	void AddSiteRateSuffStat(int* siteratesuffstatcount, BranchSitePath** patharray);
 	void AddBranchLengthSuffStat(int& count, BranchSitePath** patharray);
 	void AddSiteProfileSuffStat(int** siteprofilesuffstatcount, BranchSitePath** patharray, bool root);
+	*/
 
 	virtual void Delete() {
 		DeleteZip();
@@ -67,6 +75,7 @@ class PoissonSubstitutionProcess : public virtual SubstitutionProcess, public vi
 
 	void ChooseTrueStates(BranchSitePath** patharray, int* nodestateup, int* nodestatedown, bool root);
 	void ChooseRootTrueStates(int* nodestate);
+	void ZipToTruePostProbs(double*** statepostprob, int nodelabel);
 
 	private:
 

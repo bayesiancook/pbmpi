@@ -166,7 +166,7 @@ class RASCATGammaPhyloProcess : public virtual PoissonPhyloProcess, public virtu
 
 	void Trace(ostream& os)	{
 
-		os << GetSize() - 1;
+		os << GetIndex();
 		if (chronototal.GetTime())	{
 			os << '\t' << chronototal.GetTime() / 1000;
 			os << '\t' << ((int) (propchrono.GetTime() / chronototal.GetTime() * 100));
@@ -190,8 +190,10 @@ class RASCATGammaPhyloProcess : public virtual PoissonPhyloProcess, public virtu
 
 		chronototal.Start();
 		propchrono.Start();
-		BranchLengthMove(tuning);
-		BranchLengthMove(0.1 * tuning);
+		if (! fixbl)	{
+			BranchLengthMove(tuning);
+			BranchLengthMove(0.1 * tuning);
+		}
 		if (! fixtopo)	{
 			MoveTopo(10,0);
 		}
@@ -199,7 +201,9 @@ class RASCATGammaPhyloProcess : public virtual PoissonPhyloProcess, public virtu
 
 		GlobalCollapse();
 
-		GammaBranchProcess::Move(tuning,10);
+		if (! fixbl)	{
+			GammaBranchProcess::Move(tuning,10);
+		}
 
 		// this one is important 
 		GlobalUpdateParameters();

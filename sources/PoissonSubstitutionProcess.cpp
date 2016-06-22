@@ -188,6 +188,37 @@ BranchSitePath** PoissonSubstitutionProcess::SamplePaths(int* stateup, int* stat
 //-------------------------------------------------------------------------
 
 
+void PoissonSubstitutionProcess::AddSiteRateSuffStat(int* siteratesuffstatcount, double* siteratesuffstatbeta, double branchlength, BranchSitePath** patharray, int* nonmissing)	{
+	for (int i=GetSiteMin(); i<GetSiteMax(); i++)	{
+		if (nonmissing[i] == 1)	{
+			siteratesuffstatcount[i] += patharray[i]->GetNsub();
+			siteratesuffstatbeta[i] += branchlength;
+		}
+	}
+}
+
+
+void PoissonSubstitutionProcess::AddBranchLengthSuffStat(int& count, double& beta, BranchSitePath** patharray, int* nonmissing)	{
+	for (int i=GetSiteMin(); i<GetSiteMax(); i++)	{
+		if (nonmissing[i] == 1)	{
+			count += patharray[i]->GetNsub();
+			beta += GetRate(i);
+		}
+	}
+}
+
+
+void PoissonSubstitutionProcess::AddSiteProfileSuffStat(int** siteprofilesuffstatcount, BranchSitePath** patharray, bool root)	{
+	cerr << "error: in PoissonSubstitutionProcess::AddSiteProfileSuffStat: deprecated\n";
+	exit(1);
+	for (int i=GetSiteMin(); i<GetSiteMax(); i++)	{
+		if (root || patharray[i]->GetNsub())	{
+			siteprofilesuffstatcount[i][GetRandomStateFromZip(i,patharray[i]->GetFinalState())]++;
+		}
+	}
+}
+
+/*
 void PoissonSubstitutionProcess::AddSiteRateSuffStat(int* siteratesuffstatcount, BranchSitePath** patharray)	{
 	for (int i=sitemin; i<sitemax; i++)	{
 	// for (int i=0; i<GetNsite(); i++)	{
@@ -212,6 +243,7 @@ void PoissonSubstitutionProcess::AddSiteProfileSuffStat(int** siteprofilesuffsta
 		}
 	}
 }
+*/
 
 void PoissonSubstitutionProcess::ChooseTrueStates(BranchSitePath** patharray, int* nodestateup, int* nodestatedown, bool root)	{
 	for (int i=sitemin; i<sitemax; i++)	{
@@ -229,6 +261,45 @@ void PoissonSubstitutionProcess::ChooseRootTrueStates(int* nodestate)	{
 	for (int i=sitemin; i<sitemax; i++)	{
 		int tmp = GetRandomStateFromZip(i,nodestate[i]);
 		nodestate[i] = tmp;
+	}
+}
+
+void PoissonSubstitutionProcess::ConditionalLikelihoodsToStatePostProbs(double*** aux,double*** statepostprob, int nodelabel, bool condalloc)	{
+
+	SubstitutionProcess::ConditionalLikelihoodsToStatePostProbs(aux,statepostprob,nodelabel,condalloc);
+	ZipToTruePostProbs(statepostprob,nodelabel);
+}
+
+void PoissonSubstitutionProcess::ZipToTruePostProbs(double*** statepostprob, int nodelabel)	{
+
+	double tmp[GetGlobalNstate()];
+	for (int i=sitemin; i<sitemax; i++)	{
+		double* s = statepostprob[i][nodelabel];
+		double* pi = GetProfile(i);
+	
+		double total = 0;
+		for (int k=0; k<GetOrbitSize(i); k++)	{
+			tmp[GetStateFromZip(i,k)] = s[k];
+			total += zipstat[i][k];
+		}
+		if (GetZipSize(i) > GetOrbitSize(i))	{
+			double s0 = s[GetOrbitSize(i)];
+			for (int k=0; k<GetGlobalNstate(); k++)	{
+				if (! InOrbit(i,k))	{
+					tmp[k] = s0 * pi[k] / (1 - total);
+				}
+			}
+		}
+		double totprob = 0;
+		for (int k=0; k<GetGlobalNstate(); k++)	{
+			s[k] = tmp[k];
+			totprob += tmp[k];
+		}
+		if (fabs(totprob - 1) > 1e-7)	{
+			cerr << "error in PoissonSubstitutionProcess::ZipToTruePostProbs: total is not 1\n";
+			cerr << totprob << '\n';
+			exit(1);
+		}
 	}
 }
 
@@ -267,8 +338,6 @@ void PoissonSubstitutionProcess::UpdateZip(int i)	{
 		double total = 0;
 		double* pi = GetProfile(i);
 		for (int k=0; k<GetOrbitSize(i); k++)	{
-			int n = GetStateFromZip(i,k);
-			zipstat[i][k] = 0;
 			zipstat[i][k] = pi[GetStateFromZip(i,k)];
 			total += zipstat[i][k];
 		}

@@ -204,8 +204,10 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 		chronototal.Start();
 
 		propchrono.Start();
-		BranchLengthMove(tuning);
-		BranchLengthMove(0.1 * tuning);
+		if (! fixbl)	{
+			BranchLengthMove(tuning);
+			BranchLengthMove(0.1 * tuning);
+		}
 		if (! fixtopo)	{
 			MoveTopo(NSPR,NNNI);
 		}
@@ -213,27 +215,25 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 		propchrono.Stop();
 
 		
-		// MPI2: reactivate this in order to test the suff stat code
-		// chronocollapse.Start();
 		GlobalCollapse();
-		// chronocollapse.Stop();
 
-		// chronosuffstat.Start();
-		GammaBranchProcess::Move(tuning,10);
+		if (! fixbl)	{
+			GammaBranchProcess::Move(tuning,10);
+			GammaBranchProcess::Move(0.1*tuning,10);
+		}
 
 		GlobalUpdateParameters();
-		PartitionedDGamRateProcess::Move(0.3*tuning,15);
-		PartitionedDGamRateProcess::Move(0.03*tuning,15);
+		PartitionedDGamRateProcess::Move(tuning,50);
+		PartitionedDGamRateProcess::Move(0.3*tuning,50);
+		PartitionedDGamRateProcess::Move(0.03*tuning,50);
 
-		// is called inside ExpoConjugateGTRSBDPProfileProcess::Move(1,1,10);
-		// GlobalUpdateParameters();
 		PartitionedExpoConjugateGTRPartitionedProfileProcess::Move(1,1,10);
 		if (iscodon){
 			PartitionedExpoConjugateGTRPartitionedProfileProcess::Move(0.1,1,15);
 			PartitionedExpoConjugateGTRPartitionedProfileProcess::Move(0.01,1,15);
 		}
 
-		if (PartitionedGTRProfileProcess::GetNpart() == nfreerr){
+		if (PartitionedGTRProfileProcess::GetNpart() == nfreerr && !fixbl){
 			LengthRelRateMove(1,10);
 			LengthRelRateMove(0.1,10);
 			LengthRelRateMove(0.01,10);
@@ -241,9 +241,12 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 
 		if(PartitionedDGamRateProcess::GetNpart() > 1 && !LinkedMultipliers())
 		{
-			LengthMultiplierMove(1,10);
-			LengthMultiplierMove(0.1,10);
-			LengthMultiplierMove(0.01,10);
+			if(!fixbl)
+			{
+				LengthMultiplierMove(1,10);
+				LengthMultiplierMove(0.1,10);
+				LengthMultiplierMove(0.01,10);
+			}
 
 			if(nfreerr > 0)
 			{
@@ -253,15 +256,9 @@ class PartitionedRASGTRGammaPhyloProcess : public virtual PartitionedExpoConjuga
 			}
 		}
 
-		// chronosuffstat.Stop();
-
-		// chronounfold.Start();
 		bool err = GlobalUnfold();
-		// chronounfold.Stop();
 
 		chronototal.Stop();
-
-		// Trace(cerr);
 
 		return err;
 	}

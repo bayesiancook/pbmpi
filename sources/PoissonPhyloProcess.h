@@ -32,6 +32,8 @@ class PoissonPhyloProcess : public virtual PhyloProcess, public virtual PoissonS
 		PhyloProcess::Unfold();
 	}
 
+	void Collapse();
+
 	// protected:
 
 	// true data here !
@@ -58,10 +60,13 @@ class PoissonPhyloProcess : public virtual PhyloProcess, public virtual PoissonS
 
 	void UpdateSiteRateSuffStat();
 	void UpdateSiteProfileSuffStat();
+	void PoissonUpdateSiteProfileSuffStat();
 	void UpdateBranchLengthSuffStat();
 
 	void GlobalUpdateSiteProfileSuffStat();
 	void SlaveUpdateSiteProfileSuffStat();
+
+	int RecursiveUpdateSiteProfileSuffStat(const Link* from, int site);
 
 	const int* GetSiteProfileSuffStatCount(int site) {return siteprofilesuffstatcount[site];}
 

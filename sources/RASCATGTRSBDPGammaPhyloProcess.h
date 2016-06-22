@@ -119,6 +119,11 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 		}
 
 		Create(tree,plaindata,nratecat,inrrtype,insitemin,insitemax);
+		/*
+		if (fixbl)	{
+			SetLengthsFromNames();
+		}
+		*/
 		if (myid == 0)	{
 			Sample();
 			GlobalUnfold();
@@ -174,7 +179,7 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 
 		UpdateOccupancyNumbers();
 
-		os << GetSize() - 1;
+		os << GetIndex();
 		if (chronototal.GetTime())	{
 			os << '\t' << chronototal.GetTime() / 1000;
 			os << '\t' << ((int) (propchrono.GetTime() / chronototal.GetTime() * 100));
@@ -212,73 +217,45 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 		chronototal.Start();
 
 		propchrono.Start();
-		// cerr << "BL move\n";
-		BranchLengthMove(tuning);
-		BranchLengthMove(0.1 * tuning);
-		// cerr << "BL move ok\n";
-		// cerr << "gibbs\n";
+		if (! fixbl)	{
+			BranchLengthMove(tuning);
+			BranchLengthMove(0.1 * tuning);
+		}
 		if (! fixtopo)	{
 			MoveTopo(NSPR,NNNI);
 		}
-		// raph
-		/*
-		if (! fixtopo)	{
-			cout << "SPR " << GibbsSPR(4)<<'\n';	
-			for(int i=0; i<3; i++){
-				cout << "NNI"<<i<<' '<< GibbsNNI(0.1,1)<<'\n';
-			}
-
-		}
-		*/
-
-		// cerr << "gibbs ok\n";
 		propchrono.Stop();
 
 		
-		// MPI2: reactivate this in order to test the suff stat code
-		// chronocollapse.Start();
-		// cerr << "collapse\n";
 		GlobalCollapse();
-		// cerr << "collapse ok\n";
-		// chronocollapse.Stop();
 
-		// chronosuffstat.Start();
-		// cerr << "branch process move\n";
-		GammaBranchProcess::Move(tuning,10);
-		// cerr << "branch process move ok\n";
+		if (! fixbl)	{
+			GammaBranchProcess::Move(tuning,10);
+			GammaBranchProcess::Move(0.1*tuning,10);
+		}
 
-		// cerr << "rate move\n";
 		GlobalUpdateParameters();
+		DGamRateProcess::Move(tuning,10);
 		DGamRateProcess::Move(0.3*tuning,10);
 		DGamRateProcess::Move(0.03*tuning,10);
 
-		// cerr << "profile move\n";
-		// is called inside ExpoConjugateGTRSBDPProfileProcess::Move(1,1,10);
-		// GlobalUpdateParameters();
 		GlobalUpdateParameters();
-		ExpoConjugateGTRSBDPProfileProcess::Move(1,1,10);
+		ExpoConjugateGTRSBDPProfileProcess::Move(1,1,2);
 		if (iscodon){
-			ExpoConjugateGTRSBDPProfileProcess::Move(0.1,1,15);
-			ExpoConjugateGTRSBDPProfileProcess::Move(0.01,1,15);
+			ExpoConjugateGTRSBDPProfileProcess::Move(0.1,1,3);
+			ExpoConjugateGTRSBDPProfileProcess::Move(0.01,1,3);
 		}
+		GlobalUpdateParameters();
 
-		if (! fixrr){
+		if ((! fixrr) && (! fixbl)){
 			LengthRelRateMove(1,10);
 			LengthRelRateMove(0.1,10);
 			LengthRelRateMove(0.01,10);
 		}
 
-		// chronosuffstat.Stop();
-
-		// chronounfold.Start();
-		// cerr << "unfold\n";
 		bool err = GlobalUnfold();
-		// cerr << "unfold ok\n";
-		// chronounfold.Stop();
 
 		chronototal.Stop();
-
-		// Trace(cerr);
 
 		return err;
 	}
@@ -355,14 +332,10 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 	}
 
 	virtual void ReadPB(int argc, char* argv[]);
-	void ReadNocc(string name, int burnin, int every, int until);
 	void ReadRelRates(string name, int burnin, int every, int until);
 	void ReadSiteProfiles(string name, int burnin, int every, int until);
 	void SlaveComputeCVScore();
 	void SlaveComputeSiteLogL();
-
-	double ProfileProposal(double* profile, int cat, double tuning);
-	void ReadTestProfile(string name, int nrep, double tuning, int burnin, int every, int until);
 
 	protected:
 

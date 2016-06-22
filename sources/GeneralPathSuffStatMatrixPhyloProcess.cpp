@@ -66,11 +66,18 @@ void GeneralPathSuffStatMatrixPhyloProcess::Collapse()	{
 	DrawAllocations();
 	SampleNodeStates();
 	if (! dataclamped)	{
+		if (rateprior)	{
+			DrawAllocationsFromPrior();
+		}
+		if (profileprior)	{
+			DrawProfileFromPrior();
+		}
 		SimulateForward();
 	}
 	DeleteCondSiteLogL();
 	DeleteConditionalLikelihoods();
 	InactivateSumOverRateAllocations(ratealloc);
+	FillMissingMap();
 	SampleSubstitutionMappings(GetRoot());
 	// DeleteMatrices();
 	CreateSuffStat();
@@ -145,7 +152,8 @@ void GeneralPathSuffStatMatrixPhyloProcess::UpdateSiteProfileSuffStat()	{
 	}
 
 	for (int j=0; j<GetNbranch(); j++)	{
-		AddSiteProfileSuffStat(siterootstate,sitepaircount,sitewaitingtime,submap[j],blarray[j],(j == 0));
+		// AddSiteProfileSuffStat(siterootstate,sitepaircount,sitewaitingtime,submap[j],blarray[j],(j == 0));
+		AddSiteProfileSuffStat(siterootstate,sitepaircount,sitewaitingtime,submap[j],blarray[j],missingmap[j]);
 	}
 }
 
@@ -158,7 +166,8 @@ void GeneralPathSuffStatMatrixPhyloProcess::UpdateSiteRateSuffStat()	{
 	}
 
 	for (int j=1; j<GetNbranch(); j++)	{
-		AddSiteRateSuffStat(siteratesuffstatcount,siteratesuffstatbeta,submap[j],blarray[j]);
+		// AddSiteRateSuffStat(siteratesuffstatcount,siteratesuffstatbeta,submap[j],blarray[j]);
+		AddSiteRateSuffStat(siteratesuffstatcount,siteratesuffstatbeta,submap[j],blarray[j],missingmap[j]);
 	}
 }
 
@@ -171,7 +180,8 @@ void GeneralPathSuffStatMatrixPhyloProcess::UpdateBranchLengthSuffStat()	{
 		double& beta = branchlengthsuffstatbeta[j];
 		count = 0;
 		beta = 0;
-		AddBranchLengthSuffStat(count,beta,submap[j]);
+		// AddBranchLengthSuffStat(count,beta,submap[j]);
+		AddBranchLengthSuffStat(count,beta,submap[j],missingmap[j]);
 	}
 }
 
@@ -214,18 +224,17 @@ void GeneralPathSuffStatMatrixPhyloProcess::GlobalUpdateSiteProfileSuffStat()	{
 		smin[i] = width*i;
 		smax[i] = width*(1+i);
 		if (i == (nprocs-2)) smax[i] = GetNsite();
-		// workload[i] = (smax[i] - smin[i])*(GetNstate()*GetNstate()*sizeof(int) + GetNstate()*sizeof(double));
-		iworkload[i] = (smax[i] - smin[i])*(GetNstate()*GetNstate() + 1);
+		iworkload[i] = (smax[i] - smin[i])*(GetGlobalNstate()*GetGlobalNstate() + 1);
 		if (iworkload[i] > inalloc) inalloc = iworkload[i];
-		dworkload[i] = (smax[i] - smin[i])*GetNstate();
+		dworkload[i] = (smax[i] - smin[i])*GetGlobalNstate();
 		if (dworkload[i] > dnalloc) dnalloc = dworkload[i];
 	}
 
 	int* ivector = new int[inalloc];
 	double* dvector = new double[dnalloc];
 
-	int iload = GetNsite() * (GetNstate()*GetNstate() + 1);
-	int dload = GetNsite() * GetNstate();
+	int iload = GetNsite() * (GetGlobalNstate()*GetGlobalNstate() + 1);
+	int dload = GetNsite() * GetGlobalNstate();
 	int* iivector = new int[iload];
 	double* ddvector = new double[dload];
 
@@ -238,8 +247,8 @@ void GeneralPathSuffStatMatrixPhyloProcess::GlobalUpdateSiteProfileSuffStat()	{
 			iivector[im] = ivector[m];
 			im++;
 			m++;
-			for(int k=0; k<GetNstate(); ++k) {
-				for(int l=0; l<GetNstate(); ++l) {
+			for(int k=0; k<GetGlobalNstate(); ++k) {
+				for(int l=0; l<GetGlobalNstate(); ++l) {
 					if (ivector[m])	{
 						sitepaircount[j][pair<int,int>(k,l)] = ivector[m];
 					}
@@ -256,7 +265,7 @@ void GeneralPathSuffStatMatrixPhyloProcess::GlobalUpdateSiteProfileSuffStat()	{
 		MPI_Recv(dvector,dworkload[i-1],MPI_DOUBLE,i,TAG1,MPI_COMM_WORLD,&stat);
 		int m = 0;
 		for(int j=smin[i-1]; j<smax[i-1]; ++j) {
-			for(int k=0; k<GetNstate(); ++k) {
+			for(int k=0; k<GetGlobalNstate(); ++k) {
 				if (dvector[m])	{
 					sitewaitingtime[j][k] = dvector[m];
 				}
@@ -291,14 +300,14 @@ void GeneralPathSuffStatMatrixPhyloProcess::GlobalUpdateSiteProfileSuffStat()	{
 void GeneralPathSuffStatMatrixPhyloProcess::SlaveUpdateSiteProfileSuffStat()	{
 
 	UpdateSiteProfileSuffStat();
-	int iworkload = (sitemax- sitemin)*(GetNstate()*GetNstate()+1), dworkload = (sitemax - sitemin)*GetNstate();
+	int iworkload = (sitemax- sitemin)*(GetGlobalNstate()*GetGlobalNstate()+1), dworkload = (sitemax - sitemin)*GetGlobalNstate();
 	int* ivector = new int[iworkload];
 	int m = 0;
 	for(int j=sitemin; j<sitemax; ++j) {
 		ivector[m] = siterootstate[j];
 		m++;
-		for(int k=0; k<GetNstate(); ++k) {
-			for(int l=0; l<GetNstate(); ++l) {
+		for(int k=0; k<GetGlobalNstate(); ++k) {
+			for(int l=0; l<GetGlobalNstate(); ++l) {
 				ivector[m] = sitepaircount[j][pair<int,int>(k,l)];
 				m++;
 			}
@@ -313,7 +322,7 @@ void GeneralPathSuffStatMatrixPhyloProcess::SlaveUpdateSiteProfileSuffStat()	{
 	double* dvector = new double[dworkload];
 	m = 0;
 	for(int j=sitemin; j<sitemax; ++j) {
-		for(int k=0; k<GetNstate(); ++k) {
+		for(int k=0; k<GetGlobalNstate(); ++k) {
 			dvector[m] = sitewaitingtime[j][k];
 			m++;
 		}
@@ -329,8 +338,8 @@ void GeneralPathSuffStatMatrixPhyloProcess::SlaveUpdateSiteProfileSuffStat()	{
 		sitewaitingtime[i].clear();
 	}
 
-	int iload = GetNsite() * (GetNstate()*GetNstate() + 1);
-	int dload = GetNsite() * GetNstate();
+	int iload = GetNsite() * (GetGlobalNstate()*GetGlobalNstate() + 1);
+	int dload = GetNsite() * GetGlobalNstate();
 	int* iivector = new int[iload];
 	double* ddvector = new double[dload];
 
@@ -341,8 +350,8 @@ void GeneralPathSuffStatMatrixPhyloProcess::SlaveUpdateSiteProfileSuffStat()	{
 	for(int j=0; j<GetNsite(); j++)	{
 		siterootstate[j] = iivector[im];
 		im++;
-		for(int k=0; k<GetNstate(); ++k) {
-			for(int l=0; l<GetNstate(); ++l) {
+		for(int k=0; k<GetGlobalNstate(); ++k) {
+			for(int l=0; l<GetGlobalNstate(); ++l) {
 				if (iivector[im])	{
 					sitepaircount[j][pair<int,int>(k,l)] = iivector[im];
 				}
@@ -353,7 +362,7 @@ void GeneralPathSuffStatMatrixPhyloProcess::SlaveUpdateSiteProfileSuffStat()	{
 
 	int dm = 0;
 	for(int j=0; j<GetNsite(); j++)	{
-		for(int k=0; k<GetNstate(); ++k) {
+		for(int k=0; k<GetGlobalNstate(); ++k) {
 			if (ddvector[dm])	{
 				sitewaitingtime[j][k] = ddvector[dm];
 			}

@@ -78,11 +78,18 @@ void MatrixPhyloProcess::Collapse()	{
 	DrawAllocations();
 	SampleNodeStates();
 	if (! dataclamped)	{
+		if (rateprior)	{
+			DrawAllocationsFromPrior();
+		}
+		if (profileprior)	{
+			DrawProfileFromPrior();
+		}
 		SimulateForward();
 	}
 	DeleteCondSiteLogL();
 	DeleteConditionalLikelihoods();
 	InactivateSumOverRateAllocations(ratealloc);
+	FillMissingMap();
 	SampleSubstitutionMappings(GetRoot());
 	DeleteMatrices();
 	CreateSuffStat();

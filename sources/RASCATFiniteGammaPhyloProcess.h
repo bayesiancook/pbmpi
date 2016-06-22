@@ -178,7 +178,7 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 			// os << '\t' << ((int) (chronosuffstat.GetTime() / chronototal.GetTime() * 100));
 		}
 		*/
-		os << GetSize() - 1;
+		os << GetIndex();
 		if (chronototal.GetTime())	{
 			os << '\t' << chronototal.GetTime() / 1000;
 			os << '\t' << ((int) (propchrono.GetTime() / chronototal.GetTime() * 100));
@@ -202,8 +202,10 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 
 		chronototal.Start();
 		propchrono.Start();
-		BranchLengthMove(tuning);
-		BranchLengthMove(0.1 * tuning);
+		if (! fixbl)	{
+			BranchLengthMove(tuning);
+			BranchLengthMove(0.1 * tuning);
+		}
 		if (! fixtopo)	{
 			MoveTopo(NSPR,NNNI);
 		}
@@ -211,12 +213,16 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 
 		GlobalCollapse();
 
-		GammaBranchProcess::Move(tuning,10);
+		if (! fixbl)	{
+			GammaBranchProcess::Move(tuning,50);
+			GammaBranchProcess::Move(0.1*tuning,50);
+		}
 
 		// this one is important 
 		GlobalUpdateParameters();
-		DGamRateProcess::Move(0.3*tuning,10);
-		DGamRateProcess::Move(0.03*tuning,10);
+		DGamRateProcess::Move(tuning,50);
+		DGamRateProcess::Move(0.3*tuning,50);
+		DGamRateProcess::Move(0.03*tuning,50);
 		// RASCATSubstitutionProcess::MoveRate(tuning);
 
 		// this one is not useful
@@ -226,6 +232,7 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 		// GlobalUpdateParameters();
 
 		PoissonFiniteProfileProcess::Move(1,1,5);
+		GlobalUpdateParameters();
 
 		bool err = GlobalUnfold();
 

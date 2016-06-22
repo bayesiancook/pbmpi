@@ -28,10 +28,15 @@ class GeneralPathSuffStatMatrixSubstitutionProcess : public virtual MatrixSubsti
 
 	protected:
 
+	void AddBranchLengthSuffStat(int& count, double& beta, BranchSitePath** patharray, int* nonmissing);
+	void AddSiteRateSuffStat(int* count, double* beta, BranchSitePath** patharray, double length, int* nonmissing);
+	void AddSiteProfileSuffStat(int* siterootstate, map<pair<int,int>, int>* sitepaircount, map<int,double>* sitewaitingtime, BranchSitePath** patharray, double branchlength, int* nonmissing);
+	/*
 	void AddBranchLengthSuffStat(int& count, double& beta, BranchSitePath** patharray);
 	void AddSiteRateSuffStat(int* count, double* beta, BranchSitePath** patharray, double length);
 	// void AddSiteProfileSuffStat(int& siterootstate, map<pair<int,int>, int>& sitepaircount, map<int,double>& sitewaitingtime, BranchSitePath* path, double efflength, bool isroot);
 	void AddSiteProfileSuffStat(int* siterootstate, map<pair<int,int>, int>* sitepaircount, map<int,double>* sitewaitingtime, BranchSitePath** patharray, double branchlength, bool isroot);
+	*/
 
 };
 

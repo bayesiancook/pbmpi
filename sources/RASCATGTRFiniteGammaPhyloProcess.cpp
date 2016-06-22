@@ -196,12 +196,15 @@ void RASCATGTRFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	string testdatafile = "";
 	int rateprior = 0;
 	int profileprior = 0;
-	int rootprior = 0;
+	int rootprior = 1;
+	int savetrees = 0;
 
 	int rr = 0;
 	int siteprofile = 0;
 
 	bool ss = false;
+
+	int ancstatepostprobs = 0;
 
 	try	{
 
@@ -270,6 +273,12 @@ void RASCATGTRFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 			}
 			else if (s == "-siteprofile")	{
 				siteprofile = 1;
+			}
+			else if (s == "-savetrees")	{
+				savetrees = 1;
+			}
+			else if (s == "-anc")	{
+				ancstatepostprobs = 1;
 			}
 			else if (s == "-rr")	{
 				rr = 1;
@@ -351,6 +360,9 @@ void RASCATGTRFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	else if (siteprofile)	{
 		ReadSiteProfiles(name,burnin,every,until);
 	}
+	else if (ancstatepostprobs)	{
+		ReadAncestral(name,burnin,every,until);
+	}
 	else if (rr)	{
 		ReadRelRates(name,burnin,every,until);
 	}
@@ -358,7 +370,7 @@ void RASCATGTRFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 		ReadSiteRates(name,burnin,every,until);
 	}
 	else if (ppred)	{
-		PostPred(ppred,name,burnin,every,until,rateprior,profileprior,rootprior,testdatafile);
+		PostPred(ppred,name,burnin,every,until,rateprior,profileprior,rootprior,testdatafile,savetrees);
 	}
 	else if (map)	{
 		ReadMap(name,burnin,every,until);

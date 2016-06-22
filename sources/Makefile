@@ -8,16 +8,15 @@ SRCS=  TaxonSet.cpp Tree.cpp Random.cpp SequenceAlignment.cpp CodonSequenceAlign
 	OneProfileProcess.cpp MatrixProfileProcess.cpp MatrixOneProfileProcess.cpp \
 	GTRProfileProcess.cpp ExpoConjugateGTRProfileProcess.cpp \
 	ExpoConjugateGTRDPProfileProcess.cpp ExpoConjugateGTRSBDPProfileProcess.cpp \
-	ExpoConjugateGTRFiniteProfileProcess.cpp GeneralPathSuffStatGTRProfileProcess.cpp \
-	GeneralPathSuffStatMatrixOneProfileProcess.cpp MixtureProfileProcess.cpp \
+	ExpoConjugateGTRFiniteProfileProcess.cpp \
+	MixtureProfileProcess.cpp \
 	PoissonMixtureProfileProcess.cpp MatrixMixtureProfileProcess.cpp \
 	GTRMixtureProfileProcess.cpp ExpoConjugateGTRMixtureProfileProcess.cpp \
 	GeneralPathSuffStatMatrixMixtureProfileProcess.cpp \
-	GeneralPathSuffStatGTRFiniteProfileProcess.cpp GeneralPathSuffStatGTRDPProfileProcess.cpp \
-	GeneralPathSuffStatGTRSBDPProfileProcess.cpp DPProfileProcess.cpp SBDPProfileProcess.cpp \
+	DPProfileProcess.cpp SBDPProfileProcess.cpp \
 	PoissonDPProfileProcess.cpp PoissonSBDPProfileProcess.cpp MatrixDPProfileProcess.cpp \
 	MatrixSBDPProfileProcess.cpp FiniteProfileProcess.cpp PoissonFiniteProfileProcess.cpp \
-	MatrixFiniteProfileProcess.cpp AAMutSelProfileProcess.cpp CodonMutSelProfileProcess.cpp \
+	MatrixFiniteProfileProcess.cpp CodonMutSelProfileProcess.cpp \
 	AACodonMutSelProfileProcess.cpp SubstitutionProcess.cpp Propagate.cpp \
 	PoissonSubstitutionProcess.cpp MatrixSubstitutionProcess.cpp \
 	ExpoConjugateGTRSubstitutionProcess.cpp GeneralPathSuffStatMatrixSubstitutionProcess.cpp \
@@ -26,15 +25,10 @@ SRCS=  TaxonSet.cpp Tree.cpp Random.cpp SequenceAlignment.cpp CodonSequenceAlign
 	RASCATGammaPhyloProcess.cpp RASCATSBDPGammaPhyloProcess.cpp \
 	RASCATFiniteGammaPhyloProcess.cpp RASCATGTRFiniteGammaPhyloProcess.cpp \
 	RASCATGTRDPGammaPhyloProcess.cpp RASCATGTRSBDPGammaPhyloProcess.cpp \
-	GeneralPathSuffStatRASCATGTRFiniteGammaPhyloProcess.cpp \
-	GeneralPathSuffStatRASCATGTRDPGammaPhyloProcess.cpp \
-	GeneralPathSuffStatRASCATGTRSBDPGammaPhyloProcess.cpp AAMutSelFinitePhyloProcess.cpp AACodonMutSelFinitePhyloProcess.cpp CodonMutSelFinitePhyloProcess.cpp\
-	AAMutSelSiteSpecificPhyloProcess.cpp AAMutSelDPPhyloProcess.cpp \
-	AAMutSelSBDPPhyloProcess.cpp CodonMutSelSBDPPhyloProcess.cpp \
-	AACodonMutSelSBDPPhyloProcess.cpp MultiGeneMixture.cpp MultiGeneGTRSBDPMixture.cpp \
-	MultiGenePoissonSBDPMixture.cpp \
+	AACodonMutSelFinitePhyloProcess.cpp CodonMutSelFinitePhyloProcess.cpp\
+	CodonMutSelSBDPPhyloProcess.cpp \
+	AACodonMutSelSBDPPhyloProcess.cpp \
 	Bipartition.cpp BipartitionList.cpp Consensus.cpp TaxaParameters.cpp PBTree.cpp TreeList.cpp PolyNode.cpp correl.cpp correlation.cpp NNI.cpp \
-	BP2Stat.cpp BP2util.cpp \
 	PartitionedRASGTRGammaPhyloProcess.cpp PartitionedProfileProcess.cpp PartitionedGTRProfileProcess.cpp \
 	PartitionedGTRPhyloProcess.cpp PartitionedGTRPartitionedProfileProcess.cpp PartitionedGTRMixtureProfileProcess.cpp \
 	PartitionedExpoConjugateGTRSubstitutionProcess.cpp PartitionedExpoConjugateGTRProfileProcess.cpp \
@@ -49,7 +43,7 @@ ALL_SRCS=$(wildcard *.cpp)
 ALL_OBJS=$(patsubst %.cpp,%.o,$(ALL_SRCS))
 
 PROGSDIR=../data
-ALL= pb_mpi readpb_mpi tracecomp bpcomp 
+ALL= pb_mpi readpb_mpi tracecomp bpcomp cvrep
 PROGS=$(addprefix $(PROGSDIR)/, $(ALL))
 
 .PHONY: all clean
@@ -74,35 +68,23 @@ endif
 
 # Targets
 
-$(PROGSDIR)/missfrac: MissingFractionPerGene.o $(OBJS)
-	$(CC) MissingFractionPerGene.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@
+$(PROGSDIR)/cvrep : CVrep.o $(OBJS)
+	$(CC) CVrep.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@
 
 $(PROGSDIR)/jackknife: JackKnife.o $(OBJS)
 	$(CC) JackKnife.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@
 
-$(PROGSDIR)/simucodon: SimuCodon.o $(OBJS)
-	$(CC) SimuCodon.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@
-
 $(PROGSDIR)/readpb_mpi: ReadPB.o $(OBJS)
 	$(CC) ReadPB.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@
 
-$(PROGSDIR)/bpcomp2: BPcomp2.o $(OBJS)
-	$(CC) BPcomp2.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@
-
 $(PROGSDIR)/pb_mpi: PB.o $(OBJS)
 	$(CC) PB.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@
-
-$(PROGSDIR)/mpb_mpi: MultiGenePB.o $(OBJS)
-	$(CC) MultiGenePB.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@
 
 $(PROGSDIR)/tracecomp: TraceComp.o $(OBJS)
 	$(CC) TraceComp.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@
 
 $(PROGSDIR)/bpcomp: BPCompare.o $(OBJS)
 	$(CC) BPCompare.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@
-
-$(PROGSDIR)/woconst: woconst.o $(OBJS)
-	$(CC) woconst.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@
 
 clean:
 	-rm -f *.o *.d *.d.*

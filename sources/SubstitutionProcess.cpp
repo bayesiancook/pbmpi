@@ -412,6 +412,50 @@ double SubstitutionProcess::ComputeLikelihood(double*** aux, bool condalloc)	{
 }
 	
 
+void SubstitutionProcess::ConditionalLikelihoodsToStatePostProbs(double*** aux,double*** statepostprob, int nodelabel, bool condalloc)	{
+
+	for (int i=sitemin; i<sitemax; i++)	{
+		if (condalloc)	{
+			int j = ratealloc[i];
+			double* t = aux[i][j];
+			double* s = statepostprob[i][nodelabel];
+			/*
+			if (GetNstate(i) != GetNstate())	{
+				cerr << "error in SubstitutionProcess::ConditionalLikelihoodsToStatePostProbs: non matching number of states\n";
+				exit(1);
+			}
+			*/
+			double total = 0;
+			for (int k=0; k<GetNstate(i); k++)	{
+				s[k] = t[k];
+				total += s[k];
+			}
+			for (int k=0; k<GetNstate(i); k++)	{
+				s[k] /= total;
+			}
+		}
+		else	{
+			double* s = statepostprob[i][nodelabel];
+			for (int k=0; k<GetNstate(i); k++)	{
+				s[k] =0;
+			}
+			for (int j=0; j<GetNrate(i); j++)	{
+				double* t = aux[i][j];
+				for (int k=0; k<GetNstate(i); k++)	{
+					s[k] += t[k];
+				}
+			}
+			double total = 0;
+			for (int k=0; k<GetNstate(i); k++)	{
+				total += s[k];
+			}
+			for (int k=0; k<GetNstate(i); k++)	{
+				s[k] /= total;
+			}
+		}
+	}
+}
+
 //-------------------------------------------------------------------------
 //	* sample the allocation of each site to one of the available rate categories
 // 	for each site, the rate caegory is chosen with probability proportional
