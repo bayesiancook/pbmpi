@@ -156,21 +156,13 @@ double BranchProcess::RecursiveTotalLength(const Link* from)	{
 void BranchProcess::RecursiveSetLengthsFromNames(const Link* from)	{
 	if (! from->isRoot())	{
 		double l = atof(from->GetBranch()->GetName().c_str());
-		if (l < 0)	{
-			cerr << "error in BranchProcess::SetLengthsFromFile : negative branch length: " << l << '\n';
-			exit(1);
-		}
-		if (l == 0)	{
-			l = 1e-10;
-			// cerr << "warning: null branch length\n";
-		}
-		/*
 		if (l <= 0)	{
-			// l = 0.1;
+			l = 0.1;
+			/*
 			cerr << "error in BranchProcess::SetLengthsFromFile : " << l << '\n';
 			exit(1);
+			*/
 		}
-		*/
 		SetLength(from->GetBranch(),l);
 	}
 	for (const Link* link=from->Next(); link!=from; link=link->Next())	{

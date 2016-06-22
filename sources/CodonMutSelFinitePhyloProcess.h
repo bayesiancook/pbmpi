@@ -172,7 +172,7 @@ class CodonMutSelFinitePhyloProcess : public virtual CodonMutSelFiniteSubstituti
 	}
 
 	void TraceHeader(ostream& os)	{
-		os << "iter\ttime\tpruning\tlnL\tlength\tNmode\tstatent\tstatalpha\tnucsA\tnucsC\tnucsG\tnucsT\tnucrrAC\tnucrrAG\tnucrrAT\tnucrrCG\tnucrrCT\tnucrrGT";
+		os << "#iter\ttime\tpruning\tlnL\tlength\tNmode\tstatent\tstatalpha\tnucsA\tnucsC\tnucsG\tnucsT\tnucrrAC\tnucrrAG\tnucrrAT\tnucrrCG\tnucrrCT\tnucrrGT";
 		os << "\n";
 		//os << "\ttotaltime";
 		//os << "\tpruning\tsuffstat\tunfold\tcollapse";
@@ -183,7 +183,7 @@ class CodonMutSelFinitePhyloProcess : public virtual CodonMutSelFiniteSubstituti
 		UpdateOccupancyNumbers();
 
 		//os << ((int) (chronototal.GetTime() / 1000));
-		os << GetIndex();
+		os << GetSize();
 		if (chronototal.GetTime())	{
 			os << '\t' << chronototal.GetTime() / 1000;
 			os << '\t' << ((int) (propchrono.GetTime() / chronototal.GetTime() * 100));
@@ -264,16 +264,20 @@ class CodonMutSelFinitePhyloProcess : public virtual CodonMutSelFiniteSubstituti
 	// primary scheduler
 
 	double Move(double tuning = 1.0)	{
+		// cerr << "unfold\n";
 		chronototal.Start();
 		propchrono.Start();
+		//cerr << "bl\n";
 		if (! fixbl)	{
 			BranchLengthMove(tuning);
 			BranchLengthMove(0.1 * tuning);
 		}
+		//cerr << "gspr\n";
 		if (! fixtopo)	{
 			//GibbsSPR(50);
 			MoveTopo(NSPR,NNNI);
 		}
+		//cerr << "collapse\n";
 		propchrono.Stop();
 
 		chronosuffstat.Start();
@@ -281,6 +285,7 @@ class CodonMutSelFinitePhyloProcess : public virtual CodonMutSelFiniteSubstituti
 		chronocollapse.Start();
 		GlobalCollapse();
 		chronocollapse.Stop();
+		//cerr << "branch\n";
 		if (! fixbl)	{
 			GammaBranchProcess::Move(0.1 * tuning,10);
 			GammaBranchProcess::Move(tuning,10);
@@ -299,6 +304,12 @@ class CodonMutSelFinitePhyloProcess : public virtual CodonMutSelFiniteSubstituti
 		return err;
 	}
 
+
+	//void Sample()	{
+	//	PhyloProcess::SampleRate();
+	//	PhyloProcess::SampleLength();
+	//	PhyloProcess::SampleProfile();
+	//}
 
 	protected:
 
@@ -320,6 +331,7 @@ class CodonMutSelFinitePhyloProcess : public virtual CodonMutSelFiniteSubstituti
 	}
 
 	int dc;
+	int fixbl;
 	int NSPR;
 	int NNNI;
 	GeneticCodeType codetype;

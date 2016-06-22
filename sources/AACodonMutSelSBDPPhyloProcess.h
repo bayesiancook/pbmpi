@@ -180,7 +180,7 @@ class AACodonMutSelSBDPPhyloProcess : public virtual AACodonMutSelSBDPSubstituti
 	}
 
 	void TraceHeader(ostream& os)	{
-		os << "iter\ttime\tpruning\tlnL\tlength\tcodonent\tomega\tNmode\tstatent\tstatalpha\tnucsA\tnucsC\tnucsG\tnucsT\tnucrrAC\tnucrrAG\tnucrrAT\tnucrrCG\tnucrrCT\tnucrrGT";
+		os << "#iter\ttime\tpruning\tlnL\tlength\tcodonent\tomega\tNmode\tstatent\tstatalpha\tnucsA\tnucsC\tnucsG\tnucsT\tnucrrAC\tnucrrAG\tnucrrAT\tnucrrCG\tnucrrCT\tnucrrGT";
 		os << '\n'; 
 		//os << "lnL\tlength\tNmode\tNocc\tnucsA\tnucsC\tnucsT\tnucsG\tnucrrAC\tnucrrAG\tnucrrAT\tnucrrCG\tnucrrCT\tnucrrGT\tstatent";
 		//os << "\ttotaltime";
@@ -193,7 +193,7 @@ class AACodonMutSelSBDPPhyloProcess : public virtual AACodonMutSelSBDPSubstituti
 		UpdateOccupancyNumbers();
 
 		//os << ((int) (chronototal.GetTime() / 1000));
-		os << GetIndex();
+		os << GetSize();
 		if (chronototal.GetTime())	{
 			os << '\t' << chronototal.GetTime() / 1000;
 			os << '\t' << ((int) (propchrono.GetTime() / chronototal.GetTime() * 100));
@@ -282,6 +282,7 @@ class AACodonMutSelSBDPPhyloProcess : public virtual AACodonMutSelSBDPSubstituti
 	virtual void ReadPB(int argc, char* argv[]);
 	void Read(string name, int burnin, int every, int until);
 	void ReadMapStats(string name, int burnin, int every, int until);
+	//int CountNonSynMapping(const Link* from, int i);
 	int CountNonSynMapping(int i);
 	int CountNonSynMapping();
 	int GlobalNonSynMapping();
@@ -290,16 +291,22 @@ class AACodonMutSelSBDPPhyloProcess : public virtual AACodonMutSelSBDPSubstituti
 	// primary scheduler
 
 	double Move(double tuning = 1.0)	{
+		//cerr << "unfold\n";
 		chronototal.Start();
 		propchrono.Start();
+		//chronopruning.Start();
+		//cerr << "bl\n";
 		if (! fixbl)	{
 			BranchLengthMove(0.1 * tuning);
 			BranchLengthMove(tuning);
 		}
+		//cerr << "gspr\n";
 		if (! fixtopo)	{
 			//GibbsSPR(50);
 			MoveTopo(NSPR,NNNI);
 		}
+		//cerr << "collapse\n";
+		//chronopruning.Stop();
 		propchrono.Stop();
 
 		chronosuffstat.Start();
@@ -307,15 +314,19 @@ class AACodonMutSelSBDPPhyloProcess : public virtual AACodonMutSelSBDPSubstituti
 		chronocollapse.Start();
 		GlobalCollapse();
 		chronocollapse.Stop();
+		//cerr << "branch\n";
 		if (! fixbl)	{
 			GammaBranchProcess::Move(0.1 * tuning,10);
 			GammaBranchProcess::Move(tuning,10);
 		}
 
 		GlobalUpdateParameters();
+		//cerr << "AACodonMutSelSBDPProfileProcess\n";
 		AACodonMutSelSBDPProfileProcess::Move(tuning,1,15);
 		chronosuffstat.Stop();
 
+		//cerr << "GlobalUnfold\n";
+		//cerr.flush();
 		chronounfold.Start();
 		bool err = GlobalUnfold();
 		chronounfold.Stop();
@@ -355,6 +366,7 @@ class AACodonMutSelSBDPPhyloProcess : public virtual AACodonMutSelSBDPSubstituti
 
 	GeneticCodeType codetype;
 	CodonStateSpace* statespace;
+	int fixbl;
 	int NSPR;
 	int NNNI;
 	int fixcodonprofile;

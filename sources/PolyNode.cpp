@@ -428,7 +428,7 @@ string PolyNode::SortLeavesAlphabetical()	{
 			node = node->next;
 			degree++;
 		}	while(node!=down);
-		string* retval = new string[degree];
+		string retval[degree];
 		PolyNode* nodelist[degree];
 		int k = 0;
 		do	{
@@ -458,9 +458,7 @@ string PolyNode::SortLeavesAlphabetical()	{
 		}
 		nodelist[0]->prev = nodelist[degree-1];
 		down = nodelist[0];
-		string ret = retval[0];
-		delete[] retval;
-		return ret;
+		return retval[0];
 	}	
 	return "";
 }

@@ -48,32 +48,6 @@ void PoissonPhyloProcess::Delete()	{
 	}
 }
 
-void PoissonPhyloProcess::Collapse()	{
-
-	if (! condflag)	{
-		cerr << "error in PoissonPhyloProcess::Collapse\n";
-		exit(1);
-	}
-	DrawAllocations();
-	SampleNodeStates();
-	if (! dataclamped)	{
-		if (rateprior)	{
-			DrawAllocationsFromPrior();
-		}
-		if (profileprior)	{
-			DrawProfileFromPrior();
-		}
-		SimulateForward();
-	}
-	DeleteCondSiteLogL();
-	DeleteConditionalLikelihoods();
-	InactivateSumOverRateAllocations(ratealloc);
-	FillMissingMap();
-	SampleSubstitutionMappings(GetRoot());
-	CreateSuffStat();
-	PoissonUpdateSiteProfileSuffStat();
-}
-
 void PoissonPhyloProcess::CreateSuffStat()	{
 
 	PhyloProcess::CreateSuffStat();
@@ -107,76 +81,55 @@ void PoissonPhyloProcess::DeleteSuffStat()	{
 	PhyloProcess::DeleteSuffStat();
 }
 
-void PoissonPhyloProcess::UpdateBranchLengthSuffStat()	{
+/*
+void PoissonPhyloProcess::RecursiveSimulateForward(const Link* from)	{
+	
+	if (from->isRoot())	{
+		ChooseRootTrueStates(GetStates(from->GetNode()));
+	}
+	for (const Link* link=from->Next(); link!=from; link=link->Next())	{
+		SimuPropagate(GetStates(from->GetNode()),GetStates(link->Out()->GetNode()),GetLength(link->GetBranch()));
+		RecursiveSimulateForward(link->Out());
+	}
+}
+*/
 
-	// double R = GetNactiveSite() * GetMeanRate();
+void PoissonPhyloProcess::UpdateBranchLengthSuffStat()	{
+	if (! GetMyid())	{
+		cerr << "error in update branch length suff stat: master\n";
+		exit(1);
+	}
+	double R = (GetSiteMax() - GetSiteMin()) * GetMeanRate();
+	// double R = GetNsite() * GetMeanRate();
 	branchlengthsuffstatbeta[0] = 0;
 	branchlengthsuffstatcount[0] = 0;
 	for (int j=1; j<GetNbranch(); j++)	{
-		// branchlengthsuffstatbeta[j] = R;
-		branchlengthsuffstatbeta[j] = 0;
+		branchlengthsuffstatbeta[j] = R;
 		branchlengthsuffstatcount[j] = 0;
-		AddBranchLengthSuffStat(branchlengthsuffstatcount[j],branchlengthsuffstatbeta[j],submap[j],missingmap[j]);
+		AddBranchLengthSuffStat(branchlengthsuffstatcount[j],submap[j]);
 	}
 }
 
 void PoissonPhyloProcess::UpdateSiteRateSuffStat()	{
-	// double totallength = GetTotalLength();
-	for (int i=GetSiteMin(); i<GetSiteMax(); i++)	{
+	double totallength = GetTotalLength();
+	for (int i=sitemin; i<sitemax; i++)	{
 		siteratesuffstatcount[i] = 0;
-		siteratesuffstatbeta[i] = 0;
-		// siteratesuffstatbeta[i] = totallength;
+		siteratesuffstatbeta[i] = totallength;
 	}
 	for (int j=1; j<GetNbranch(); j++)	{
-		AddSiteRateSuffStat(siteratesuffstatcount,siteratesuffstatbeta,blarray[j],submap[j],missingmap[j]);
+		AddSiteRateSuffStat(siteratesuffstatcount,submap[j]);
 	}
 }
-
-int PoissonPhyloProcess::RecursiveUpdateSiteProfileSuffStat(const Link* from, int site)	{
-
-	int state = -1;
-	if (from->isLeaf())	{
-		state = GetData(from)[site];
-	}
-	else	{
-		for (const Link* link=from->Next(); link!=from; link=link->Next())	{
-			int tmp = RecursiveUpdateSiteProfileSuffStat(link->Out(),site);
-			if (tmp != -1)	{
-				if ((state != -1) && (state != tmp))	{
-					cerr << "error in PoissonPhyloProcess::RecursiveUpdateSiteProfileSuffStat: state should be identical\n";
-					cerr << state << '\t' << tmp << '\t' << GetZipSize(site) << '\t' << GetOrbitSize(site) << '\n';
-					exit(1);
-				}
-				state = tmp;
-			}
-		}
-	}
-	if (state != -1)	{
-		BranchSitePath* path = submap[GetBranchIndex(from->GetBranch())][site];
-		if (from->isRoot() || path->GetNsub())	{
-			if ((GetZipSize(site) != GetOrbitSize(site)) && (state == GetOrbitSize(site)))	{
-				cerr << "error in PoissonPhyloProcess::RecursiveUpdateSiteProfileSuffStat: state should be observed at tips\n";
-				exit(1);
-			}
-			int truestate = GetStateFromZip(site,state);
-			siteprofilesuffstatcount[site][truestate]++;
-			state = -1;
-		}
-	}
-	return state;
-}
-
 
 void PoissonPhyloProcess::UpdateSiteProfileSuffStat()	{
-}
 
-void PoissonPhyloProcess::PoissonUpdateSiteProfileSuffStat()	{
-
-	for (int i=GetSiteMin(); i<GetSiteMax(); i++)	{
+	for (int i=sitemin; i<sitemax; i++)	{
 		for (int k=0; k<GetDim(); k++)	{
 			siteprofilesuffstatcount[i][k] = 0;
 		}
-		RecursiveUpdateSiteProfileSuffStat(GetRoot(),i);
+	}
+	for (int j=0; j<GetNbranch(); j++)	{
+		AddSiteProfileSuffStat(siteprofilesuffstatcount,submap[j],(j==0));
 	}
 }
 
@@ -238,47 +191,7 @@ void PoissonPhyloProcess::SlaveUpdateSiteProfileSuffStat()	{
 	MPI_Bcast(allocsiteprofilesuffstatcount,GetNsite()*GetDim(),MPI_INT,0,MPI_COMM_WORLD);
 }
 
-/*
-void PoissonPhyloProcess::UpdateBranchLengthSuffStat()	{
-	if (! GetMyid())	{
-		cerr << "error in update branch length suff stat: master\n";
-		exit(1);
-	}
-	double R = (GetSiteMax() - GetSiteMin()) * GetMeanRate();
-	// double R = GetNsite() * GetMeanRate();
-	branchlengthsuffstatbeta[0] = 0;
-	branchlengthsuffstatcount[0] = 0;
-	for (int j=1; j<GetNbranch(); j++)	{
-		branchlengthsuffstatbeta[j] = R;
-		branchlengthsuffstatcount[j] = 0;
-		AddBranchLengthSuffStat(branchlengthsuffstatcount[j],submap[j]);
-	}
-}
 
-void PoissonPhyloProcess::UpdateSiteRateSuffStat()	{
-	double totallength = GetTotalLength();
-	for (int i=sitemin; i<sitemax; i++)	{
-		siteratesuffstatcount[i] = 0;
-		siteratesuffstatbeta[i] = totallength;
-	}
-	for (int j=1; j<GetNbranch(); j++)	{
-		AddSiteRateSuffStat(siteratesuffstatcount,submap[j]);
-	}
-}
-
-void PoissonPhyloProcess::UpdateSiteProfileSuffStat()	{
-
-	for (int i=sitemin; i<sitemax; i++)	{
-		for (int k=0; k<GetDim(); k++)	{
-			siteprofilesuffstatcount[i][k] = 0;
-		}
-	}
-	for (int j=0; j<GetNbranch(); j++)	{
-		AddSiteProfileSuffStat(siteprofilesuffstatcount,submap[j],(j==0));
-	}
-}
-
-*/
 
 /*
 void PoissonSubstitutionProcess::ChooseTrueStates(BranchSitePath** patharray, int* nodestateup, int* nodestatedown, bool root)	{

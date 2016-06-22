@@ -42,18 +42,11 @@ class ExpoConjugateGTRSubstitutionProcess : public virtual GTRSubstitutionProces
 
 	// CPU : level 1
 	// gathering sufficient statistics from substitution mappings at each site, for a given branch
-	void AddSiteRateSuffStat(int* siteratesuffstatcount, double* siteratesuffstatbeta, BranchSitePath** patharray, double branchlength, int* nonmissing);
-	void AddRRSuffStat(int* rrsuffstatcount, double* rrsuffstatbeta, BranchSitePath** patharray, double branchlength, int* nonmissing);
-
-	void AddBranchLengthSuffStat(int& count, double& beta, BranchSitePath** patharray, int* nonmissing);
-	void AddSiteProfileSuffStat(int** siteprofilesuffstatcount, double** siteprofilesuffstatbeta, BranchSitePath** patharray, double branchlength, int* nonmissing);
-	/*
 	void AddSiteRateSuffStat(int* siteratesuffstatcount, double* siteratesuffstatbeta, BranchSitePath** patharray, double branchlength);
 	void AddRRSuffStat(int* rrsuffstatcount, double* rrsuffstatbeta, BranchSitePath** patharray, double branchlength);
 
 	void AddBranchLengthSuffStat(int& count, double& beta, BranchSitePath** patharray);
 	void AddSiteProfileSuffStat(int** siteprofilesuffstatcount, double** siteprofilesuffstatbeta, BranchSitePath** patharray, double branchlength, bool isroot);
-	*/
 
 };
 

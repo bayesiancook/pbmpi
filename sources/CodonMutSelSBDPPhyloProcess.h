@@ -164,7 +164,7 @@ class CodonMutSelSBDPPhyloProcess : public virtual CodonMutSelSBDPSubstitutionPr
 	}
 
 	void TraceHeader(ostream& os)	{
-		os << "time\ttimeperccyle\tpruning\tlnL\tlength\talpha\tNmode\tstatent\tstatalpha\tnucsA\tnucsC\tnucsG\tnucsT\tnucrrAC\tnucrrAG\tnucrrAT\tnucrrCG\tnucrrCT\tnucrrGT";
+		os << "#time\ttimeperccyle\tpruning\tlnL\tlength\talpha\tNmode\tstatent\tstatalpha\tnucsA\tnucsC\tnucsG\tnucsT\tnucrrAC\tnucrrAG\tnucrrAT\tnucrrCG\tnucrrCT\tnucrrGT";
 		os << '\n'; 
 
 		//os << "lnL\tlength\tNmode\tNocc\tnucsA\tnucsC\tnucsT\tnucsG\tnucrrAC\tnucrrAG\tnucrrAT\tnucrrCG\tnucrrCT\tnucrrGT\tstatent";
@@ -178,7 +178,7 @@ class CodonMutSelSBDPPhyloProcess : public virtual CodonMutSelSBDPSubstitutionPr
 		UpdateOccupancyNumbers();
 
 		//os << ((int) (chronototal.GetTime() / 1000));
-		os << GetIndex();
+		os << GetSize();
 		if (chronototal.GetTime())	{
 			os << '\t' << chronototal.GetTime() / 1000;
 			os << '\t' << ((int) (propchrono.GetTime() / chronototal.GetTime() * 100));
@@ -315,6 +315,7 @@ class CodonMutSelSBDPPhyloProcess : public virtual CodonMutSelSBDPSubstitutionPr
 
 	GeneticCodeType codetype;
 	CodonStateSpace* statespace;
+	int fixbl;
 	int NSPR;
 	int NNNI;
 	int dc;

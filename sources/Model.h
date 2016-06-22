@@ -15,15 +15,23 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 
 
 #include "CodonSequenceAlignment.h"
-
 #include "RASCATGTRFiniteGammaPhyloProcess.h"
 #include "RASCATGTRSBDPGammaPhyloProcess.h"
+#include "GeneralPathSuffStatRASCATGTRDPGammaPhyloProcess.h"
+#include "GeneralPathSuffStatRASCATGTRSBDPGammaPhyloProcess.h"
+#include "RASCATGTRDPGammaPhyloProcess.h"
+#include "RASCATGammaPhyloProcess.h"
 #include "RASCATFiniteGammaPhyloProcess.h"
 #include "RASCATSBDPGammaPhyloProcess.h"
-#include "AACodonMutSelSBDPPhyloProcess.h"
+#include "GeneralPathSuffStatRASCATGTRFiniteGammaPhyloProcess.h"
+#include "AAMutSelFinitePhyloProcess.h"
 #include "AACodonMutSelFinitePhyloProcess.h"
+#include "AAMutSelSBDPPhyloProcess.h"
+#include "AAMutSelSiteSpecificPhyloProcess.h"
+#include "AAMutSelDPPhyloProcess.h"
 #include "CodonMutSelFinitePhyloProcess.h"
 #include "CodonMutSelSBDPPhyloProcess.h"
+#include "AACodonMutSelSBDPPhyloProcess.h"
 #include "PartitionedRASGTRGammaPhyloProcess.h"
 #include "PartitionedRASCATGTRSBDPGammaPhyloProcess.h"
 #include "PartitionedRASCATGTRFiniteGammaPhyloProcess.h"
@@ -151,6 +159,22 @@ class Model	{
 		else if (modeltype == 3)	{
 			cerr << "deprecated.\n";
 			exit(1);
+			if (mixturetype == 1)	{
+				type = "AAMUTSELFINITE";
+				process = new AAMutSelFinitePhyloProcess(datafile,treefile,codetype,ncat,fixncomp,empmix,mixtype,fixtopo,fixbl,dc,myid,nprocs);
+			}
+			else if (mixturetype == 2)	{
+				type = "AAMUTSELDP";
+				process = new AAMutSelDPPhyloProcess(datafile,treefile,codetype,fixtopo,fixbl,kappaprior,dc,myid,nprocs);
+			}
+			else if (mixturetype == 3)	{
+				type = "AAMUTSELSBDP";
+				process = new AAMutSelSBDPPhyloProcess(datafile,treefile,codetype,fixtopo,fixbl,kappaprior,dc,myid,nprocs);
+			}
+			else	{
+				cerr << "mixture type " << mixturetype << " not recognized\n";
+				exit(1);
+			}
 		}
 		
 
@@ -187,11 +211,6 @@ class Model	{
 			
 		}
 
-		process->SetFixBL(fixbl);
-		if (fixbl && (! myid))	{
-			cerr << "set lengths from tree file\n";
-			process->SetLengthsFromNames();
-		}
 		process->SetTopoBurnin(topoburnin);
 		process->SetErrorHandling(true);
 
@@ -255,11 +274,35 @@ class Model	{
 		else if (type == "PARTCATFIX")  {
 			process = new PartitionedRASGTRGammaPhyloProcess(is,myid,nprocs);
 		}
+		else if (type == "CATDP")   {
+			process = new RASCATGammaPhyloProcess(is,myid,nprocs);
+		}
+		else if (type == "CATSBDP") {
+			process = new RASCATSBDPGammaPhyloProcess(is,myid,nprocs);
+		}
+		else if (type == "CATFINITE")   {
+			process = new RASCATFiniteGammaPhyloProcess(is,myid,nprocs);
+		}
+		else if (type == "CATGTRDP")    {
+			process = new RASCATGTRDPGammaPhyloProcess(is,myid,nprocs);
+		}
+		else if (type == "CATGTRSBDP")  {
+			process = new RASCATGTRSBDPGammaPhyloProcess(is,myid,nprocs);
+		}
+		else if (type == "CATGTRFINITE")    {
+			process = new RASCATGTRFiniteGammaPhyloProcess(is,myid,nprocs);
+		}
+		else if (type == "CATDP")	{
+			process = new RASCATGammaPhyloProcess(is,myid,nprocs); 
+		}
 		else if (type == "CATSBDP")	{
 			process = new RASCATSBDPGammaPhyloProcess(is,myid,nprocs); 
 		}
 		else if (type == "CATFINITE")	{
 			process = new RASCATFiniteGammaPhyloProcess(is,myid,nprocs); 
+		}
+		else if (type == "CATGTRDP")	{
+			process = new RASCATGTRDPGammaPhyloProcess(is,myid,nprocs); 
 		}
 		else if (type == "CATGTRSBDP")	{
 			process = new RASCATGTRSBDPGammaPhyloProcess(is,myid,nprocs); 
@@ -272,8 +315,23 @@ class Model	{
 			cerr << "sorry, steppingstone sampling is not implemented for model type: " << type << '\n';
 			exit(1);
 		}
+		else if (type == "GPSSCATGTRSBDP")	{
+			process = new GeneralPathSuffStatRASCATGTRSBDPGammaPhyloProcess(is,myid,nprocs);
+		}
+		else if (type == "GPSSCATGTRFINITE")	{
+			process = new GeneralPathSuffStatRASCATGTRFiniteGammaPhyloProcess(is,myid,nprocs); 
+		}
+		else if (type == "AAMUTSELFINITE")	{
+			process = new AAMutSelFinitePhyloProcess(is,myid,nprocs);
+		}
 		else if (type == "AACODONMUTSELFINITE")	{
 			process = new AACodonMutSelFinitePhyloProcess(is,myid,nprocs);
+		}
+		else if (type == "AAMUTSELSBDP")	{
+			process = new AAMutSelSBDPPhyloProcess(is,myid,nprocs);
+		}
+		else if (type == "AAMUTSELDP")	{
+			process = new AAMutSelDPPhyloProcess(is,myid,nprocs);
 		}
 		else if (type == "CODONMUTSELFINITE")	{
 			process = new CodonMutSelFinitePhyloProcess(is,myid,nprocs);
@@ -289,6 +347,7 @@ class Model	{
 			exit(1);
 		}
 
+		// cerr << "RESTORE SETSIZE\n";
 		process->SetSize(size);
 		// cerr << "reset size to " << process->GetSize() << '\n';
 		process->SetErrorHandling(catch_errors);
@@ -318,7 +377,6 @@ class Model	{
 	}
 
 	void ToStream(ostream& os, bool header)	{
-		stringstream ss;
 		if (header)	{
 			os << type << '\n';
 			os << every << '\t' << until << '\t' << GetSize() << '\n';
@@ -326,8 +384,7 @@ class Model	{
 			os << stone_index << '\t' << num_stones << '\t' << alpha << '\n';
 			process->ToStreamHeader(os);
 		}
-		process->ToStream(ss);
-		os << ss.str();
+		process->ToStream(os);
 	}
 
 	~Model()	{
@@ -366,10 +423,6 @@ class Model	{
 
 	int GetSize()	{
 		return process->GetSize();
-	}
-	
-	void IncSize()	{
-		process->IncSize();
 	}
 
 	void RunStone(int burnin)
@@ -514,30 +567,11 @@ class Model	{
 	NewickTree* GetTree() {return process->GetLengthTree();}
 
 	void TraceHeader(ostream& os)	{
-		stringstream ss;
-		process->TraceHeader(ss);
-		os << ss.str();
+		process->TraceHeader(os);
 	}
 
 	void Trace(ostream& os)	{
-		stringstream ss;
-		process->Trace(ss);
-		os << ss.str();
-	}
-	
-	void TreeTrace(ostream& os)	{
-		stringstream ss;
-		process->SetNamesFromLengths();
-		process->RenormalizeBranchLengths();
-		GetTree()->ToStream(ss);
-		process->DenormalizeBranchLengths();
-		os << ss.str();
-	}
-	
-	void Monitor(ostream& os)	{
-		stringstream ss;
-		process->Monitor(ss);
-		os << ss.str();
+		process->Trace(os);
 	}
 
 	void ReadPB(int argc, char* argv[])	{

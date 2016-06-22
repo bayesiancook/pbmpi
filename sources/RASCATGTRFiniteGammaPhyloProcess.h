@@ -172,7 +172,7 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 
 	void Trace(ostream& os)	{
 
-		os << GetIndex();
+		os << GetSize() - 1;
 		if (chronototal.GetTime())	{
 			os << '\t' << chronototal.GetTime() / 1000;
 			os << '\t' << ((int) (propchrono.GetTime() / chronototal.GetTime() * 100));
@@ -200,42 +200,62 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 
 	double Move(double tuning = 1.0)	{
 
+		// cerr << "move\n";
 		chronototal.Start();
 
 		propchrono.Start();
-		if (! fixbl)	{
-			BranchLengthMove(tuning);
-			BranchLengthMove(0.1 * tuning);
-		}
+		// cerr << "BL move\n";
+		BranchLengthMove(tuning);
+		BranchLengthMove(0.1 * tuning);
+		// cerr << "BL move ok\n";
+		// cerr << "gibbs\n";
 		if (!fixtopo)	{
 			MoveTopo(NSPR,NNNI);
 		}
+		// cerr << "gibbs ok\n";
 		propchrono.Stop();
 
+		// MPI2: reactivate this in order to test the suff stat code
+		// chronocollapse.Start();
+		// cerr << "collapse\n";
 		GlobalCollapse();
+		// cerr << "collapse ok\n";
+		// chronocollapse.Stop();
 
-		if (! fixbl)	{
-			GammaBranchProcess::Move(tuning,50);
-			GammaBranchProcess::Move(0.1*tuning,50);
-		}
+		// chronosuffstat.Start();
+		// cerr << "branch process move\n";
+		GammaBranchProcess::Move(tuning,10);
+		// cerr << "branch process move ok\n";
 
+		// cerr << "rate move\n";
 		GlobalUpdateParameters();
-		DGamRateProcess::Move(tuning,50);
-		DGamRateProcess::Move(0.3*tuning,50);
-		DGamRateProcess::Move(0.03*tuning,50);
+		DGamRateProcess::Move(0.3*tuning,10);
+		DGamRateProcess::Move(0.03*tuning,10);
 
+		// cerr << "profile move\n";
+		// is called inside ExpoConjugateGTRDPProfileProcess::Move(1,1,10);
+		// GlobalUpdateParameters();
 		ExpoConjugateGTRFiniteProfileProcess::Move(1,1,10);
 
-		if ((! fixrr) && (! fixbl))	{
+		if (! fixrr)	{
 			LengthRelRateMove(1,10);
 			LengthRelRateMove(0.1,10);
 			LengthRelRateMove(0.01,10);
 		}
 
+		// chronosuffstat.Stop();
+
+		// chronounfold.Start();
+		// cerr << "unfold\n";
 		bool err = GlobalUnfold();
+		// cerr << "unfold ok\n";
+		// chronounfold.Stop();
 
 		chronototal.Stop();
 
+		// Trace(cerr);
+
+		// cerr << "move ok\n";
 		return err;
 	}
 

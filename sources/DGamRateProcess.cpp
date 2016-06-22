@@ -163,6 +163,27 @@ void DGamRateProcess::GlobalUpdateRateSuffStat()	{
 		ratesuffstatcount[i] = 0;
 		ratesuffstatbeta[i] = 0.0;
 	}
+#ifdef BYTE_COM
+	int k,l;
+	double x;
+	unsigned char* bvector = new unsigned char[workload*(sizeof(int)+sizeof(double))];
+
+	for(i=1; i<nprocs; ++i) {
+		MPI_Recv(bvector,workload*(sizeof(int)+sizeof(double)),MPI_UNSIGNED_CHAR,MPI_ANY_SOURCE,TAG1,MPI_COMM_WORLD,&stat);
+		for(j=0; j<workload; ++j) {
+			l = 0;
+			for(k=sizeof(int)-1; k>=0; --k) {
+				l = (l << 8) + bvector[sizeof(int)*j+k]; 
+			}
+			ratesuffstatcount[j] += l;
+		}
+		for(j=0; j<workload; ++j) {
+			memcpy(&x,&bvector[sizeof(int)*workload+sizeof(double)*j],sizeof(double));
+			ratesuffstatbeta[j] += x;
+		}
+	}
+	delete[] bvector;
+#else
 	int ivector[workload];
 	double dvector[workload];
         for(i=1; i<nprocs; ++i) {
@@ -178,6 +199,7 @@ void DGamRateProcess::GlobalUpdateRateSuffStat()	{
                         ratesuffstatbeta[j] += dvector[j]; 
                 }
         }
+#endif
 }
 
 void DGamRateProcess::UpdateRateSuffStat()	{
@@ -198,7 +220,29 @@ void DGamRateProcess::SlaveUpdateRateSuffStat()	{
 
 	UpdateRateSuffStat();
 
+#ifdef BYTE_COM
+	int n = 0;
+	unsigned int j;
+	unsigned char el_int[sizeof(int)],el_dbl[sizeof(double)];
+	unsigned char* bvector = new unsigned char[GetNcat()*(sizeof(int)+sizeof(double))];
+
+	for(int i=0; i<GetNcat(); ++i) {
+		convert(el_int,ratesuffstatcount[i]);
+		for(j=0; j<sizeof(int); ++j) {
+			bvector[n] = el_int[j]; n++;
+		}
+	}
+	for(int i=0; i<GetNcat(); ++i) {
+		convert(el_dbl,ratesuffstatbeta[i]);
+		for(j=0; j<sizeof(double); ++j) {
+			bvector[n] = el_dbl[j]; n++;
+		}
+	}
+	MPI_Send(bvector,GetNcat()*(sizeof(int)+sizeof(double)),MPI_UNSIGNED_CHAR,0,TAG1,MPI_COMM_WORLD);
+	delete[] bvector;
+#else
 	MPI_Send(ratesuffstatcount,GetNcat(),MPI_INT,0,TAG1,MPI_COMM_WORLD);
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Send(ratesuffstatbeta,GetNcat(),MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
+#endif
 }	
