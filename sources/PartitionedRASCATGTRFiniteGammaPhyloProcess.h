@@ -200,20 +200,16 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 		propchrono.Stop();
 
 		
-		// MPI2: reactivate this in order to test the suff stat code
-		// chronocollapse.Start();
 		GlobalCollapse();
-		// chronocollapse.Stop();
 
-		// chronosuffstat.Start();
-		GammaBranchProcess::Move(tuning,10);
+		GammaBranchProcess::Move(tuning,50);
+		GammaBranchProcess::Move(0.1*tuning,50);
 
 		GlobalUpdateParameters();
-		PartitionedDGamRateProcess::Move(0.3*tuning,15);
-		PartitionedDGamRateProcess::Move(0.03*tuning,15);
+		PartitionedDGamRateProcess::Move(tuning,50);
+		PartitionedDGamRateProcess::Move(0.3*tuning,50);
+		PartitionedDGamRateProcess::Move(0.03*tuning,50);
 
-		// is called inside ExpoConjugateGTRSBDPProfileProcess::Move(1,1,10);
-		// GlobalUpdateParameters();
 		PartitionedExpoConjugateGTRFiniteProfileProcess::Move(1,1,10);
 
 		if (PartitionedGTRProfileProcess::GetNpart() == nfreerr){
@@ -236,15 +232,9 @@ class PartitionedRASCATGTRFiniteGammaPhyloProcess : public virtual PartitionedEx
 			}
 		}
 
-		// chronosuffstat.Stop();
-
-		// chronounfold.Start();
 		bool err = GlobalUnfold();
-		// chronounfold.Stop();
 
 		chronototal.Stop();
-
-		// Trace(cerr);
 
 		return err;
 	}

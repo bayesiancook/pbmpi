@@ -177,46 +177,29 @@ class RASCATSBDPGammaPhyloProcess : public virtual RASCATGammaPhyloProcess, publ
 		if (! fixtopo)	{
 			MoveTopo(NSPR,NNNI);
 		}
-		//raph
-		/*
-		if (! fixtopo)	{
-			cout << "SPR " << GibbsSPR(4)<<'\n';	
-			for(int i=0; i<1; i++){
-				cout << "NNI"<<i<<' '<< GibbsNNI(0.1,1)<<'\n';
-			}
-
-		}
-		*/
 		propchrono.Stop();
 
 
 		GlobalCollapse();
 
 		GammaBranchProcess::Move(tuning,10);
+		GammaBranchProcess::Move(0.1*tuning,10);
 
-		// this one is important 
 		GlobalUpdateParameters();
+		DGamRateProcess::Move(tuning,10);
 		DGamRateProcess::Move(0.3*tuning,10);
 		DGamRateProcess::Move(0.03*tuning,10);
-		// RASCATSubstitutionProcess::MoveRate(tuning);
-
-		// this one is not useful
-		// because uniformized process:
-		// conditional on discrete substitution mapping
-		// profiles do not depend on branch lengths and site rates
-		// GlobalUpdateParameters();
 
 		PoissonSBDPProfileProcess::Move(1,1,5);
 		if (iscodon)	{
 			PoissonSBDPProfileProcess::Move(0.1,1,15);
 			PoissonSBDPProfileProcess::Move(0.01,1,15);
 		}
+		GlobalUpdateParameters();
 
 		bool err = GlobalUnfold();
 
 		chronototal.Stop();
-
-		// Trace(cerr);
 
 		return err;
 	
