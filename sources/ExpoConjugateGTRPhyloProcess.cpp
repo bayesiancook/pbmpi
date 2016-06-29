@@ -98,7 +98,6 @@ void ExpoConjugateGTRPhyloProcess::UpdateSiteRateSuffStat()	{
 
 void ExpoConjugateGTRPhyloProcess::UpdateBranchLengthSuffStat()	{
 
-	
 	branchlengthsuffstatcount[0] = 0;
 	branchlengthsuffstatbeta[0] = 0;
 	for (int j=1; j<GetNbranch(); j++)	{

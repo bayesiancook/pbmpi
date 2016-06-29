@@ -28,6 +28,8 @@ class ExpoConjugateGTRSubstitutionProcess : public virtual GTRSubstitutionProces
 	ExpoConjugateGTRSubstitutionProcess() {}
 	virtual ~ExpoConjugateGTRSubstitutionProcess() {}
 
+	virtual int GetNstate(int site) {return GetDim();}
+
 	protected:
 
 	void Create(int innsite, int indim,int insitemin,int insitemax)	{
