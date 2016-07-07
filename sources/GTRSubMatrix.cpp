@@ -22,6 +22,7 @@ using namespace std;
 //		 GTRSubMatrix
 // ---------------------------------------------------------------------------
 
+int GTRSubMatrix::minstat = 0;
 
 GTRSubMatrix::GTRSubMatrix(int inNstate, const double* rr, const double* stat, bool innormalise) : SubMatrix(inNstate, innormalise)	{
 
@@ -32,9 +33,17 @@ GTRSubMatrix::GTRSubMatrix(int inNstate, const double* rr, const double* stat, b
 }
 
 void GTRSubMatrix::ComputeStationary()	{
+	double total = 0;
+	if (minstat != 0)	{
+		cerr << minstat << '\n';
+		exit(1);
+	}
 	for (int k=0; k<Nstate; k++)	{
-		mStationary[k] = ExternalStat[k];
-		// mStationary[k] = instat[k];
+		mStationary[k] = ExternalStat[k] + minstat;
+		total += mStationary[k];
+	}
+	for (int k=0; k<Nstate; k++)	{
+		mStationary[k] /= total;
 	}
 }
 

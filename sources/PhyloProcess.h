@@ -189,6 +189,16 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 		return empfreq;
 	}
 
+	int isObserved(int site, int k)	{
+		int obs = 0;
+		for (int j=0; j<GetNtaxa(); j++)	{
+			if (GetData()->GetState(j,site) == k)	{
+				obs = 1;
+			}
+		}
+		return obs;
+	}
+
 	// the following methods are particularly important for MPI
 	// Create / Delete / Unfold and Collapse should probably be specialized
 	// according to whether this is a slave or the master processus

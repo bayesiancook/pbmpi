@@ -224,8 +224,10 @@ void SubstitutionProcess::Offset(double*** t, bool condalloc)	{
 				double max = 0;
 				for (int k=0; k<GetNstate(i); k++)	{
 					if (tmp[k] <0)	{
+						/*
 						cerr << "error in pruning: negative prob : " << tmp[k] << "\n";
 						exit(1);
+						*/
 						tmp[k] = 0;
 					}
 					if (max < tmp[k])	{

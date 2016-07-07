@@ -23,6 +23,7 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 #include <list>
 #include "TexTab.h"
 
+
 void RASCATGTRSBDPGammaPhyloProcess::GlobalUpdateParameters()	{
 	// MPI2
 	// should send the slaves the relevant information

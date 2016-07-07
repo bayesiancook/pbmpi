@@ -93,6 +93,33 @@ class ProfileProcess {
 		burnin = in;
 	}
 
+	virtual int isObserved(int site, int k) = 0;
+
+	double GetMinStat(int site)	{
+
+		double* profile = GetProfile(site);
+		double min = 1;
+		for (int k=0; k<GetDim(); k++)	{
+			if (isObserved(site,k))	{
+				if (min > profile[k])	{
+					min = profile[k];
+				}
+			}
+		}
+		return min;
+	}
+
+	double GetMinMinStat()	{
+		double min = 1;
+		for (int i=0; i<GetNsite(); i++)	{
+			double tmp = GetMinStat(i);
+			if (min > tmp)	{
+				min = tmp;
+			}
+		}
+		return min;
+	}
+
 	protected:
 
 	virtual void DrawProfileFromPrior() {

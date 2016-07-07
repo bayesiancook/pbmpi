@@ -337,16 +337,6 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 		GlobalUpdateParameters();
 	}
 
-	int isObserved(int site, int k)	{
-		int obs = 0;
-		for (int j=0; j<GetNtaxa(); j++)	{
-			if (GetData()->GetState(j,site) == k)	{
-				obs = 1;
-			}
-		}
-		return obs;
-	}
-
 	virtual void ReadPB(int argc, char* argv[]);
 	void ReadRelRates(string name, int burnin, int every, int until);
 	void ReadSiteProfiles(string name, int burnin, int every, int until);

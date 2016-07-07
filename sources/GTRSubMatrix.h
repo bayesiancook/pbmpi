@@ -24,6 +24,7 @@ class GTRSubMatrix : public virtual SubMatrix	{
 
 	public:
 
+
 				GTRSubMatrix(int nstate, const double* rr, const double* stat, bool innormalise = false);
 				~GTRSubMatrix() {};
 
@@ -32,6 +33,10 @@ class GTRSubMatrix : public virtual SubMatrix	{
 
 	static int rrindex(int i, int j, int nstate)	{
 		return (i<j) ? (2 * nstate - i - 1) * i / 2 + j - i - 1 : (2 * nstate - j - 1) * j / 2 + i - j - 1 ;
+	}
+
+	static void SetMinStat(double in)	{
+		minstat = in;
 	}
 
 	// make a copy of the entries (not of the pointer)
@@ -49,6 +54,9 @@ class GTRSubMatrix : public virtual SubMatrix	{
 	const double* mRelativeRate;
 	const double* ExternalStat;
 	int Nrr;
+
+	static int minstat;
+
 };
 
 

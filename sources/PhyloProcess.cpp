@@ -2276,9 +2276,6 @@ void PhyloProcess::SlaveSetTestData()	{
 
 void PhyloProcess::ReadCV(string testdatafile, string name, int burnin, int every, int until, int iscodon, GeneticCodeType codetype)	{
 	
-	cerr << "in ReadCV: currently not working\n";
-	exit(1);
-
 	ifstream is((name + ".chain").c_str());
 	if (!is)	{
 		cerr << "error: no .chain file found\n";
@@ -2313,7 +2310,6 @@ void PhyloProcess::ReadCV(string testdatafile, string name, int burnin, int ever
 
 	while (i < until)	{
 		cerr << ".";
-		cerr << GetNsite() << '\n';
 		samplesize++;
 		FromStream(is);
 		i++;
@@ -2330,6 +2326,7 @@ void PhyloProcess::ReadCV(string testdatafile, string name, int burnin, int ever
 			score += tmp;
 		}
 		scorelist.push_back(score);
+		cerr << score << '\n';
 		
 		int nrep = 1;
 		while ((i<until) && (nrep < every))	{

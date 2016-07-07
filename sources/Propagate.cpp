@@ -178,6 +178,7 @@ void MatrixSubstitutionProcess::Propagate(double*** from, double*** to, double t
 						exit(1);
 					}
 				}
+				/*
 				maxup = 0.0;
 				for(k=0; k<nstate; k++)	{
 					if (up[k] < 0.0)	{
@@ -206,6 +207,7 @@ void MatrixSubstitutionProcess::Propagate(double*** from, double*** to, double t
 					}
 					cerr << time << '\t' << length << '\n';
 					cerr << GetDim() << '\n';
+					cerr << GetMinStat(i) << '\n';
 					exit(1);
 				}
 				if (max == 0.0)	{
@@ -217,7 +219,7 @@ void MatrixSubstitutionProcess::Propagate(double*** from, double*** to, double t
 					cerr << '\n';
 					exit(1);
 				}
-
+				*/
 
 				// this is the offset (in log)
 				down[nstate] = up[nstate];

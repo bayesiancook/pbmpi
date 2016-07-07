@@ -107,33 +107,6 @@ class ExpoConjugateGTRSBDPProfileProcess : public virtual MatrixSBDPProfileProce
 	void ToStream(ostream& os);
 	void FromStream(istream& is);
 
-	virtual int isObserved(int site, int k) = 0;
-
-	double GetMinStat(int site)	{
-
-		int cat = alloc[site];
-		double min = 1;
-		for (int k=0; k<GetDim(); k++)	{
-			if (isObserved(site,k))	{
-				if (min > profile[cat][k])	{
-					min = profile[cat][k];
-				}
-			}
-		}
-		return min;
-	}
-
-	double GetMinMinStat()	{
-		double min = 1;
-		for (int i=0; i<GetNsite(); i++)	{
-			double tmp = GetMinStat(i);
-			if (min > tmp)	{
-				min = tmp;
-			}
-		}
-		return min;
-	}
-
 	protected:
 
 	virtual double LogProxy(int site, int cat)	{
