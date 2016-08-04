@@ -1032,7 +1032,8 @@ void PhyloProcess::ForwardFillMissingMap(const Link* from, const Link* up)	{
 					missingmap[index][i] = 1;
 				}
 				else	{
-					if (missingmap[index][i] > 1)	{
+					if (from->isLeaf() || (missingmap[index][i] > 1))	{
+					// if (missingmap[index][i] > 1)	{
 						missingmap[index][i] = 2;
 					}
 					else	{
