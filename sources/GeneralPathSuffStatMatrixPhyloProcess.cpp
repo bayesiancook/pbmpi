@@ -123,6 +123,7 @@ void GeneralPathSuffStatMatrixPhyloProcess::UpdateSiteProfileSuffStat()	{
 	for (int i=sitemin; i<sitemax; i++)	{
 		sitepaircount[i].clear();
 		sitewaitingtime[i].clear();
+		siterootstate[i] = -1;
 	}
 
 	for (int j=0; j<GetNbranch(); j++)	{

@@ -63,12 +63,14 @@ void GeneralPathSuffStatMatrixMixtureProfileProcess::UpdateModeProfileSuffStat()
 		}
 		*/
 		int cat = alloc[i];
-		profilerootcount[cat][rootstate]++;
-		for (map<int,double>::iterator i = waitingtime.begin(); i!= waitingtime.end(); i++)	{
-			profilewaitingtime[cat][i->first] += i->second;
-		}
-		for (map<pair<int,int>, int>::iterator i = paircount.begin(); i!= paircount.end(); i++)	{
-			profilepaircount[cat][i->first] += i->second;
+		if (rootstate != -1)	{
+			profilerootcount[cat][rootstate]++;
+			for (map<int,double>::iterator i = waitingtime.begin(); i!= waitingtime.end(); i++)	{
+				profilewaitingtime[cat][i->first] += i->second;
+			}
+			for (map<pair<int,int>, int>::iterator i = paircount.begin(); i!= paircount.end(); i++)	{
+				profilepaircount[cat][i->first] += i->second;
+			}
 		}
 	}
 }
@@ -122,16 +124,18 @@ double GeneralPathSuffStatMatrixMixtureProfileProcess::LogStatProb(int site, int
 	double total = 0;
 	SubMatrix* mat = matrixarray[cat];
 	const double* stat = matrixarray[cat]->GetStationary();
-	total += log(stat[GetSiteRootState(site)]);
+	if (GetSiteRootState(site) != -1)	{
+		total += log(stat[GetSiteRootState(site)]);
 
-	map<int,double>& waitingtime = GetSiteWaitingTime(site);
-	for (map<int,double>::iterator i = waitingtime.begin(); i!= waitingtime.end(); i++)	{
-		total += i->second * (*mat)(i->first,i->first);
-	}
+		map<int,double>& waitingtime = GetSiteWaitingTime(site);
+		for (map<int,double>::iterator i = waitingtime.begin(); i!= waitingtime.end(); i++)	{
+			total += i->second * (*mat)(i->first,i->first);
+		}
 
-	map<pair<int,int>, int>& paircount = GetSitePairCount(site);
-	for (map<pair<int,int>, int>::iterator i = paircount.begin(); i!= paircount.end(); i++)	{
-		total += i->second * log((*mat)(i->first.first, i->first.second));
+		map<pair<int,int>, int>& paircount = GetSitePairCount(site);
+		for (map<pair<int,int>, int>::iterator i = paircount.begin(); i!= paircount.end(); i++)	{
+			total += i->second * log((*mat)(i->first.first, i->first.second));
+		}
 	}
 	return total;
 }

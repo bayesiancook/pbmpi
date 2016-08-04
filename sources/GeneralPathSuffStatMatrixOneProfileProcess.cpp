@@ -35,12 +35,14 @@ void GeneralPathSuffStatMatrixOneProfileProcess::UpdateProfileSuffStat()	{
 		map<int,double>& waitingtime = GetSiteWaitingTime(i);
 		int rootstate = GetSiteRootState(i);
 
-		profilerootcount[rootstate]++;
-		for (map<int,double>::iterator i = waitingtime.begin(); i!= waitingtime.end(); i++)	{
-			profilewaitingtime[i->first] += i->second;
-		}
-		for (map<pair<int,int>, int>::iterator i = paircount.begin(); i!= paircount.end(); i++)	{
-			profilepaircount[i->first] += i->second;
+		if (rootstate != -1)	{
+			profilerootcount[rootstate]++;
+			for (map<int,double>::iterator i = waitingtime.begin(); i!= waitingtime.end(); i++)	{
+				profilewaitingtime[i->first] += i->second;
+			}
+			for (map<pair<int,int>, int>::iterator i = paircount.begin(); i!= paircount.end(); i++)	{
+				profilepaircount[i->first] += i->second;
+			}
 		}
 	}
 }
