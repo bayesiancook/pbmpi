@@ -2137,7 +2137,6 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 			os.close();
 		}
 
-		MPI_Status stat;
 		MESSAGE signal = BCAST_TREE;
 		MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 		GlobalBroadcastTree();
