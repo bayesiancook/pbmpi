@@ -178,7 +178,6 @@ void MatrixSubstitutionProcess::Propagate(double*** from, double*** to, double t
 						exit(1);
 					}
 				}
-				/*
 				maxup = 0.0;
 				for(k=0; k<nstate; k++)	{
 					if (up[k] < 0.0)	{
@@ -199,6 +198,7 @@ void MatrixSubstitutionProcess::Propagate(double*** from, double*** to, double t
 						max = down[k];
 					}
 				}
+				/*
 				if (maxup == 0.0)	{
 					cerr << "error in backward propagate: null up array\n";
 					cerr << "site : " << i << '\n';

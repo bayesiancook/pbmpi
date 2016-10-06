@@ -224,25 +224,27 @@ void SubstitutionProcess::Offset(double*** t, bool condalloc)	{
 				double max = 0;
 				for (int k=0; k<GetNstate(i); k++)	{
 					if (tmp[k] <0)	{
-						/*
 						cerr << "error in pruning: negative prob : " << tmp[k] << "\n";
 						exit(1);
-						*/
-						tmp[k] = 0;
+						// tmp[k] = 0;
 					}
 					if (max < tmp[k])	{
 						max = tmp[k];
 					}
 				}
+				/*
 				if (max == 0)	{
 					max = 1e-12;
-					/*
-					cerr << "error in pruning: null likelihood\n";
-					exit(1);
-					*/
 				}
-				for (int k=0; k<GetNstate(i); k++)	{
-					tmp[k] /= max;
+				*/
+				if (max < 0)	{
+					cerr << "error in pruning (offset function): null likelihood\n";
+					exit(1);
+				}
+				if (max > 0)	{
+					for (int k=0; k<GetNstate(i); k++)	{
+						tmp[k] /= max;
+					}
 				}
 				tmp[GetNstate(i)] += log(max);
 			}
@@ -256,8 +258,8 @@ void SubstitutionProcess::Offset(double*** t, bool condalloc)	{
 //-------------------------------------------------------------------------
 
 double SubstitutionProcess::ComputeLikelihood(double*** aux, bool condalloc)	{
+
 	for (int i=sitemin; i<sitemax; i++)	{
-	// for (int i=0; i<GetNsite(); i++)	{
 		if (condalloc)	{
 			int j = ratealloc[i];
 			double* t = aux[i][j];
@@ -265,21 +267,12 @@ double SubstitutionProcess::ComputeLikelihood(double*** aux, bool condalloc)	{
 			int nstate = GetNstate(i);
 			for (int k=0; k<nstate; k++)	{
 				tot += (*t++);
-				// tot += t[k];
 			}
 			if (tot == 0)	{
 				// dirty !
 				tot = 1e-12;
-				/*
-				cerr << "pruning : 0 \n";
-				for (int k=0; k<GetNstate(i); k++)	{
-					cerr << t[k] << '\n';
-				}
-				exit(1);
-				*/
 			}
 			sitelogL[i] = log(tot) + (*t);
-			// sitelogL[i] = log(tot) + t[GetNstate(i)];
 			t -= nstate;
 		}
 		else	{
@@ -291,21 +284,25 @@ double SubstitutionProcess::ComputeLikelihood(double*** aux, bool condalloc)	{
 				int nstate = GetNstate(i);
 				for (int k=0; k<nstate; k++)	{
 					tot += (*t++);
-					// tot += t[k];
+				}
+				if (tot < 0)	{
+					cerr << "error in SubstitutionProcess::ComputeLikelihood: negative prob\n";
+					cerr << tot << '\n';
+					exit(1);
+				}
+				if (isnan(tot))	{
+					cerr << "error in SubstitutionProcess::ComputeLikelihood: tot is nan\n";
+					for (int k=0; k<nstate; k++)	{
+						cerr << GetStationary(i)[k] << '\t';
+					}
+					cerr << '\n';
+					exit(1);
 				}
 				if (tot == 0)	{
 					// dirty !
 					tot = 1e-12;
-					/*
-					cerr << "pruning : 0 \n";
-					for (int k=0; k<GetNstate(i); k++)	{
-						cerr << t[k] << '\n';
-					}
-					exit(1);
-					*/
 				}
 				logl[j] = log(tot) + (*t);
-				// logl[j] = log(tot) + t[GetNstate(i)];
 				t -= nstate;
 				if ((!j) || (max < logl[j]))	{
 					max = logl[j];
@@ -326,7 +323,6 @@ double SubstitutionProcess::ComputeLikelihood(double*** aux, bool condalloc)	{
 
 	logL = 0;
 	for (int i=sitemin; i<sitemax; i++)	{
-	// for (int i=0; i<GetNsite(); i++)	{
 		logL += sitelogL[i];
 	}
 	return logL;

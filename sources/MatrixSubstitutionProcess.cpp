@@ -68,6 +68,18 @@ BranchSitePath* MatrixSubstitutionProcess::ResampleAcceptReject(int maxtrial, in
 
 	int ntrial = 0;
 	BranchSitePath* path = 0;
+	if (rate * totaltime < 1e-10)	{
+	// if (rate * totaltime == 0)	{
+		if (stateup != statedown)	{
+			cerr << "error in MatrixSubstitutionProcess::ResampleAcceptReject: stateup != statedown, efflength == 0\n";
+			exit(1);
+		}
+		delete path;
+		path = new BranchSitePath();
+		ntrial++;
+		path->Reset(stateup);
+	}
+	else	{
 	do	{
 		delete path;
 		path = new BranchSitePath();
@@ -107,6 +119,7 @@ BranchSitePath* MatrixSubstitutionProcess::ResampleAcceptReject(int maxtrial, in
 			}
 		}
 	} while ((ntrial < maxtrial) && (path->last->GetState() != statedown));
+	}
 
 	// if endstate does not match state at the corresponding end of the branch
 	// just force it to match

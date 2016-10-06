@@ -243,6 +243,10 @@ double PhyloProcess::ComputeNodeLikelihood(const Link* from, int auxindex)	{
 	if (localaux)	{
 		DeleteConditionalLikelihoodVector(aux);
 	}
+	if (isnan(lnL))	{
+		cerr << "in PhyloProcess::ComputeNodeLikelihood: nan\n";
+		exit(1);
+	}
 	return lnL;
 }
 
@@ -597,13 +601,6 @@ double PhyloProcess::GibbsSPR(int nrep)	{
 
 int PhyloProcess::GibbsSPR()	{
 
-	// not necessary, but
-	// should be updated when entering this function
-	// UpdateConditionalLikelihoods();
-	// 
-	// this is important
-	// for the conditional likelihoods of the cut-then-regrafted subtree to be OK
-
 	Link* up = 0;
 	Link* down = 0;
 	GlobalRootAtRandom();
@@ -630,9 +627,7 @@ int PhyloProcess::GibbsSPR()	{
 	}
 
 	GlobalUpdateConditionalLikelihoods();
-	// UpdateConditionalLikelihoods();
 	
-	// double* loglarray = new double[GetNbranch()];
 	GlobalGibbsSPRScan(down,up,loglarray);
 	map<pair<Link*,Link*>, double> loglmap;
 	int n = 0;
@@ -688,22 +683,14 @@ int PhyloProcess::GibbsSPR()	{
 		exit(1);
 	}
 	GlobalAttach(down,up,i->first.first,i->first.second);
-	// GetTree()->Attach(down,up,i->first.first,i->first.second);
 	GlobalUpdateConditionalLikelihoods();
-	// UpdateConditionalLikelihoods();
-	// delete[] loglarray;
 	return accepted;
 }
 
 void PhyloProcess::RecursiveGibbsSPRScan(Link* from, Link* fromup, Link* down, Link* up, double* loglarray, int& n)	{
 
 	if (! from->isRoot())	{
-		// ostringstream s1;
-		// NewickTree::ToStream(s1);
-		// GlobalAttach(down,up,from,fromup);
 		GetTree()->Attach(down,up,from,fromup);
-		// UpdateConditionalLikelihoods();
-		// GlobalReset(0);
 		double*** aux = condlmap[0];
 		Reset(aux);
 		for (const Link* link=up->Next(); link!=up; link=link->Next())	{
@@ -711,51 +698,20 @@ void PhyloProcess::RecursiveGibbsSPRScan(Link* from, Link* fromup, Link* down, L
 				cerr << "ROOT\n";
 				exit(1);
 			}
-			// GlobalMultiply(link,0);
 			Multiply(GetConditionalLikelihoodVector(link),aux);
 		}
-		// GlobalPropagate(0,up->Out(),GetLength(up->GetBranch()));
 		Propagate(aux,GetConditionalLikelihoodVector(up->Out()),GetLength(up->GetBranch()));
 		double logl = ComputeNodeLikelihood(up->Out(),0);
-		// double logl = GlobalComputeNodeLikelihood(up->Out(),0);
-		// UpdateConditionalLikelihoods();
-		// double logl2 = ComputeNodeLikelihood(up->Out(),aux);
-		// cerr << logl << '\t' << logl2 << '\n';
 		if (n >= GetNbranch())	{
 			cerr << "branch overflow\n";
 			exit(1);
 		}
 		loglarray[n] = logl;
 		n++;
-		// loglmap[pair<Link*,Link*>(from,fromup)] = logl;
 		Link* tmp1 = GetTree()->Detach(down,up);
-		// GlobalDetach(down,up,tmp1,tmp2);
-		
-		// UpdateConditionalLikelihoods();
-		// ostringstream s2;
-		// NewickTree::ToStream(s2);
-		/*
-		if (s1.str() != s2.str())	{
-			cerr << "error: two different trees\n";
-			cerr << s1.str() << '\n';
-			cerr << s2.str() << '\n';
-			exit(1);
-		}
-		if (from != tmp1)	{
-			cerr << "error in gibbs: " << from << '\t' << tmp1 << '\n';
-			exit(1);
-		}
-		if (fromup != tmp2)	{
-			cerr << "error in gibbs: " << fromup << '\t' << tmp2 << '\n';
-			exit(1);
-		}
-		*/
-		// UpdateConditionalLikelihoods();
-		// cerr << from << '\t' << tmp1 << '\t' << fromup << '\t' << tmp2 << '\n';
 	}
 	Link* trailer = from;
 	for (const Link* link=from->Next(); link!=from; link=link->Next())	{
-		// RecursiveGibbsSPRScan(link->Out(),from,down,up,loglmap);
 		RecursiveGibbsSPRScan(link->Out(),trailer,down,up,loglarray,n);
 		trailer = trailer->Next();
 	}
@@ -779,13 +735,6 @@ void PhyloProcess::RecursiveGibbsFillMap(Link* from, Link* fromup, map<pair<Link
 }
 
 double PhyloProcess::NonMPIGibbsSPR()	{
-
-	// not necessary, but
-	// should be updated when entering this function
-	// UpdateConditionalLikelihoods();
-	// 
-	// this is important
-	// for the conditional likelihoods of the cut-then-regrafted subtree to be OK
 
 	GetTree()->RootAtRandom();
 
@@ -859,10 +808,7 @@ double PhyloProcess::NonMPIGibbsSPR()	{
 void PhyloProcess::RecursiveNonMPIGibbsSPRScan(Link* from, Link* fromup, Link* down, Link* up, map<pair<Link*,Link*>,double>& loglmap)	{
 
 	if (! from->isRoot())	{
-		// ostringstream s1;
-		// NewickTree::ToStream(s1);
 		GetTree()->Attach(down,up,from,fromup);
-		// UpdateConditionalLikelihoods();
 		double*** aux = condlmap[0];
 		Reset(aux);
 		for (const Link* link=up->Next(); link!=up; link=link->Next())	{
@@ -874,36 +820,11 @@ void PhyloProcess::RecursiveNonMPIGibbsSPRScan(Link* from, Link* fromup, Link* d
 		}
 		Propagate(aux,GetConditionalLikelihoodVector(up->Out()),GetLength(up->GetBranch()));
 		double logl = ComputeNodeLikelihood(up->Out(),0);
-		// UpdateConditionalLikelihoods();
-		// double logl2 = ComputeNodeLikelihood(up->Out(),aux);
-		// cerr << logl << '\t' << logl2 << '\n';
 		loglmap[pair<Link*,Link*>(from,fromup)] = logl;
 		Link* tmp1 = GetTree()->Detach(down,up);
-		// UpdateConditionalLikelihoods();
-		// ostringstream s2;
-		// NewickTree::ToStream(s2);
-		/*
-		if (s1.str() != s2.str())	{
-			cerr << "error: two different trees\n";
-			cerr << s1.str() << '\n';
-			cerr << s2.str() << '\n';
-			exit(1);
-		}
-		if (from != tmp1)	{
-			cerr << "error in gibbs: " << from << '\t' << tmp1 << '\n';
-			exit(1);
-		}
-		if (fromup != tmp2)	{
-			cerr << "error in gibbs: " << fromup << '\t' << tmp2 << '\n';
-			exit(1);
-		}
-		*/
-		// UpdateConditionalLikelihoods();
-		// cerr << from << '\t' << tmp1 << '\t' << fromup << '\t' << tmp2 << '\n';
 	}
 	Link* trailer = from;
 	for (const Link* link=from->Next(); link!=from; link=link->Next())	{
-		// RecursiveGibbsSPRScan(link->Out(),from,down,up,loglmap);
 		RecursiveNonMPIGibbsSPRScan(link->Out(),trailer,down,up,loglmap);
 		trailer = trailer->Next();
 	}
@@ -1859,6 +1780,13 @@ void PhyloProcess::GlobalUpdateBranchLengthSuffStat()	{
 		cerr << "error at root\n";
 		cerr << branchlengthsuffstatbeta[0] << '\n';
 	}
+	// check for nan
+	for(int j=0; j<GetNbranch(); ++j) {
+		if (isnan(branchlengthsuffstatbeta[j]))	{
+			cerr << "in PhyloProcess::GlobalUpdateBranchLengthSuffStat: nan\n";
+			exit(1);
+		}
+	}
 }
 
 void PhyloProcess::SlaveUpdateBranchLengthSuffStat()	{
@@ -1887,6 +1815,12 @@ void PhyloProcess::GlobalUpdateSiteRateSuffStat()	{
 void PhyloProcess::SlaveUpdateSiteRateSuffStat()	{
 
 	UpdateSiteRateSuffStat();
+	for (int i=GetSiteMin(); i<GetSiteMax(); i++)	{
+		if (isnan(siteratesuffstatbeta[i]))	{
+			cerr << "in PhyloProcess::GlobalUpdateSiteRateSuffStat: nan ratesuffstatbeta\n";
+			exit(1);
+		}
+	}
 }
 
 void PhyloProcess::GlobalGetMeanSiteRate()	{
