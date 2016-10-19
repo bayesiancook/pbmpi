@@ -594,6 +594,10 @@ void RASCATGTRSBDPGammaPhyloProcess::SlaveComputeSiteLogL()	{
 		UpdateConditionalLikelihoods();
 		for (int i=sitemin; i<sitemax; i++)	{
 			sitelogl[i][k] = sitelogL[i];
+			if (isnan(sitelogl[i][k]))	{
+				cerr << "error in RASCATGTRSBDP::SlaveComputeSiteLogL: nan\n";
+				exit(1);
+			}
 		}
 	}
 
@@ -615,6 +619,14 @@ void RASCATGTRSBDPGammaPhyloProcess::SlaveComputeSiteLogL()	{
 			totweight += weight[k];
 		}
 		meansitelogl[i] = log(tot) + max;
+		if (isnan(meansitelogl[i]))	{
+			cerr << "error: meansitelogl is nan\n";
+			exit(1);
+		}
+		if (isinf(meansitelogl[i]))	{
+			cerr << "error: meansitelogl is inf\n";
+			exit(1);
+		}
 	}
 
 	MPI_Send(meansitelogl,GetNsite(),MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);

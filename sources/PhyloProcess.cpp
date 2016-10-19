@@ -2573,10 +2573,22 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until)	{
 		for(int i=1; i<GetNprocs(); ++i) {
 			MPI_Recv(tmp,GetNsite(),MPI_DOUBLE,i,TAG1,MPI_COMM_WORLD,&stat);
 			// for (int i=0; i<GetNsite(); i++)	{
-			for (int j=smin[i-1]; j<smax[i-1]; j++)	{
 			// for (int i=GetSiteMin(i); i<GetSiteMax(i); i++)	{
+			for (int j=smin[i-1]; j<smax[i-1]; j++)	{
+				if (isnan(tmp[j]))	{
+					cerr << "error: nan logl received by master\n";
+					cerr << "site : " << j << '\n';
+					cerr << "proc : " << i << '\n';
+					exit(1);
+				}
 				logl[j].push_back(tmp[j]);
 				mean[j] += tmp[j];
+				if (isnan(mean[j]))	{
+					cerr << "error: mean logl is nan (when summing over replicates\n";
+					cerr << "site : " << j << '\n';
+					cerr << "proc : " << i << '\n';
+					exit(1);
+				}
 				total += tmp[j];
 			}
 		}
@@ -2618,6 +2630,11 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until)	{
 	double total = 0;
 	for (int i=0; i<GetNsite(); i++)	{
 		mean[i] /= samplesize;
+		if (isnan(mean[i]))	{
+			cerr << "error: mean logl is nan (when printing out)\n";
+			cerr << "site : " << i << '\n';
+			exit(1);
+		}
 		total += mean[i];
 		os << i+1 << '\t' << mean[i] << '\t' << cpo[i] << '\n';
 	}

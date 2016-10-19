@@ -310,12 +310,27 @@ double SubstitutionProcess::ComputeLikelihood(double*** aux, bool condalloc)	{
 			}
 			double total = 0;
 			double meanrate = 0;
-			for (int j=0; j<GetNrate(i); j++)	{
-				double tmp = GetRateWeight(i,j) * exp(logl[j] - max);
-				total += tmp;
-				meanrate += tmp * GetRate(i,j);
+			if (isinf(max))	{
+				meanrate = 1.0;
+				sitelogL[i] = max;
 			}
-			sitelogL[i] = log(total) + max;
+			else	{
+				for (int j=0; j<GetNrate(i); j++)	{
+					double tmp = GetRateWeight(i,j) * exp(logl[j] - max);
+					total += tmp;
+					meanrate += tmp * GetRate(i,j);
+				}
+				sitelogL[i] = log(total) + max;
+			}
+			if (isnan(sitelogL[i]))	{
+				cerr << "error in SubstitutionProcess::ComputeNodeLikelihood: nan\n";
+				cerr << total << '\t' << max << '\n';
+				for (int j=0; j<GetNrate(i); j++)	{
+					cerr << logl[j] << '\t';
+				}
+				cerr << '\n';
+				exit(1);
+			}
 			meanrate /= total;
 			meansiterate[i] = meanrate;
 		}
