@@ -289,8 +289,14 @@ double SBDPProfileProcess::MoveOccupiedCompAlloc(int k0)	{
 			int accepted = (log(rnd::GetRandom().Uniform()) < logMetropolis);
 			if (accepted)	{
 				total += 1.0;
-				// SwapComponents(cat1, cat2);
-				MixtureProfileProcess::SwapComponents(cat1,cat2);
+				// MixtureProfileProcess::SwapComponents(cat1,cat2);
+				SwapComponents(cat1, cat2);
+				double tempv = V[cat1];
+				V[cat1] = V[cat2];
+				V[cat2] = tempv;
+				double tempw = weight[cat1];
+				weight[cat1] = weight[cat2];
+				weight[cat2] = tempw;
 			
 			}
 			delete[] occupiedComponentIndices;

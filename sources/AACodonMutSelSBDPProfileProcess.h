@@ -360,6 +360,7 @@ class AACodonMutSelSBDPProfileProcess : public virtual MatrixSBDPProfileProcess,
 
 	void UpdateMatrix(int k)	{
 		matrixarray[k]->CorruptMatrix();
+		// matrixarray[k]->UpdateMatrix();
 	}
 
 	
