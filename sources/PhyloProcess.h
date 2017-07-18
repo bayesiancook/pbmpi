@@ -101,7 +101,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	virtual void FromStreamHeader(istream& is)	{
 		is >> version;
 		if (atof(version.substr(0,3).c_str()) < 1.2)	{
-			cerr << "error: version is too old : " << version << '\n';
+			cerr << "error: chain run under older version not anymore supported: " << version << '\n';
 			exit(1);
 		}
 		propchrono.FromStream(is);
@@ -266,11 +266,19 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	void GlobalUnclamp();
 	void GlobalRestoreData();
 	void GlobalSetDataFromLeaves();
+    /*
 	double GlobalGetMeanDiversity();
+	double GlobalGetMeanSquaredFreq();
+	double GlobalGetMeanFreqVariance();
+    */
 	void SlaveUnclamp();
 	void SlaveRestoreData();
 	void SlaveSetDataFromLeaves();
+    /*
 	void SlaveGetMeanDiversity();
+	void SlaveGetMeanSquaredFreq();
+	void SlaveGetMeanFreqVariance();
+    */
 
 	void GlobalSetNodeStates();
 	void SlaveSetNodeStates();

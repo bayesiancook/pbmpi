@@ -1096,6 +1096,7 @@ void PhyloProcess::GlobalSetNodeStates()	{
 }
 
 
+/*
 double PhyloProcess::GlobalGetMeanDiversity()	{
 
 	assert(myid == 0);
@@ -1112,6 +1113,59 @@ double PhyloProcess::GlobalGetMeanDiversity()	{
 	}
 	return total / GetNsite();
 }
+
+double PhyloProcess::GlobalGetMeanSquaredFreq()	{
+
+	assert(myid == 0);
+	MESSAGE signal = GETSQUAREDFREQ;
+	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+
+	MPI_Status stat;
+
+	double total = 0;
+	for(int i=1; i<nprocs; ++i) {
+		double tmp;
+		MPI_Recv(&tmp,1,MPI_DOUBLE,MPI_ANY_SOURCE,TAG1,MPI_COMM_WORLD,&stat);
+		total += tmp;
+	}
+	return total / GetNsite();
+}
+
+double PhyloProcess::GlobalGetMeanFreqVariance()	{
+
+	assert(myid == 0);
+	MESSAGE signal = GETFREQVAR;
+	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+
+	MPI_Status stat;
+
+	double total1[GetDim()];
+	double total2[GetDim()];
+    for (int k=0; k<GetDim(); k++)  {
+        total1[k] = total2[k] = 0;
+    }
+
+    double* tmp = new double[2*GetDim()];
+	for(int i=1; i<nprocs; ++i) {
+		MPI_Recv(tmp,2*GetDim(),MPI_DOUBLE,MPI_ANY_SOURCE,TAG1,MPI_COMM_WORLD,&stat);
+        for (int k=0; k<GetDim(); k++)  {
+            total1[k] += tmp[k];
+            total2[k] += tmp[k+GetDim()];
+        }
+	}
+    delete[] tmp;
+
+    double meanvar = 0;
+    for (int k=0; k<GetDim(); k++)  {
+        total1[k] /= GetNsite();
+        total2[k] /= GetNsite();
+        total2[k] -= total1[k]*total1[k];
+        meanvar += total2[k];
+    }
+    meanvar /= GetDim();
+	return meanvar;
+}
+*/
 
 void PhyloProcess::GlobalSetRatePrior(int inrateprior)	{
 
@@ -1200,12 +1254,32 @@ void PhyloProcess::SlaveSetNodeStates()	{
 
 }
 
+/*
 void PhyloProcess::SlaveGetMeanDiversity()	{
 
 	double div = GetData()->GetTotalDiversity(sitemin,sitemax);
 	MPI_Send(&div,1,MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
 	
 }
+
+void PhyloProcess::SlaveGetMeanSquaredFreq()	{
+
+	double div = GetData()->GetTotalSquaredFreq(sitemin,sitemax);
+	MPI_Send(&div,1,MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
+	
+}
+
+void PhyloProcess::SlaveGetMeanFreqVariance()	{
+
+    double* m = new double[2*GetDim()];
+    for (int k=0; k<2*GetDim(); k++)    {
+        m[k] = 0;
+    }
+	GetData()->GetTotalFreqMoments(m,sitemin,sitemax);
+	MPI_Send(m,2*GetDim(),MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
+    delete[] m;
+}
+*/
 
 void PhyloProcess::GlobalSimulateForward()	{
 
@@ -1607,9 +1681,17 @@ void PhyloProcess::SlaveExecute(MESSAGE signal)	{
 	case SETNODESTATES:
 		SlaveSetNodeStates();
 		break;
+    /*
 	case GETDIV:
 		SlaveGetMeanDiversity();
 		break;
+	case GETSQUAREDFREQ:
+		SlaveGetMeanSquaredFreq();
+		break;
+	case GETFREQVAR:
+		SlaveGetMeanFreqVariance();
+		break;
+    */
 	case CVSCORE:
 		SlaveComputeCVScore();
 		break;
@@ -2028,6 +2110,12 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 	else if (ppredtype == 3)	{
 		obs = GetObservedCompositionalHeterogeneity(obstaxstat,obs2);
 	}
+    else if (ppredtype == 4)    {
+        obs = data->GetMeanSquaredFreq();
+    }
+    else if (ppredtype == 5)    {
+        obs = data->GetMeanFreqVariance();
+    }
 
 	cerr << "burnin: " << burnin << '\n';
 	cerr << "every " << every << " points until " << until << '\n';
@@ -2095,6 +2183,12 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 					}
 				}
 			}
+            else if (ppredtype == 4)    {
+                stat = data->GetMeanSquaredFreq();
+            }
+            else if (ppredtype == 5)    {
+                stat = data->GetMeanFreqVariance();
+            }
 			meanstat += stat;
 			varstat += stat * stat;
 			if (stat < obs)	{
@@ -2179,6 +2273,24 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 			os << GetTaxonSet()->GetTaxon(j) << '\t' << obstaxstat[j] << '\t' << meantaxstat[j] << '\t' << (obstaxstat[j] - meantaxstat[j])/sqrt(vartaxstat[j]) << '\t' << pptaxstat[j] << '\n';
 		}
 		cerr << "result of compositional homogeneity test in " << name << ".comp\n";
+	}
+    else if (ppredtype == 4)	{
+		ofstream os((name + ".siteconvprob").c_str());
+		os << "empirical convergence probability test\n";
+		os << "obs     : " << obs << '\n';
+		os << "mean    : " << meanstat << " +/- " << sqrt(varstat) << '\n';
+		os << "z-score : " << (obs - meanstat) / sqrt(varstat) << '\n';
+		os << "pp      : " << 1-ppstat << '\n';
+		cerr << "result of test in " << name << ".siteconvprob\n";
+	}
+    else if (ppredtype == 5)	{
+		ofstream os((name + ".sitecomp").c_str());
+		os << "across-site compositional heterogeneity test\n";
+		os << "obs     : " << obs << '\n';
+		os << "mean    : " << meanstat << " +/- " << sqrt(varstat) << '\n';
+		os << "z-score : " << (obs - meanstat) / sqrt(varstat) << '\n';
+		os << "pp      : " << 1-ppstat << '\n';
+		cerr << "result of test in " << name << ".sitecomp\n";
 	}
 	cerr << '\n';
 }

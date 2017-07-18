@@ -497,6 +497,99 @@ class SequenceAlignment	{
 		cout << "number of positions eliminated : " << Eliminated << '\n';
 	}
 
+    /*
+	virtual double GetTotalFreqMoments(double* m, int sitemin, int sitemax)	{
+		double total = 0;
+		double freq[GetNstate()];
+		for (int i=sitemin; i<sitemax; i++)	{
+			for (int k=0; k<GetNstate(); k++)	{
+				freq[k] = 0;
+			}
+			for (int j=0; j<Ntaxa; j++)	{
+				int state = GetState(j,i);
+				if (state != unknown)	{
+					freq[state]++;
+				}
+			}
+            double norm = 0;
+			for (int k=0; k<GetNstate(); k++)	{
+                norm += freq[k];
+            }
+			for (int k=0; k<GetNstate(); k++)	{
+                freq[k] /= norm;
+                m[k] += freq[k];
+                m[k+GetNstate()] += freq[k]*freq[k];
+            }
+		}
+		return total;
+	}
+    */
+
+    virtual double GetMeanFreqVariance()    {
+		double m1[GetNstate()];
+        double m2[GetNstate()];
+        for (int k=0; k<GetNstate(); k++)   {
+            m1[k] = m2[k] = 0;
+        }
+
+		double freq[GetNstate()];
+		for (int i=0; i<GetNsite(); i++)	{
+			for (int k=0; k<GetNstate(); k++)	{
+				freq[k] = 0;
+			}
+			for (int j=0; j<Ntaxa; j++)	{
+				int state = GetState(j,i);
+				if (state != unknown)	{
+					freq[state]++;
+				}
+			}
+            double norm = 0;
+			for (int k=0; k<GetNstate(); k++)	{
+                norm += freq[k];
+            }
+			for (int k=0; k<GetNstate(); k++)	{
+                freq[k] /= norm;
+                m1[k] += freq[k];
+                m2[k] += freq[k]*freq[k];
+            }
+		}
+
+        double meanvar = 0;
+        for (int k=0; k<GetNstate(); k++)   {
+            m1[k] /= GetNsite();
+            m2[k] /= GetNsite();
+            m2[k] -= m1[k]*m1[k];
+            meanvar += m2[k];
+        }
+        meanvar /= GetNstate();
+        return meanvar;
+    }
+
+	virtual double GetTotalSquaredFreq(int sitemin, int sitemax)	{
+		double total = 0;
+		double freq[GetNstate()];
+		for (int i=sitemin; i<sitemax; i++)	{
+			for (int k=0; k<GetNstate(); k++)	{
+				freq[k] = 0;
+			}
+			for (int j=0; j<Ntaxa; j++)	{
+				int state = GetState(j,i);
+				if (state != unknown)	{
+					freq[state]++;
+				}
+			}
+            double norm = 0;
+			for (int k=0; k<GetNstate(); k++)	{
+                norm += freq[k];
+            }
+			for (int k=0; k<GetNstate(); k++)	{
+                freq[k] /= norm;
+                total += freq[k]*freq[k];
+            }
+		}
+		return total;
+	}
+
 	virtual double GetTotalDiversity(int sitemin, int sitemax)	{
 		double total = 0;
 		int obs[GetNstate()];
@@ -521,6 +614,10 @@ class SequenceAlignment	{
 		// total /= (sitemax - sitemin);
 		return total;
 	}
+
+    double GetMeanSquaredFreq() {
+        return GetTotalSquaredFreq(0,GetNsite()) / GetNsite();
+    }
 
 	double GetMeanDiversity()	{
 		return GetTotalDiversity(0,GetNsite()) / GetNsite();

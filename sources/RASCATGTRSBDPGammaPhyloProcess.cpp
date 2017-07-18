@@ -235,6 +235,12 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 			else if (s == "-comp")	{
 				ppred = 3;
 			}
+            else if (s == "-siteconvprob")   {
+                ppred = 4;
+            }
+            else if (s == "-sitecomp")   {
+                ppred = 5;
+            }
 			else if (s == "-ppred")	{
 				ppred = 1;
 			}
