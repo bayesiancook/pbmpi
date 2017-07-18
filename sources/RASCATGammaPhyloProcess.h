@@ -124,6 +124,9 @@ class RASCATGammaPhyloProcess : public virtual PoissonPhyloProcess, public virtu
 			is >> codetype;
 			is >> kappaprior;
 			is >> mintotweight;
+            if (atof(version.substr(0,3).c_str()) > 1.7)	{
+                is >> dirweightprior;
+            }
 		}
 		else	{
 			iscodon = 0;
@@ -273,6 +276,7 @@ class RASCATGammaPhyloProcess : public virtual PoissonPhyloProcess, public virtu
 		os << codetype << '\n';
 		os << kappaprior << '\n';
 		os << mintotweight << '\n';
+        os << dirweightprior << '\n';
 		os << fixtopo << '\n';
 		os << NSPR << '\t' << NNNI << '\n';
 		os << dc << '\n';

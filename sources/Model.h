@@ -75,11 +75,11 @@ class Model	{
 			}
 			if (mixturetype == 1)	{
 				type = "CATFINITE";
-				process = new RASCATFiniteGammaPhyloProcess(datafile,treefile,nratecat,ncat,fixncomp,empmix,mixtype,fixtopo,NSPR,NNNI,dc,myid,nprocs); 
+				process = new RASCATFiniteGammaPhyloProcess(datafile,treefile,nratecat,ncat,fixncomp,empmix,mixtype,dirweightprior,fixtopo,NSPR,NNNI,dc,myid,nprocs); 
 			}
 			else	{
 				type = "CATSBDP";
-				process = new RASCATSBDPGammaPhyloProcess(datafile,treefile,nratecat,iscodon,codetype,fixtopo,NSPR,NNNI,kappaprior,mintotweight,dc,incinit,myid,nprocs); 
+				process = new RASCATSBDPGammaPhyloProcess(datafile,treefile,nratecat,iscodon,codetype,fixtopo,NSPR,NNNI,kappaprior,dirweightprior,mintotweight,dc,incinit,myid,nprocs); 
 			}
 		}
 
@@ -91,7 +91,7 @@ class Model	{
 			if (mixturetype == 1)	{
 				if (suffstat)	{
 					type = "CATGTRFINITE";
-					process = new RASCATGTRFiniteGammaPhyloProcess(datafile,treefile,nratecat,ncat,fixncomp,empmix,mixtype,rrtype,fixtopo,NSPR,NNNI,dc,myid,nprocs); 
+					process = new RASCATGTRFiniteGammaPhyloProcess(datafile,treefile,nratecat,ncat,fixncomp,empmix,mixtype,rrtype,dirweightprior,fixtopo,NSPR,NNNI,dc,myid,nprocs); 
 				}
 				else	{
 					cerr << "gpss deprecated\n";
@@ -105,7 +105,7 @@ class Model	{
 			else if (mixturetype == 3)	{
 				if (suffstat)	{
 					type = "CATGTRSBDP";
-					process = new RASCATGTRSBDPGammaPhyloProcess(datafile,treefile,nratecat,iscodon,codetype,rrtype,fixtopo,NSPR,NNNI,kappaprior,mintotweight,dc,incinit,myid,nprocs); 
+					process = new RASCATGTRSBDPGammaPhyloProcess(datafile,treefile,nratecat,iscodon,codetype,rrtype,fixtopo,NSPR,NNNI,kappaprior,dirweightprior,mintotweight,dc,incinit,myid,nprocs); 
 				}
 				else	{
 					cerr << "gpss deprecated\n";

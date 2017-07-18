@@ -65,9 +65,11 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 
 	RASCATFiniteGammaPhyloProcess() {}
 
-	RASCATFiniteGammaPhyloProcess(string indatafile, string treefile, int nratecat, int ncat, int infixncomp, int inempmix, string inmixtype, int infixtopo, int inNSPR, int inNNNI, int indc, int me, int np)	{
+	RASCATFiniteGammaPhyloProcess(string indatafile, string treefile, int nratecat, int ncat, int infixncomp, int inempmix, string inmixtype, double indirweightprior, int infixtopo, int inNSPR, int inNNNI, int indc, int me, int np)	{
 		myid = me;
 		nprocs = np;
+
+        dirweightprior = indirweightprior;
 
 		fixtopo = infixtopo;
 		NSPR = inNSPR;
@@ -127,6 +129,9 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 		int inempmix;
 		string inmixtype;
 		is >> infixncomp >> inempmix >> inmixtype;
+		if (atof(version.substr(0,3).c_str()) > 1.7)	{
+            is >> dirweightprior;
+        }
 		is >> fixtopo;
 		if (atof(version.substr(0,3).c_str()) > 1.4)	{
 			is >> NSPR;
@@ -279,6 +284,7 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 		os << datafile << '\n';
 		os << GetNcat() << '\n';
 		os << fixncomp << '\t' << empmix << '\t' << mixtype << '\n';
+        os << dirweightprior << '\n';
 		os << fixtopo << '\n';
 		os << NSPR << '\t' << NNNI << '\n';
 		os << dc << '\n';

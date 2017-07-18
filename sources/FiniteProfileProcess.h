@@ -25,7 +25,7 @@ class FiniteProfileProcess: public virtual MixtureProfileProcess	{
 
 	public:
 
-	FiniteProfileProcess(int K = 1) : weight(0), fixncomp(false), empmix(false), Ncat(0), statfix(0), empweight(0)  {
+	FiniteProfileProcess(int K = 1) : weight(0), fixncomp(false), empmix(false), Ncat(0), statfix(0), empweight(0), dirweightprior(0)  {
 		Ncomponent = K;
 		weightalpha = 1;
 	}

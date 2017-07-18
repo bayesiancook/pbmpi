@@ -64,7 +64,7 @@ class RASCATSBDPGammaPhyloProcess : public virtual RASCATGammaPhyloProcess, publ
 
 	public:
 
-	RASCATSBDPGammaPhyloProcess(string indatafile, string treefile, int nratecat, int iniscodon, GeneticCodeType incodetype, int infixtopo, int inNSPR, int inNNNI, int inkappaprior, double inmintotweight, int indc, int ininc, int me, int np)	{
+	RASCATSBDPGammaPhyloProcess(string indatafile, string treefile, int nratecat, int iniscodon, GeneticCodeType incodetype, int infixtopo, int inNSPR, int inNNNI, int inkappaprior, double indirweightprior, double inmintotweight, int indc, int ininc, int me, int np)	{
 		myid = me;
 		nprocs = np;
 
@@ -77,6 +77,7 @@ class RASCATSBDPGammaPhyloProcess : public virtual RASCATGammaPhyloProcess, publ
 		codetype = incodetype;
 		dc = indc;
 		kappaprior = inkappaprior;
+        dirweightprior = indirweightprior;
 		SetMinTotWeight(inmintotweight);
 
 		datafile = indatafile;
@@ -140,6 +141,9 @@ class RASCATSBDPGammaPhyloProcess : public virtual RASCATGammaPhyloProcess, publ
 			is >> codetype;
 			is >> kappaprior;
 			is >> mintotweight;
+            if (atof(version.substr(0,3).c_str()) > 1.7)	{
+                is >> dirweightprior;
+            }
 		}
 		else	{
 			iscodon = 0;

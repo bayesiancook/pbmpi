@@ -25,7 +25,7 @@ class DPProfileProcess: public virtual MixtureProfileProcess	{
 
 	public:
 
-	DPProfileProcess() : kappa(1), movekappa(true), kappaprior(0) {}
+	DPProfileProcess() : kappa(1), movekappa(true), kappaprior(0), dirweightprior(0) {}
 	virtual ~DPProfileProcess(){}
 
 	protected:

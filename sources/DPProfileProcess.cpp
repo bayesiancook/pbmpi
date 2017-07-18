@@ -143,7 +143,9 @@ double DPProfileProcess::MoveHyper(double tuning, int nrep)	{
 	if (!burnin)	{
 		total += MoveKappa(tuning,nrep);
 	}
-	total += MoveDirWeights(tuning,nrep);
+    if (! dirweightprior)   {
+        total += MoveDirWeights(tuning,nrep);
+    }
 	return total;
 }
 

@@ -63,7 +63,7 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 	void SlaveUpdateParameters();
 
 
-	RASCATGTRSBDPGammaPhyloProcess(string indatafile, string treefile, int nratecat, int iniscodon, GeneticCodeType incodetype, string inrrtype, int infixtopo, int inNSPR, int inNNNI, int inkappaprior, double inmintotweight, int indc, int incinit, int me, int np)	{
+	RASCATGTRSBDPGammaPhyloProcess(string indatafile, string treefile, int nratecat, int iniscodon, GeneticCodeType incodetype, string inrrtype, int infixtopo, int inNSPR, int inNNNI, int inkappaprior, double indirweightprior, double inmintotweight, int indc, int incinit, int me, int np)	{
 		myid = me;
 		nprocs = np;
 
@@ -76,6 +76,7 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 		codetype = incodetype;
 		dc = indc;
 		kappaprior = inkappaprior;
+        dirweightprior = indirweightprior;
 		SetMinTotWeight(inmintotweight);
 
 		datafile = indatafile;
@@ -144,6 +145,9 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 			is >> codetype;
 			is >> kappaprior;
 			is >> mintotweight;
+            if (atof(version.substr(0,3).c_str()) > 1.7)	{
+                is >> dirweightprior;
+            }
 		}
 		else	{
 			iscodon = 0;
@@ -316,6 +320,7 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 		os << codetype << '\n';
 		os << kappaprior << '\n';
 		os << mintotweight << '\n';
+        os << dirweightprior << '\n';
 		os << rrtype << '\n';
 		os << fixtopo << '\n';
 		os << NSPR << '\t' << NNNI << '\n';

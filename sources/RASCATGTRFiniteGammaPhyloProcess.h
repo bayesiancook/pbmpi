@@ -61,10 +61,12 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 
 	void GlobalUpdateParameters();
 
-	RASCATGTRFiniteGammaPhyloProcess(string indatafile, string treefile, int nratecat, int ncat, int infixncomp, int inempmix, string inmixtype, string inrrtype, int infixtopo, int inNSPR, int inNNNI, int indc, int me, int np)	{
+	RASCATGTRFiniteGammaPhyloProcess(string indatafile, string treefile, int nratecat, int ncat, int infixncomp, int inempmix, string inmixtype, string inrrtype, double indirweightprior, int infixtopo, int inNSPR, int inNNNI, int indc, int me, int np)	{
 
 		myid = me;
 		nprocs = np;
+
+        dirweightprior = indirweightprior;
 
 		fixtopo = infixtopo;
 		NSPR = inNSPR;
@@ -127,6 +129,9 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 		string inrrtype;
 		is >> infixncomp >> inempmix >> inmixtype;
 		is >> inrrtype;
+		if (atof(version.substr(0,3).c_str()) > 1.7)	{
+            is >> dirweightprior;
+        }
 		is >> fixtopo;
 		if (atof(version.substr(0,3).c_str()) > 1.4)	{
 			is >> NSPR;
@@ -273,6 +278,7 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 		os << GetNcat() << '\n';
 		os << fixncomp << '\t' << empmix << '\t' << mixtype << '\n';
 		os << rrtype << '\n';
+        os << dirweightprior << '\n';
 		os << fixtopo << '\n';
 		os << NSPR << '\t' << NNNI << '\n';
 		os << dc << '\n';
