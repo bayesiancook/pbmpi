@@ -393,14 +393,14 @@ int FileSequenceAlignment::ReadSpecial(string filespec)	{
 		int NAlphabetSet = Nstate+5;
 		char* Alphabet = new char[Nstate];
 		char* AlphabetSet = new char[NAlphabetSet];
-		cerr << "alphabet size : " << Nstate << '\n';
-		cerr << "alphabet : ";
+		// cerr << "alphabet size : " << Nstate << '\n';
+		// cerr << "alphabet : ";
 		for (int i=0; i<Nstate; i++)	{
 			Alphabet[i] = tmp[i];
 			AlphabetSet[i] = tmp[i];
-			cerr << Alphabet[i] << ' ';
+			// cerr << Alphabet[i] << ' ';
 		}
-		cerr << '\n';
+		// cerr << '\n';
 		returnvalue = 4;
 
 		AlphabetSet[Nstate] = '?';
@@ -875,7 +875,7 @@ FileSequenceAlignment::ReadPhylip (string filespec, int repeattaxa)	{
 			exit(1);
 		}
 		Nsite = Int(temp);
-		cerr << Ntaxa << '\t' << Nsite << '\n';
+		// cerr << Ntaxa << '\t' << Nsite << '\n';
 
 		Data = new (int *[Ntaxa]);
 		for (int i=0; i<Ntaxa; i++)	{
