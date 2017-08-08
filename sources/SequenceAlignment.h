@@ -379,6 +379,26 @@ class SequenceAlignment	{
 		return Data[taxon][site] == -1;
 	}
 
+	bool AllMissingColumn(int site)	{
+		bool ret = true;
+		int tax = 0;
+		while ((tax < GetNtaxa()) && ret)	{
+			ret &= (Data[tax][site] == unknown);
+			tax++;
+		}
+		return ret;
+	}
+	
+	int GetAllMissingColumns()	{
+		int tot = 0;
+		for (int i=0; i<Nsite; i++)	{
+			if (AllMissingColumn(i))	{
+				tot++;
+			}
+		}
+		return tot;
+	}
+
 	bool NoMissingColumn(int site)	{
 		bool ret = true;
 		int tax = 0;
@@ -526,13 +546,53 @@ class SequenceAlignment	{
     */
 
     virtual double GetMeanFreqVariance()    {
-		double m1[GetNstate()];
+	double m1[GetNstate()];
         double m2[GetNstate()];
         for (int k=0; k<GetNstate(); k++)   {
             m1[k] = m2[k] = 0;
         }
 
+	double freq[GetNstate()];
+	int totnsite = 0;
+	for (int i=0; i<GetNsite(); i++)	{
+		for (int k=0; k<GetNstate(); k++)	{
+			freq[k] = 0;
+		}
+		for (int j=0; j<Ntaxa; j++)	{
+			int state = GetState(j,i);
+			if (state != unknown)	{
+				freq[state]++;
+			}
+		}
+		double norm = 0;
+		for (int k=0; k<GetNstate(); k++)	{
+			norm += freq[k];
+		}
+		if (norm)	{
+			for (int k=0; k<GetNstate(); k++)	{
+				freq[k] /= norm;
+				m1[k] += freq[k];
+				m2[k] += freq[k]*freq[k];
+			}
+			totnsite++;
+		}
+	}
+
+        double meanvar = 0;
+        for (int k=0; k<GetNstate(); k++)   {
+            m1[k] /= totnsite;
+            m2[k] /= totnsite;
+            m2[k] -= m1[k]*m1[k];
+            meanvar += m2[k];
+        }
+        meanvar /= GetNstate();
+        return meanvar;
+    }
+
+	double GetMeanSquaredFreq() {
+		double total = 0;
 		double freq[GetNstate()];
+		int totnsite = 0;
 		for (int i=0; i<GetNsite(); i++)	{
 			for (int k=0; k<GetNstate(); k++)	{
 				freq[k] = 0;
@@ -543,57 +603,27 @@ class SequenceAlignment	{
 					freq[state]++;
 				}
 			}
-            double norm = 0;
+			double norm = 0;
 			for (int k=0; k<GetNstate(); k++)	{
-                norm += freq[k];
-            }
-			for (int k=0; k<GetNstate(); k++)	{
-                freq[k] /= norm;
-                m1[k] += freq[k];
-                m2[k] += freq[k]*freq[k];
-            }
-		}
-
-        double meanvar = 0;
-        for (int k=0; k<GetNstate(); k++)   {
-            m1[k] /= GetNsite();
-            m2[k] /= GetNsite();
-            m2[k] -= m1[k]*m1[k];
-            meanvar += m2[k];
-        }
-        meanvar /= GetNstate();
-        return meanvar;
-    }
-
-	virtual double GetTotalSquaredFreq(int sitemin, int sitemax)	{
-		double total = 0;
-		double freq[GetNstate()];
-		for (int i=sitemin; i<sitemax; i++)	{
-			for (int k=0; k<GetNstate(); k++)	{
-				freq[k] = 0;
+				norm += freq[k];
 			}
-			for (int j=0; j<Ntaxa; j++)	{
-				int state = GetState(j,i);
-				if (state != unknown)	{
-					freq[state]++;
+			if (norm)	{
+				for (int k=0; k<GetNstate(); k++)	{
+					freq[k] /= norm;
+					total += freq[k]*freq[k];
 				}
+				totnsite++;
 			}
-            double norm = 0;
-			for (int k=0; k<GetNstate(); k++)	{
-                norm += freq[k];
-            }
-			for (int k=0; k<GetNstate(); k++)	{
-                freq[k] /= norm;
-                total += freq[k]*freq[k];
-            }
 		}
-		return total;
+		return total/totnsite;
 	}
 
-	virtual double GetTotalDiversity(int sitemin, int sitemax)	{
+	virtual double GetMeanDiversity()	{
 		double total = 0;
 		int obs[GetNstate()];
-		for (int i=sitemin; i<sitemax; i++)	{
+		int totnsite = 0;
+		for (int i=0; i<GetNsite(); i++)	{
+			int totobs = 0;
 			for (int k=0; k<GetNstate(); k++)	{
 				obs[k] = 0;
 			}
@@ -601,26 +631,21 @@ class SequenceAlignment	{
 				int state = GetState(j,i);
 				if (state != unknown)	{
 					obs[state]++;
+					totobs++;
 				}
 			}
-			int div = 0;
-			for (int k=0; k<GetNstate(); k++)	{
-				if (obs[k])	{
-					div++;
+			if (totobs)	{
+				int div = 0;
+				for (int k=0; k<GetNstate(); k++)	{
+					if (obs[k])	{
+						div++;
+					}
 				}
+				total += div;
+				totnsite++;
 			}
-			total += div;
 		}
-		// total /= (sitemax - sitemin);
-		return total;
-	}
-
-    double GetMeanSquaredFreq() {
-        return GetTotalSquaredFreq(0,GetNsite()) / GetNsite();
-    }
-
-	double GetMeanDiversity()	{
-		return GetTotalDiversity(0,GetNsite()) / GetNsite();
+		return total / totnsite;
 	}
 
 	double CompositionalHeterogeneity(double* taxstat, ostream* os, double& meandist)	{

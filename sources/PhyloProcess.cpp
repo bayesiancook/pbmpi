@@ -2087,6 +2087,166 @@ void PhyloProcess::ReadSiteRates(string name, int burnin, int every, int until)	
 
 }
 
+void PhyloProcess::AllPostPred(string name, int burnin, int every, int until, int inrateprior, int inprofileprior, int inrootprior)	{
+
+	GlobalSetRatePrior(inrateprior);
+	GlobalSetProfilePrior(inprofileprior);
+	GlobalSetRootPrior(inrootprior);
+
+	ifstream is((name + ".chain").c_str());
+	if (!is)	{
+		cerr << "error: no .chain file found\n";
+		exit(1);
+	}
+
+	double* obstaxstat = new double[GetNtaxa()];
+	SequenceAlignment* datacopy  = new SequenceAlignment(GetData());
+	int nstat = 5;
+	double obsarray[nstat];
+	obsarray[0] = data->GetMeanDiversity();
+	obsarray[1] = data->GetMeanSquaredFreq();
+	obsarray[2] = data->GetMeanFreqVariance();
+	obsarray[3] = GetObservedCompositionalHeterogeneity(obstaxstat,obsarray[4]);
+
+	cerr << "burnin: " << burnin << '\n';
+	cerr << "every " << every << " points until " << until << '\n';
+	// cerr << "number of points : " << (until - burnin)/every << '\n';
+	int i=0;
+	while ((i < until) && (i < burnin))	{
+		FromStream(is);
+		i++;
+	}
+	int samplesize = 0;
+	double meanstatarray[nstat];
+	double varstatarray[nstat];
+	double ppstatarray[nstat];
+	for (int k=0; k<6; k++)	{
+		meanstatarray[k] = 0;
+		varstatarray[k] = 0;
+		ppstatarray[k] = 0;
+	}
+
+	double* meantaxstat = new double[GetNtaxa()];
+	double* vartaxstat = new double[GetNtaxa()];
+	double* pptaxstat = new double[GetNtaxa()];
+	double* taxstat = new double[GetNtaxa()];
+	for (int j=0; j<GetNtaxa(); j++)	{
+		meantaxstat[j] = 0;
+		vartaxstat[j] = 0;
+		pptaxstat[j] = 0;
+	}
+	while (i < until)	{
+		cerr << ".";
+		samplesize++;
+		FromStream(is);
+		i++;
+
+		MESSAGE signal = BCAST_TREE;
+		MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+		GlobalBroadcastTree();
+		GlobalUpdateConditionalLikelihoods();
+		GlobalUnclamp();
+		GlobalCollapse();
+		GlobalSetDataFromLeaves();
+
+		double statarray[nstat];
+		statarray[0] = data->GetMeanDiversity();
+		statarray[1] = data->GetMeanSquaredFreq();
+		statarray[2] = data->GetMeanFreqVariance();
+		statarray[3] = GetCompositionalHeterogeneity(taxstat,statarray[4]);
+		for (int j=0; j<GetNtaxa(); j++)	{
+			meantaxstat[j] += taxstat[j];
+			vartaxstat[j] += taxstat[j] * taxstat[j];
+			if (taxstat[j] > obstaxstat[j])	{
+				pptaxstat[j] ++;
+			}
+		}
+
+		for (int k=0; k<nstat; k++)	{
+			meanstatarray[k] += statarray[k];
+			varstatarray[k] += statarray[k] * statarray[k];
+			if (statarray[k] > obsarray[k])	{
+				ppstatarray[k]++;
+			}
+		}
+
+		GlobalRestoreData();
+		GlobalUnfold();
+
+		int nrep = 1;
+		while ((i<until) && (nrep < every))	{
+			FromStream(is);
+			i++;
+			nrep++;
+		}
+	}
+	cerr << '\n';
+	cerr << '\n';
+	for (int k=0; k<nstat; k++)	{
+		meanstatarray[k] /= samplesize;
+		varstatarray[k] /= samplesize;
+		varstatarray[k] -= meanstatarray[k] * meanstatarray[k];
+		ppstatarray[k] /= samplesize;
+	}
+
+	ofstream os((name + ".ppred").c_str());
+
+	os << "diversity test\n";
+	os << "obs div : " << obsarray[0] << '\n';
+	os << "mean div: " << meanstatarray[0] << " +/- " << sqrt(varstatarray[0]) << '\n';
+	os << "z-score : " << (meanstatarray[0] - obsarray[0]) / sqrt(varstatarray[0]) << '\n';
+	os << "pp      : " << 1-ppstatarray[0] << '\n';
+
+	os << '\n';
+
+	os << "empirical convergence probability test\n";
+	os << "obs     : " << obsarray[1] << '\n';
+	os << "mean    : " << meanstatarray[1] << " +/- " << sqrt(varstatarray[1]) << '\n';
+	os << "z-score : " << (obsarray[1] - meanstatarray[1]) / sqrt(varstatarray[1]) << '\n';
+	os << "pp      : " << ppstatarray[1] << '\n';
+
+	os << '\n';
+
+	os << "across-site compositional heterogeneity test\n";
+	os << "obs     : " << obsarray[2] << '\n';
+	os << "mean    : " << meanstatarray[2] << " +/- " << sqrt(varstatarray[2]) << '\n';
+	os << "z-score : " << (obsarray[2] - meanstatarray[2]) / sqrt(varstatarray[2]) << '\n';
+	os << "pp      : " << ppstatarray[2] << '\n';
+	cerr << "result of test in " << name << ".sitecomp\n";
+
+	os << '\n';
+
+	os << "compositional homogeneity test\n";
+	os << '\n';
+	os << "max heterogeneity across taxa\n";
+	os << "obs comp : " << obsarray[3] << '\n';
+	os << "mean comp: " << meanstatarray[3] << " +/- " << sqrt(varstatarray[3]) << '\n';
+	os << "z-score : " << (obsarray[3] - meanstatarray[3]) / sqrt(varstatarray[3]) << '\n';
+	os << "pp      : " << ppstatarray[3] << '\n';
+
+	os << '\n';
+
+	os << "mean squared heterogeneity across taxa\n";
+	os << "obs comp : " << obsarray[4] << '\n';
+	os << "mean comp: " << meanstatarray[4] << " +/- " << sqrt(varstatarray[4]) << '\n';
+	os << "z-score : " << (obsarray[4] - meanstatarray[4]) / sqrt(varstatarray[4]) << '\n';
+	os << "pp      : " << ppstatarray[4] << '\n';
+
+	os << '\n';
+
+	os << "taxonname\tobs\tmean pred\tz-score\tpp\n";
+	for (int j=0; j<GetNtaxa(); j++)	{
+		meantaxstat[j] /= samplesize;
+		vartaxstat[j] /= samplesize;
+		pptaxstat[j] /= samplesize;
+		vartaxstat[j] -= meantaxstat[j] * meantaxstat[j];
+		os << GetTaxonSet()->GetTaxon(j) << '\t' << obstaxstat[j] << '\t' << meantaxstat[j] << '\t' << (obstaxstat[j] - meantaxstat[j])/sqrt(vartaxstat[j]) << '\t' << pptaxstat[j] << '\n';
+	}
+
+	cerr << "results of all posterior predictive tests in " << name << ".ppred\n";
+	cerr << '\n';
+}
+
 void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, int until, int inrateprior, int inprofileprior, int inrootprior, int savetrees)	{
 
 	GlobalSetRatePrior(inrateprior);
@@ -2116,7 +2276,6 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
     else if (ppredtype == 5)    {
         obs = data->GetMeanFreqVariance();
     }
-
 	cerr << "burnin: " << burnin << '\n';
 	cerr << "every " << every << " points until " << until << '\n';
 	// cerr << "number of points : " << (until - burnin)/every << '\n';
@@ -2183,12 +2342,12 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 					}
 				}
 			}
-            else if (ppredtype == 4)    {
-                stat = data->GetMeanSquaredFreq();
-            }
-            else if (ppredtype == 5)    {
-                stat = data->GetMeanFreqVariance();
-            }
+		    else if (ppredtype == 4)    {
+			stat = data->GetMeanSquaredFreq();
+		    }
+		    else if (ppredtype == 5)    {
+			stat = data->GetMeanFreqVariance();
+		    }
 			meanstat += stat;
 			varstat += stat * stat;
 			if (stat < obs)	{
