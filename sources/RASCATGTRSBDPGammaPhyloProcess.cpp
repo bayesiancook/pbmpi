@@ -214,7 +214,7 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	string testdatafile = "";
 	int rateprior = 0;
 	int profileprior = 0;
-	int rootprior = 0;
+	int rootprior = 1;
 
 	int testprofile = 0;
 	double tuning = 1;
