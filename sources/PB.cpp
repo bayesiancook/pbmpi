@@ -392,6 +392,9 @@ int main(int argc, char* argv[])	{
 			else if (s == "-jeffomega")	{
 				omegaprior = 1;
 			}
+            else if (s == "-expomega")    {
+                omegaprior = 2;
+            }
 			else if (s == "-b")	{
 				i++;
 				burnin = atoi(argv[i]);

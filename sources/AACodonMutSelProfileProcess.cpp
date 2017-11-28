@@ -155,10 +155,18 @@ double AACodonMutSelProfileProcess::LogOmegaPrior()        {
 		// ratio of exponential random variables
 		return -2 * log(1 + *omega);
 	}
-	else	{	
+    else if (omegaprior == 1)   {
 		// jeffreys
 		return -log(*omega);
 	}
+    else if (omegaprior == 2)   {
+        // gamma
+        return -*omega;
+    }
+    else    {
+        cerr << "error: did not recognize omega prior\n";
+        exit(1);
+    }
 }
 
 void AACodonMutSelProfileProcess::SampleOmega()        {
