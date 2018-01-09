@@ -101,7 +101,7 @@ int main(int argc, char* argv[])	{
 					cerr << "\n";
 				}
 				MPI_Finalize();
-				exit(1);
+				exit(0);
 			}
 			else if ((s == "-h") || (s == "--help"))	{
 				throw(0);
