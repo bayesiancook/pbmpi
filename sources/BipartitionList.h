@@ -17,7 +17,7 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 class TreeList;
 class BooleanBipartitionList;
 
-double BPCompare(string* ChainName, int P, int burnin, int every, int until, int ps, int verbose, int mergeallbp, string OutFile, double cutoff, double conscutoff, bool rootonly = false, bool bench = false);
+double BPCompare(string* ChainName, int P, string reftreename, int burnin, int every, int until, int ps, int verbose, int mergeallbp, string OutFile, double cutoff, double conscutoff, bool rootonly = false, bool bench = false);
 
 class BipartitionList	{
 

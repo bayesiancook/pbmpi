@@ -40,7 +40,7 @@ double BPCompProgressive(string name1, string name2, int burnin, int every, int 
 }
 */
 
-double BPCompare(string* ChainName, int P, int burnin, int every, int until, int ps, int verbose, int mergeallbp, string OutFile, double cutoff, double conscutoff, bool rootonly, bool bench)	{
+double BPCompare(string* ChainName, int P, string reftreename, int burnin, int every, int until, int ps, int verbose, int mergeallbp, string OutFile, double cutoff, double conscutoff, bool rootonly, bool bench)	{
 
 
 	if (!P)	{
@@ -58,6 +58,7 @@ double BPCompare(string* ChainName, int P, int burnin, int every, int until, int
 	}
 	BipartitionList** bplist = new BipartitionList*[P];
 	TaxaParameters* taxaparam = 0; 
+	BipartitionList* refbplist = 0;
 
 	if (verbose)	{
 		cout << '\n';
@@ -70,6 +71,12 @@ double BPCompare(string* ChainName, int P, int burnin, int every, int until, int
 			name = ChainName[p] + ".treelist";
 			if (! ifstream(name.c_str()))	{
 				cerr << "Warning : cannot find " << ChainName[p] << " nor " << name << "\n";
+				ok = 0;
+			}
+		}
+		if (reftreename != "")	{
+			if (! ifstream(reftreename.c_str()))	{
+				cerr << "did not find ref tree\n";
 				ok = 0;
 			}
 		}
@@ -99,6 +106,15 @@ double BPCompare(string* ChainName, int P, int burnin, int every, int until, int
 			else	{
 				delete bplist[Q];
 			}
+
+			if (reftreename != "")	{
+				refbplist = new BipartitionList(reftreename,0,1,1,0,rootonly);
+				if (refbplist->Ntree != 1)	{
+					cerr << "error: ref tree file should contain exactly one tree\n";
+					exit(1);
+				}
+				refbplist->RegisterWith(taxaparam);
+			}
 		}
 	}
 
@@ -119,15 +135,22 @@ double BPCompare(string* ChainName, int P, int burnin, int every, int until, int
 	for (int p=0; p<Q; p++)	{
 		mergedbplist->Append(bplist[p]);
 	}
+	if (refbplist)	{
+		mergedbplist->Append(refbplist);
+	}
 
 	int bpsize = mergedbplist->GetSize();
 
 	double diff[bpsize];
+	double refdiff[bpsize];
 	double prob[Q][bpsize];
 	double length[Q][bpsize];
 	double meanprob[bpsize];
+	double refprob[bpsize];
+	double reflength[bpsize];
 	for (int k=0; k<bpsize; k++)	{
 		meanprob[k] = 0;
+		refprob[k] = 0;
 	}
 
 	for (int k=0; k<bpsize; k++)	{
@@ -146,10 +169,109 @@ double BPCompare(string* ChainName, int P, int burnin, int every, int until, int
 				length[p][k] = bplist[p]->GetLength(i);
 			}
 		}
+		if (refbplist)	{
+			int i = 0;
+			while ( (i < refbplist->GetSize()) && (bp != refbplist->GetBipartition(i)) )	{
+				i++;
+			}
+			if (i == refbplist->GetSize())	{
+				refprob[k] = 0;
+				reflength[k] = 0;
+			}
+			else	{
+				refprob[k] = refbplist->GetProb(i);
+				reflength[k] = refbplist->GetLength(i);
+			}
+		}
 	}
 
 	double maxdiff = 0;
-	if (P > 1)	{
+	if (refbplist)	{
+		// compute diffs
+		double meandiff = 0;
+		double weight = 0;
+		for (int k=0; k<bpsize; k++)	{
+			double max = 0;
+			double var = 0;
+			double mean = 0;
+			double meand = 0;
+			int count = 0;
+			for (int p=0; p<P; p++)	{
+				for (int q=p+1; q<P; q++)	{
+					double tmp = fabs(prob[p][k] - prob[q][k]);
+					if (max < tmp)	{
+						max = tmp;
+					}
+					meand += tmp;
+					count++;
+				}
+				mean += prob[p][k];
+				var += prob[p][k] * prob[p][k];
+			}
+			mean /= P;
+			var /= P;
+			var -= mean * mean;
+			meand /= count;
+			meandiff += mean * meand;
+			weight += mean;
+			diff[k] = max;
+			refdiff[k] = fabs(refprob[k] - mean);
+			if (maxdiff < max)	{
+				maxdiff = max;
+			}
+			meanprob[k] = mean;
+		}
+		meandiff /= weight;
+		
+		if (! bench)	{
+			osp << "total number of bp : " << bpsize << '\n';
+			osp << "cutoff : " << cutoff << '\n';
+			taxaparam->WriteToStream(osp);
+			osp << '\n';
+		}
+
+		int permut[bpsize];
+		for (int k=0; k<bpsize; k++)	{
+			permut[k] = k;
+		}
+		for (int i=0; i<bpsize; i++)	{
+			for (int j = bpsize-1; j>i; j--)	{
+				if (refdiff[permut[j]] > refdiff[permut[j-1]])	{
+					int tmp = permut[j];
+					permut[j] = permut[j-1];
+					permut[j-1] = tmp;
+				}
+			}
+		}
+		if (! bench)	{
+			osp << "bipartition\trefdiff\tprobs\n";
+			osp << '\n';
+		}
+		for (int i=0; i<bpsize; i++)	{
+			int k = permut[i];
+			if (refdiff[k] > 0.01)   {
+				mergedbplist->GetBipartition(k).WriteToStream(osp,verbose);
+				// mergedbplist->GetBipartition(k).WriteToStream(osp);
+				osp << '\t' << (int) (100 * refdiff[k]);
+				osp << '\t' << (int) (100 * diff[k]);
+				osp << '\t';
+				osp << '\t' << (int) (refprob[k]);
+				for (int p=0; p<P; p++)	{
+					osp << '\t' << (int) (100 * prob[p][k]);
+				}
+				osp << '\t';
+				osp << '\t' << reflength[k];
+				for (int p=0; p<P; p++)	{
+					osp << '\t' << length[p][k];
+				}
+				osp << '\n';
+			}
+		}
+		if (! bench)	{
+			osp << '\n' << '\n';
+		}
+	}
+	else if (P > 1)	{
 		// compute diffs
 		double meandiff = 0;
 		double weight = 0;

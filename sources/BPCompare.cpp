@@ -29,6 +29,7 @@ int main(int argc, char* argv[])	{
 	}
 
 	string OutFile = "";
+	string reftreename = "";
 	double cutoff = 0.05;
 	int burnin = -1;
 	double conscutoff = 0.5;
@@ -72,6 +73,10 @@ int main(int argc, char* argv[])	{
 		else if (s == "-r")	{
 			rootonly = true;
 		}
+		else if (s == "-ref")	{
+			i++;
+			reftreename = argv[i];
+		}
 		else if ( (s == "-x") || (s == "-extract") )	{
 			i++;
 			if (i == argc) throw(0);
@@ -113,7 +118,7 @@ int main(int argc, char* argv[])	{
 		i++;
 	}
 
-	BPCompare(ChainName, P, burnin, every, until, ps, verbose, mergeallbp, OutFile, cutoff, conscutoff, rootonly, bench);
+	BPCompare(ChainName, P, reftreename, burnin, every, until, ps, verbose, mergeallbp, OutFile, cutoff, conscutoff, rootonly, bench);
 
 }
 
