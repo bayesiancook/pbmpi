@@ -5,7 +5,7 @@ partitioned phylobayes mpi
 
 Options unique to the partitioned version:
 
-`-p <partition-file>` partitioning scheme file in PartitionFinder format
+`-p <partition-file>` partitioning scheme file in [PartitionFinder](http://www.robertlanfear.com/partitionfinder/) format
 
 `-linkgam` link gamma distribution shape parameters across +G partitions (by default, each +G partition has its own shape parameter) 
 
