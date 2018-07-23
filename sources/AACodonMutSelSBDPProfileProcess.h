@@ -334,9 +334,21 @@ class AACodonMutSelSBDPProfileProcess : public virtual MatrixSBDPProfileProcess,
 			is >> dirweight[j];
 		}
 		for (int i=0; i<Ncomponent; i++)	{
+            double tot = 0;
 			for (int j=0; j<GetDim(); j++)	{
 				is >> profile[i][j];
+                tot += profile[i][j];
 			}
+            /*
+            if (fabs(tot-1) > 1e-5) {
+                cerr << "normalization error when reading profiles\n";
+                cerr << tot-1 << '\n';
+                exit(1);
+            }
+            */
+			for (int j=0; j<GetDim(); j++)	{
+                profile[i][j] /= tot;
+            }
 		}
 		for (int i=0; i<GetNsite(); i++)	{
 			is >> alloc[i];
