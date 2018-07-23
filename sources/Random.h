@@ -50,8 +50,6 @@ class Random {
  
 	public:
 
-	static const double INFPROB=250;
-	
   	Random(int seed = -1);
 
 	void InitRandom(int seed = -1);

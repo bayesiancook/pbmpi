@@ -19,6 +19,10 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 #include "CodonStateSpace.h"
 #include "SubMatrix.h"
 
+static const double TOOSMALL = 1e-30;
+static const double TOOLARGE = 500;
+static const double TOOLARGENEGATIVE = -50;
+
 class CodonSubMatrix : public SubMatrix	{
 
 	public:
@@ -67,10 +71,6 @@ class AAMutSelProfileSubMatrix : public CodonSubMatrix	{
 	double GetRate();
 	double* aaprofile;
 
-	static const double TOOSMALL = 1e-30;
-	static const double TOOLARGE = 500;
-	static const double TOOLARGENEGATIVE = -500;
-
 };
 
 class AACodonMutSelProfileSubMatrix : public CodonSubMatrix	{
@@ -95,11 +95,6 @@ class AACodonMutSelProfileSubMatrix : public CodonSubMatrix	{
 	double* codonprofile;
 	double* omega;
 
-	//static const double TOOSMALL = 1e-1;
-	static const double TOOSMALL = 1e-30;
-	static const double TOOLARGE = 500;
-	static const double TOOLARGENEGATIVE = -50;
-
 };
 
 class CodonMutSelProfileSubMatrix : public CodonSubMatrix	{
@@ -118,10 +113,6 @@ class CodonMutSelProfileSubMatrix : public CodonSubMatrix	{
 	void ComputeStationary();
 	double GetRate();
 	double* codonprofile;
-
-	static const double TOOSMALL = 1e-30;
-	static const double TOOLARGE = 500;
-	static const double TOOLARGENEGATIVE = -50;
 
 };
 
