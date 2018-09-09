@@ -671,11 +671,11 @@ void FiniteProfileProcess::ReadStatFix(string filename)	{
 		// read alphabet
 		int permut[Nstate];
 		for (int k=0; k<Nstate; k++)	{
-			char c;
+			string c;
 			is >> c;
 			int l=0;
-			// while ((l<Nstate) && (c != GetStateSpace()->GetCharState(l))) l++;
-			while ((l<Nstate) && (c != AminoAcids[l])) l++;
+			while ((l<Nstate) && (c != GetStateSpace()->GetState(l))) l++;
+			// while ((l<Nstate) && (c != AminoAcids[l])) l++;
 			if (l == Nstate)	{
 				cerr << "error when reading empirical mixture in " << filename << ": does not recognise letter " << c << '\n';
 				cerr << "file should be formatted as follows\n";
