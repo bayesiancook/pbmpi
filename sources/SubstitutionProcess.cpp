@@ -416,7 +416,7 @@ void SubstitutionProcess::DrawAllocations(double*** aux)	{
 				}
 			}
 			double cumul = 0;
-			double* p = new double[GetNrate(i)];
+			double p[GetNrate(i)];
 			for (int j=0; j<GetNrate(i); j++)	{
 				cumul += GetRateWeight(i,j) * exp(logl[j] - max);
 				p[j] = cumul;
