@@ -31,7 +31,6 @@ void MixtureProfileProcess::Create(int innsite, int indim)	{
 		profile = new double*[GetNmodeMax()];
 		for (int i=0; i<GetNmodeMax(); i++)	{
 			profile[i] = allocprofile + i*GetDim();
-			// profile[i] = new double[GetDim()];
 		}
 		alloc = new int[GetNsite()];
 		occupancy = new int[GetNmodeMax()];

@@ -29,9 +29,9 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 void FiniteProfileProcess::Create(int innsite, int indim, int ncat, int infixncomp,int inempmix, string inmixtype)	{
 	if (! weight)	{
 		Ncomponent = ncat;
+        fixncomp = infixncomp;
 		MixtureProfileProcess::Create(innsite,indim);
 		weight = new double[GetNmodeMax()];
-		fixncomp = infixncomp;
 		empmix = inempmix;
 		mixtype = inmixtype;
 	}
