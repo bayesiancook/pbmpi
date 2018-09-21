@@ -38,7 +38,7 @@ class FiniteProfileProcess: public virtual MixtureProfileProcess	{
 		fixncomp = in;
 	}
 
-	virtual int GetNmodeMax() {return fixncomp ? GetNcomponent() : MixtureProfileProcess::GetNmodeMax();}
+	virtual int GetNmodeMax() {return 200;} 
 
 	protected:
 

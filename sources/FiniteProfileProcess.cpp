@@ -29,6 +29,10 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 void FiniteProfileProcess::Create(int innsite, int indim, int ncat, int infixncomp,int inempmix, string inmixtype)	{
 	if (! weight)	{
 		Ncomponent = ncat;
+        if (Ncomponent > GetNmodeMax()) {
+            cerr << "error in FiniteProfileProcess::Create: max number of components is " << GetNmodeMax() << '\n';
+            exit(1);
+        }
         fixncomp = infixncomp;
 		MixtureProfileProcess::Create(innsite,indim);
 		weight = new double[GetNmodeMax()];
