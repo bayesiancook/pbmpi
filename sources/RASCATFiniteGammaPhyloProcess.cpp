@@ -412,6 +412,8 @@ void RASCATFiniteGammaPhyloProcess::SlaveComputeSiteLogL()	{
 		exit(1);
 	}
 
+    // int* bkalloc = new int[GetNsite()];
+
 	double** sitelogl = new double*[GetNsite()];
 	for (int i=sitemin; i<sitemax; i++)	{
 		sitelogl[i] = new double[GetNcomponent()];
@@ -421,6 +423,7 @@ void RASCATFiniteGammaPhyloProcess::SlaveComputeSiteLogL()	{
 
 	for (int k=0; k<GetNcomponent(); k++)	{
 		for (int i=sitemin; i<sitemax; i++)	{
+            // bkalloc[i] = PoissonFiniteProfileProcess::alloc[i];
 			PoissonFiniteProfileProcess::alloc[i] = k;
 			UpdateZip(i);
 		}
@@ -460,6 +463,7 @@ void RASCATFiniteGammaPhyloProcess::SlaveComputeSiteLogL()	{
         PoissonFiniteProfileProcess::alloc[i] = k;
         UpdateZip(i);
 	}
+    UpdateConditionalLikelihoods();
 
 	MPI_Send(meansitelogl,GetNsite(),MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
 	
