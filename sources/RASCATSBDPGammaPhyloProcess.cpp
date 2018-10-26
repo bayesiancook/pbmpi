@@ -116,6 +116,7 @@ void RASCATSBDPGammaPhyloProcess::SlaveComputeSiteLogL()	{
 	for (int k=0; k<GetNcomponent(); k++)	{
 		for (int i=sitemin; i<sitemax; i++)	{
 			PoissonSBDPProfileProcess::alloc[i] = k;
+            UpdateZip(i);
 		}
 		UpdateConditionalLikelihoods();
 		for (int i=sitemin; i<sitemax; i++)	{
