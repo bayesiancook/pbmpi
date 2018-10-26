@@ -2784,6 +2784,43 @@ void PhyloProcess::WriteStatePostProbs(double*** statepostprob, string name, con
 	}
 }
 
+double PhyloProcess::GlobalGetFullLogLikelihood()  {
+
+    MPI_Status stat;
+    MESSAGE signal = SITELOGL;
+    MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+
+	int width = GetNsite()/(GetNprocs()-1);
+	int smin[GetNprocs()-1];
+	int smax[GetNprocs()-1];
+	int maxwidth = 0;
+	for(int i=0; i<GetNprocs()-1; ++i) {
+		smin[i] = width*i;
+		smax[i] = width*(1+i);
+		if (i == (GetNprocs()-2)) smax[i] = GetNsite();
+		if (maxwidth < (smax[i] - smin[i]))	{
+			maxwidth = smax[i] - smin[i];
+		}
+	}
+
+	double* tmp = new double[GetNsite()];
+    double total = 0;
+    for(int i=1; i<GetNprocs(); ++i) {
+        MPI_Recv(tmp,GetNsite(),MPI_DOUBLE,i,TAG1,MPI_COMM_WORLD,&stat);
+        for (int j=smin[i-1]; j<smax[i-1]; j++)	{
+            if (isnan(tmp[j]))	{
+                cerr << "error: nan logl received by master\n";
+                cerr << "site : " << j << '\n';
+                cerr << "proc : " << i << '\n';
+                exit(1);
+            }
+            total += tmp[j];
+        }
+    }
+    delete[] tmp;
+    return total;
+}
+
 void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until)	{
 
 	ifstream is((name + ".chain").c_str());

@@ -333,6 +333,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 		return logL;
 	}
 
+    double GlobalGetFullLogLikelihood();
 
 	virtual void GlobalUnfold();
 	virtual void GlobalCollapse();
