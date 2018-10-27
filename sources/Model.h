@@ -316,6 +316,7 @@ class Model	{
 
 	void Trace(ostream& os)	{
 		stringstream ss;
+        ss.precision(10);
 		process->Trace(ss);
 		os << ss.str();
 	}
