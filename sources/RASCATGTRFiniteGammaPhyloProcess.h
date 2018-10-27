@@ -197,7 +197,7 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 	void SlaveUpdateParameters();
 
 	void TraceHeader(ostream& os)	{
-		os << "iter\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
+		os << "iter\ttime\ttopo\tloglik\tfulllogl\tlength\talpha\tNmode\tstatent\tstatalpha";
 		if (! fixrr)	{
 			os << "\trrent\trrmean";
 		}
@@ -219,6 +219,7 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 		}
 
 		os << '\t' << GetLogLikelihood();
+		os << '\t' << GlobalGetFullLogLikelihood();
 		os << '\t' << GetRenormTotalLength();
 		os << '\t' << GetAlpha();
 		os << '\t' << GetNDisplayedComponent();

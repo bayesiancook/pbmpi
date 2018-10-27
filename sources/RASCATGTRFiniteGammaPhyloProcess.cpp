@@ -460,6 +460,7 @@ void RASCATGTRFiniteGammaPhyloProcess::SlaveComputeSiteLogL()	{
 	}
 
 	double* meansitelogl = new double[GetNsite()];
+    double* cumul = new double[GetNcomponent()];
 	for (int i=0; i<GetNsite(); i++)	{
 		meansitelogl[i] = 0;
 	}
@@ -474,10 +475,21 @@ void RASCATGTRFiniteGammaPhyloProcess::SlaveComputeSiteLogL()	{
 		double totweight = 0;
 		for (int k=0; k<GetNcomponent(); k++)	{
 			tot += weight[k] * exp(sitelogl[i][k] - max);
-			totweight += weight[k];
+            cumul[k] = tot;
 		}
 		meansitelogl[i] = log(tot) + max;
+        int k = 0;
+        double u = tot*rnd::GetRandom().Uniform();
+        while ((k < GetNcomponent()) && (u>cumul[k]))   {
+            k++;
+        }
+        if (k == GetNcomponent())   {
+            cerr << "error in RASCATFiniteGammaPhyloProcess::SlaveComputeSiteLogL: overflow\n";
+            exit(1);
+        }
+        ExpoConjugateGTRFiniteProfileProcess::alloc[i] = k;
 	}
+    UpdateConditionalLikelihoods();
 
 	MPI_Send(meansitelogl,GetNsite(),MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
 	
@@ -486,6 +498,7 @@ void RASCATGTRFiniteGammaPhyloProcess::SlaveComputeSiteLogL()	{
 	}
 	delete[] sitelogl;
 	delete[] meansitelogl;
+    delete[] cumul;
 }
 
 
