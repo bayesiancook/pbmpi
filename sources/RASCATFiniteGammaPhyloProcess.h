@@ -196,7 +196,7 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 	}
 
 	void TraceHeader(ostream& os)	{
-		os << "iter\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
+		os << "iter\ttime\ttopo\tloglik\tfulllogl\tlength\talpha\tNmode\tstatent\tstatalpha";
 		// os << "#time\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
 		// os << "\tkappa\tallocent";
 		os << '\n'; 
