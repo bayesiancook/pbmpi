@@ -28,16 +28,22 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 
 void FiniteProfileProcess::Create(int innsite, int indim, int ncat, int infixncomp,int inempmix, string inmixtype)	{
 	if (! weight)	{
-		Ncomponent = ncat;
+		empmix = inempmix;
+		mixtype = inmixtype;
+        fixncomp = infixncomp;
+        if (empmix) {
+            ReadNcomponent(mixtype);
+            Ncomponent = Ncat;
+        }
+        else    {
+            Ncomponent = ncat;
+        }
         if (Ncomponent > GetNmodeMax()) {
             cerr << "error in FiniteProfileProcess::Create: max number of components is " << GetNmodeMax() << '\n';
             exit(1);
         }
-        fixncomp = infixncomp;
 		MixtureProfileProcess::Create(innsite,indim);
 		weight = new double[GetNmodeMax()];
-		empmix = inempmix;
-		mixtype = inmixtype;
 	}
 }
 
@@ -265,6 +271,75 @@ double FiniteProfileProcess::MoveNcomponent(int nrep)	{
 }
 
 
+void FiniteProfileProcess::ReadNcomponent(string filename)	{
+	mixtype = filename;
+	if ((filename == "WLSR5") || (filename == "wlsr5"))	{
+		Ncat = WLSR5N;
+	}
+	else if ((filename == "CG6") || (filename == "cg6") || (filename == "c6") || (filename == "C6"))	{
+		Ncat = 6;
+	}
+	else if ((filename == "CG10") || (filename == "cg10"))	{
+		Ncat = 10;
+	}
+	else if ((filename == "CG20") || (filename == "cg20"))	{
+		Ncat = 20;
+	}
+	else if ((filename == "CG30") || (filename == "cg30"))	{
+		Ncat = 30;
+	}
+	else if ((filename == "CG40") || (filename == "cg40"))	{
+		Ncat = 40;
+	}
+	else if ((filename == "CG50") || (filename == "cg50"))	{
+		Ncat = 50;
+	}
+	else if ((filename == "CG60") || (filename == "cg60"))	{
+		Ncat = 60;
+	}
+	else if ((filename == "c10") || (filename == "C10"))	{
+		Ncat = C10N;
+	}
+	else if ((filename == "c20") || (filename == "C20"))	{
+		Ncat = C20N;
+	}
+	else if ((filename == "c30") || (filename == "C30"))	{
+		Ncat = C30N;
+	}
+	else if ((filename == "c30") || (filename == "C30"))	{
+		Ncat = C30N;
+	}
+	else if ((filename == "c40") || (filename == "C40"))	{
+		Ncat = C40N;
+	}
+	else if ((filename == "c50") || (filename == "C50"))	{
+		Ncat = C50N;
+	}
+	else if ((filename == "c60") || (filename == "C60"))	{
+		Ncat = C60N;
+	}
+	else if ((filename == "lg") || (filename == "LG"))	{
+		Ncat = 1;
+	}
+	else if ((filename == "uniform") || (filename == "Uniform"))	{
+		Ncat = 1;
+	}
+	else	{
+		ifstream is(filename.c_str());
+		if (!is)	{
+			cerr << "error : unrecognized file for empirical mixture : " << filename << '\n';
+			exit(1);
+		}
+		int tmpNstate;
+		is >> tmpNstate;
+		for (int k=0; k<tmpNstate; k++)	{
+			string c;
+			is >> c;
+		}
+		is >> Ncat;
+	}
+}
+
 void FiniteProfileProcess::ReadStatFix(string filename)	{
 	mixtype = filename;
 	int Nstate = GetDim();
@@ -272,7 +347,12 @@ void FiniteProfileProcess::ReadStatFix(string filename)	{
 		if (Nstate != 20)	{
 			cerr << "error: WLRS5 is for aminoacids\n";
 		}
-		Ncat = WLSR5N;
+		int ncat = WLSR5N;
+        if (ncat != Ncat)   {
+            cerr << "error: incorrect number of components\n";
+            cerr << "read: " << ncat << "; allocated: " << Ncat << '\n';
+            exit(1);
+        }
 		statfix = new double*[Ncat];
 		empweight = new double[Ncat];
 		for (int i=0; i<Ncat-1; i++)	{
@@ -302,7 +382,12 @@ void FiniteProfileProcess::ReadStatFix(string filename)	{
 		if (Nstate != 20)	{
 			cerr << "error: CG6 is for aminoacids\n";
 		}
-		Ncat = 6;
+		int ncat = 6;
+        if (ncat != Ncat)   {
+            cerr << "error: incorrect number of components\n";
+            cerr << "read: " << ncat << "; allocated: " << Ncat << '\n';
+            exit(1);
+        }
 		statfix = new double*[Ncat];
 		empweight = new double[Ncat];
 		for (int i=0; i<Ncat; i++)	{
@@ -325,7 +410,12 @@ void FiniteProfileProcess::ReadStatFix(string filename)	{
 		if (Nstate != 20)	{
 			cerr << "error: CG10 is for aminoacids\n";
 		}
-		Ncat = 10;
+		int ncat = 10;
+        if (ncat != Ncat)   {
+            cerr << "error: incorrect number of components\n";
+            cerr << "read: " << ncat << "; allocated: " << Ncat << '\n';
+            exit(1);
+        }
 		statfix = new double*[Ncat];
 		empweight = new double[Ncat];
 		for (int i=0; i<Ncat; i++)	{
@@ -348,7 +438,12 @@ void FiniteProfileProcess::ReadStatFix(string filename)	{
 		if (Nstate != 20)	{
 			cerr << "error: CG20 is for aminoacids\n";
 		}
-		Ncat = 20;
+		int ncat = 20;
+        if (ncat != Ncat)   {
+            cerr << "error: incorrect number of components\n";
+            cerr << "read: " << ncat << "; allocated: " << Ncat << '\n';
+            exit(1);
+        }
 		statfix = new double*[Ncat];
 		empweight = new double[Ncat];
 		for (int i=0; i<Ncat; i++)	{
@@ -371,7 +466,12 @@ void FiniteProfileProcess::ReadStatFix(string filename)	{
 		if (Nstate != 20)	{
 			cerr << "error: CG30 is for aminoacids\n";
 		}
-		Ncat = 30;
+		int ncat = 30;
+        if (ncat != Ncat)   {
+            cerr << "error: incorrect number of components\n";
+            cerr << "read: " << ncat << "; allocated: " << Ncat << '\n';
+            exit(1);
+        }
 		statfix = new double*[Ncat];
 		empweight = new double[Ncat];
 		for (int i=0; i<Ncat; i++)	{
@@ -394,7 +494,12 @@ void FiniteProfileProcess::ReadStatFix(string filename)	{
 		if (Nstate != 20)	{
 			cerr << "error: CG40is for aminoacids\n";
 		}
-		Ncat = 40;
+		int ncat = 40;
+        if (ncat != Ncat)   {
+            cerr << "error: incorrect number of components\n";
+            cerr << "read: " << ncat << "; allocated: " << Ncat << '\n';
+            exit(1);
+        }
 		statfix = new double*[Ncat];
 		empweight = new double[Ncat];
 		for (int i=0; i<Ncat; i++)	{
@@ -417,7 +522,12 @@ void FiniteProfileProcess::ReadStatFix(string filename)	{
 		if (Nstate != 20)	{
 			cerr << "error: CG50 is for aminoacids\n";
 		}
-		Ncat = 50;
+		int ncat = 50;
+        if (ncat != Ncat)   {
+            cerr << "error: incorrect number of components\n";
+            cerr << "read: " << ncat << "; allocated: " << Ncat << '\n';
+            exit(1);
+        }
 		statfix = new double*[Ncat];
 		empweight = new double[Ncat];
 		for (int i=0; i<Ncat; i++)	{
@@ -440,7 +550,12 @@ void FiniteProfileProcess::ReadStatFix(string filename)	{
 		if (Nstate != 20)	{
 			cerr << "error: CG60 is for aminoacids\n";
 		}
-		Ncat = 60;
+		int ncat = 60;
+        if (ncat != Ncat)   {
+            cerr << "error: incorrect number of components\n";
+            cerr << "read: " << ncat << "; allocated: " << Ncat << '\n';
+            exit(1);
+        }
 		statfix = new double*[Ncat];
 		empweight = new double[Ncat];
 		for (int i=0; i<Ncat; i++)	{
@@ -463,7 +578,12 @@ void FiniteProfileProcess::ReadStatFix(string filename)	{
 		if (Nstate != 20)	{
 			cerr << "error: C10 is for aminoacids\n";
 		}
-		Ncat = C10N;
+		int ncat = C10N;
+        if (ncat != Ncat)   {
+            cerr << "error: incorrect number of components\n";
+            cerr << "read: " << ncat << "; allocated: " << Ncat << '\n';
+            exit(1);
+        }
 		statfix = new double*[Ncat];
 		empweight = new double[Ncat];
 		for (int i=0; i<Ncat; i++)	{
@@ -486,7 +606,12 @@ void FiniteProfileProcess::ReadStatFix(string filename)	{
 		if (Nstate != 20)	{
 			cerr << "error: C20 is for aminoacids\n";
 		}
-		Ncat = C20N;
+		int ncat = C20N;
+        if (ncat != Ncat)   {
+            cerr << "error: incorrect number of components\n";
+            cerr << "read: " << ncat << "; allocated: " << Ncat << '\n';
+            exit(1);
+        }
 		statfix = new double*[Ncat];
 		empweight = new double[Ncat];
 		for (int i=0; i<Ncat; i++)	{
@@ -509,30 +634,12 @@ void FiniteProfileProcess::ReadStatFix(string filename)	{
 		if (Nstate != 20)	{
 			cerr << "error: C30 is for aminoacids\n";
 		}
-		Ncat = C30N;
-		statfix = new double*[Ncat];
-		empweight = new double[Ncat];
-		for (int i=0; i<Ncat; i++)	{
-			statfix[i] = new double[Nstate];
-			double total = 0;
-			for (int k=0; k<Nstate; k++)	{
-				statfix[i][k] = C30StatFix[i][k];
-				if (statfix[i][k]<stateps)	{
-					statfix[i][k] = stateps;
-				}
-				total += statfix[i][k];
-			}
-			for (int k=0; k<Nstate; k++)	{
-				statfix[i][k] /= total;
-			}
-			empweight[i] = C30StatWeight[i];
-		}
-	}
-	else if ((filename == "c30") || (filename == "C30"))	{
-		if (Nstate != 20)	{
-			cerr << "error: C30 is for aminoacids\n";
-		}
-		Ncat = C30N;
+		int ncat = C30N;
+        if (ncat != Ncat)   {
+            cerr << "error: incorrect number of components\n";
+            cerr << "read: " << ncat << "; allocated: " << Ncat << '\n';
+            exit(1);
+        }
 		statfix = new double*[Ncat];
 		empweight = new double[Ncat];
 		for (int i=0; i<Ncat; i++)	{
@@ -555,7 +662,12 @@ void FiniteProfileProcess::ReadStatFix(string filename)	{
 		if (Nstate != 20)	{
 			cerr << "error: C40 is for aminoacids\n";
 		}
-		Ncat = C40N;
+		int ncat = C40N;
+        if (ncat != Ncat)   {
+            cerr << "error: incorrect number of components\n";
+            cerr << "read: " << ncat << "; allocated: " << Ncat << '\n';
+            exit(1);
+        }
 		statfix = new double*[Ncat];
 		empweight = new double[Ncat];
 		for (int i=0; i<Ncat; i++)	{
@@ -578,7 +690,12 @@ void FiniteProfileProcess::ReadStatFix(string filename)	{
 		if (Nstate != 20)	{
 			cerr << "error: C50 is for aminoacids\n";
 		}
-		Ncat = C50N;
+		int ncat = C50N;
+        if (ncat != Ncat)   {
+            cerr << "error: incorrect number of components\n";
+            cerr << "read: " << ncat << "; allocated: " << Ncat << '\n';
+            exit(1);
+        }
 		statfix = new double*[Ncat];
 		empweight = new double[Ncat];
 		for (int i=0; i<Ncat; i++)	{
@@ -601,7 +718,12 @@ void FiniteProfileProcess::ReadStatFix(string filename)	{
 		if (Nstate != 20)	{
 			cerr << "error: C60 is for aminoacids\n";
 		}
-		Ncat = C60N;
+		int ncat = C60N;
+        if (ncat != Ncat)   {
+            cerr << "error: incorrect number of components\n";
+            cerr << "read: " << ncat << "; allocated: " << Ncat << '\n';
+            exit(1);
+        }
 		statfix = new double*[Ncat];
 		empweight = new double[Ncat];
 		for (int i=0; i<Ncat; i++)	{
@@ -621,7 +743,12 @@ void FiniteProfileProcess::ReadStatFix(string filename)	{
 		}
 	}
 	else if ((filename == "lg") || (filename == "LG"))	{
-		Ncat = 1;
+		int ncat = 1;
+        if (ncat != Ncat)   {
+            cerr << "error: incorrect number of components\n";
+            cerr << "read: " << ncat << "; allocated: " << Ncat << '\n';
+            exit(1);
+        }
 		statfix = new double*[Ncat];
 		empweight = new double[Ncat];
 		for (int i=0; i<Ncat; i++)	{
@@ -641,7 +768,12 @@ void FiniteProfileProcess::ReadStatFix(string filename)	{
 		}
 	}
 	else if ((filename == "uniform") || (filename == "Uniform"))	{
-		Ncat = 1;
+		int ncat = 1;
+        if (ncat != Ncat)   {
+            cerr << "error: incorrect number of components\n";
+            cerr << "read: " << ncat << "; allocated: " << Ncat << '\n';
+            exit(1);
+        }
 		statfix = new double*[Ncat];
 		empweight = new double[Ncat];
 		for (int i=0; i<Ncat; i++)	{
@@ -697,7 +829,13 @@ void FiniteProfileProcess::ReadStatFix(string filename)	{
 			}
 			permut[k] = l;
 		}
-		is >> Ncat;
+        int ncat;
+		is >> ncat;
+        if (ncat != Ncat)   {
+            cerr << "error: incorrect number of components\n";
+            cerr << "read: " << ncat << "; allocated: " << Ncat << '\n';
+            exit(1);
+        }
 		statfix = new double*[Ncat];
 		empweight = new double[Ncat];
 		for (int i=0; i<Ncat; i++)	{

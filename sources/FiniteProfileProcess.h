@@ -38,12 +38,13 @@ class FiniteProfileProcess: public virtual MixtureProfileProcess	{
 		fixncomp = in;
 	}
 
-	virtual int GetNmodeMax() {return 200;} 
+	virtual int GetNmodeMax() {return fixncomp ? Ncomponent : 200;} 
 
 	protected:
 
 	virtual void DrawProfileFromPrior();
 
+	void ReadNcomponent(string name);
 	void ReadStatFix(string name);
 	void SetStatFix();
 

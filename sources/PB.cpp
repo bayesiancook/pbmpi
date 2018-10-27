@@ -51,7 +51,7 @@ int main(int argc, char* argv[])	{
 	int modeltype = -1;
 	// int modeltype = 2;
 	int dgam = 4;
-	int ncat = 100;
+	int ncat = 1;
 	int iscodon = 0;
 	int omegaprior = 0;
 
