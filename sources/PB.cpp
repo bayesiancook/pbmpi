@@ -368,6 +368,9 @@ int main(int argc, char* argv[])	{
 			else if ((s == "-mtmam") || (s == "-MtMam") || (s == "mtvert") || (s == "MtVert"))	{
 				type = MtMam;
 			}
+            else if (s == "-mtinv") {
+                type = MtInv;
+            }
 			else if (s == "-jeffkappa")	{
 				kappaprior = 1;
 			}
