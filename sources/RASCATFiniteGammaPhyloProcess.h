@@ -59,7 +59,7 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 
 	public:
 
-        virtual void SlaveExecute(MESSAGE);
+    virtual void SlaveExecute(MESSAGE);
 	virtual void GlobalUpdateParameters();
 	virtual void SlaveUpdateParameters();
 
@@ -68,6 +68,8 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 	RASCATFiniteGammaPhyloProcess(string indatafile, string treefile, int nratecat, int ncat, int infixncomp, int inempmix, string inmixtype, double indirweightprior, int infixtopo, int inNSPR, int inNNNI, int indc, int me, int np)	{
 		myid = me;
 		nprocs = np;
+
+        withfulllogl = 0;
 
         dirweightprior = indirweightprior;
 
@@ -120,6 +122,8 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 	RASCATFiniteGammaPhyloProcess(istream& is, int me, int np)	{
 		myid = me;
 		nprocs = np;
+
+        withfulllogl = 0;
 
 		FromStreamHeader(is);
 		is >> datafile;
@@ -196,22 +200,12 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 	}
 
 	void TraceHeader(ostream& os)	{
-		os << "iter\ttime\ttopo\tloglik\tfulllogl\tlength\talpha\tNmode\tstatent\tstatalpha";
-		// os << "#time\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
-		// os << "\tkappa\tallocent";
+		os << "#time\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
 		os << '\n'; 
 	}
 
 	void Trace(ostream& os)	{
 
-		/*
-		os << ((int) (chronototal.GetTime() / 1000));
-		if (chronototal.GetTime())	{
-			os << '\t' << ((double) ((int) (chronototal.GetTime() / GetSize()))) / 1000;
-			os << '\t' << ((int) (propchrono.GetTime() / chronototal.GetTime() * 100));
-			// os << '\t' << ((int) (chronosuffstat.GetTime() / chronototal.GetTime() * 100));
-		}
-		*/
 		os << GetIndex();
 		if (chronototal.GetTime())	{
 			os << '\t' << chronototal.GetTime() / 1000;
@@ -224,7 +218,13 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 			os << '\t' << 0;
 		}
 
-		os << '\t' << GetLogLikelihood() << '\t' << GlobalGetFullLogLikelihood() << '\t' << GetRenormTotalLength() << '\t' << GetAlpha();
+        if (withfulllogl)   {
+            os << '\t' << GlobalGetFullLogLikelihood();
+        }
+        else    {
+            os << '\t' << GetLogLikelihood();
+        }
+        os << '\t' << GetRenormTotalLength() << '\t' << GetAlpha();
 		os << '\t' << GetNOccupiedComponent() << '\t' << GetStatEnt();
 		os << '\t' << GetMeanDirWeight();
 		// os << '\t' << kappa << '\t' << GetAllocEntropy();
@@ -323,6 +323,7 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 	int NSPR;
 	int NNNI;
 	int dc;
+    int withfulllogl;
 };
 
 #endif

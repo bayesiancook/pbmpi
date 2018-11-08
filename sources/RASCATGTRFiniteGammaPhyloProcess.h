@@ -66,6 +66,8 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 		myid = me;
 		nprocs = np;
 
+        withfulllogl = 0;
+
         dirweightprior = indirweightprior;
 
 		fixtopo = infixtopo;
@@ -118,6 +120,8 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 
 		myid = me;
 		nprocs = np;
+
+        withfulllogl = 0;
 
 		FromStreamHeader(is);
 		is >> datafile;
@@ -197,7 +201,7 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 	void SlaveUpdateParameters();
 
 	void TraceHeader(ostream& os)	{
-		os << "iter\ttime\ttopo\tloglik\tfulllogl\tlength\talpha\tNmode\tstatent\tstatalpha";
+		os << "iter\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
 		if (! fixrr)	{
 			os << "\trrent\trrmean";
 		}
@@ -218,8 +222,12 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 			os << '\t' << 0;
 		}
 
-		os << '\t' << GetLogLikelihood();
-		os << '\t' << GlobalGetFullLogLikelihood();
+        if (withfulllogl)   {
+            os << '\t' << GlobalGetFullLogLikelihood();
+        }
+        else    {
+            os << '\t' << GetLogLikelihood();
+        }
 		os << '\t' << GetRenormTotalLength();
 		os << '\t' << GetAlpha();
 		os << '\t' << GetNDisplayedComponent();
@@ -326,6 +334,7 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 	int NSPR;
 	int NNNI;
 	int dc;
+    int withfulllogl;
 };
 
 #endif
