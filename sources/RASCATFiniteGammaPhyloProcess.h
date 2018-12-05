@@ -69,7 +69,7 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 		myid = me;
 		nprocs = np;
 
-        withfulllogl = 0;
+        withfulllogl = 1;
 
         dirweightprior = indirweightprior;
 
@@ -123,7 +123,7 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 		myid = me;
 		nprocs = np;
 
-        withfulllogl = 0;
+        withfulllogl = 1;
 
 		FromStreamHeader(is);
 		is >> datafile;

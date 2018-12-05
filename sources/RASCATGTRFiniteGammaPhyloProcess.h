@@ -66,7 +66,7 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 		myid = me;
 		nprocs = np;
 
-        withfulllogl = 0;
+        withfulllogl = 1;
 
         dirweightprior = indirweightprior;
 
@@ -121,7 +121,7 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 		myid = me;
 		nprocs = np;
 
-        withfulllogl = 0;
+        withfulllogl = 1;
 
 		FromStreamHeader(is);
 		is >> datafile;
