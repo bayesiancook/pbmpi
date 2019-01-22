@@ -203,17 +203,6 @@ class Link	{
 		}
 		return d;
 	}
-
-	const Link* GetUp(int& d) const	{
-		d = 1;
-		const Link* link = link->Out();
-		while (link->GetDegree() == 2)	{
-			link = link->Next()->Out();
-			d++;
-		}
-		return link;
-	}
-
 };
 
 

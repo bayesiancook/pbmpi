@@ -313,7 +313,7 @@ class SequenceAlignment	{
 				Data[i][j] = from.Data[i][j];
 			}
 		}
-
+		return *this;
 	}
 
 	// the set of characters (A,C,G,T for nucleotides, etc..)
