@@ -22,7 +22,6 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 
 #include <cassert>
 #include "Parallel.h"
-extern MPI_Datatype Propagate_arg;
 
 #include "TexTab.h"
 
@@ -1403,13 +1402,13 @@ void PhyloProcess::GlobalPropagate(const Link* from, const Link* to, double time
 	// MPI
 	assert(myid == 0);
 	MESSAGE signal = PROPAGATE;
-	prop_arg args;
 	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
-	args.from = GetLinkIndex(from);
-	args.to = GetLinkIndex(to);
-	args.condalloc = (condalloc) ? 1 : 0;
-	args.time = time;
-	MPI_Bcast(&args,1,Propagate_arg,0,MPI_COMM_WORLD);
+    int args[3];
+	args[0] = GetLinkIndex(from);
+	args[1] = GetLinkIndex(to);
+	args[2] = (condalloc) ? 1 : 0;
+	MPI_Bcast(args,3,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(&time,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
 }
 
 double PhyloProcess::GlobalProposeMove(const Branch* branch, double tuning)	{
@@ -1422,10 +1421,9 @@ double PhyloProcess::GlobalProposeMove(const Branch* branch, double tuning)	{
 	MESSAGE signal = PROPOSE;
 	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 	double m = tuning * (rnd::GetRandom().Uniform() - 0.5);
-	prop_arg args;
-	args.time = m;
-	args.condalloc = branch->GetIndex();
-	MPI_Bcast(&args,1,Propagate_arg,0,MPI_COMM_WORLD);
+	int index = branch->GetIndex();
+	MPI_Bcast(&index,1,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(&m,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
 	MoveBranch(branch,m);
 	return m;
 }
@@ -1567,7 +1565,8 @@ void PhyloProcess::WaitLoop()	{
 
 void PhyloProcess::SlaveExecute(MESSAGE signal)	{
 	int n,arg[4];
-	prop_arg alpha;
+    int branchindex;
+    double time;
 	bool tvalue;
 
 	switch(signal) {
@@ -1593,8 +1592,9 @@ void PhyloProcess::SlaveExecute(MESSAGE signal)	{
 		SlaveGibbsSPRScan(arg[0],arg[1]);
 		break;
 	case PROPOSE:
-		MPI_Bcast(&alpha,1,Propagate_arg,0,MPI_COMM_WORLD);
-		SlavePropose(alpha.condalloc,alpha.time);
+		MPI_Bcast(&branchindex,1,MPI_INT,0,MPI_COMM_WORLD);
+		MPI_Bcast(&time,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+		SlavePropose(branchindex,time);
 		break;
 	case RESTORE:
 		MPI_Bcast(&n,1,MPI_INT,0,MPI_COMM_WORLD);
@@ -1621,9 +1621,10 @@ void PhyloProcess::SlaveExecute(MESSAGE signal)	{
 		SlaveInitialize(arg[0],arg[1],tvalue);
 		break;
 	case PROPAGATE:
-		MPI_Bcast(&alpha,1,Propagate_arg,0,MPI_COMM_WORLD);
-		tvalue = (alpha.condalloc == 1) ? true : false;
-		SlavePropagate(alpha.from,alpha.to,tvalue,alpha.time);
+		MPI_Bcast(&arg,3,MPI_INT,0,MPI_COMM_WORLD);
+		MPI_Bcast(&time,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+		tvalue = (arg[2] == 1) ? true : false;
+		SlavePropagate(arg[0], arg[1], tvalue, time);
 		break;
 	case ATTACH:
 		MPI_Bcast(arg,4,MPI_INT,0,MPI_COMM_WORLD);
