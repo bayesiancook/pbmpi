@@ -1621,7 +1621,7 @@ void PhyloProcess::SlaveExecute(MESSAGE signal)	{
 		SlaveInitialize(arg[0],arg[1],tvalue);
 		break;
 	case PROPAGATE:
-		MPI_Bcast(&arg,3,MPI_INT,0,MPI_COMM_WORLD);
+		MPI_Bcast(arg,3,MPI_INT,0,MPI_COMM_WORLD);
 		MPI_Bcast(&time,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
 		tvalue = (arg[2] == 1) ? true : false;
 		SlavePropagate(arg[0], arg[1], tvalue, time);
