@@ -1,5 +1,7 @@
 CC=mpic++
-CPPFLAGS= -w -O3 -c
+CC_INTEL=mpiicpc
+CPPFLAGS= -Wall -O3 -c -march=native -mtune=native -ffast-math
+CPPFLAGS_INTEL= -Wall -O3 -c -xHost
 LDFLAGS= -O3
 SRCS=  TaxonSet.cpp Tree.cpp Random.cpp SequenceAlignment.cpp CodonSequenceAlignment.cpp \
 	StateSpace.cpp CodonStateSpace.cpp ZippedSequenceAlignment.cpp SubMatrix.cpp \

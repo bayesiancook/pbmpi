@@ -17,6 +17,7 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 #include "MatrixSubstitutionProcess.h"
 #include "Random.h"
 
+
 #include <cmath>
 #include <iostream>
 #include <vector>
@@ -86,18 +87,25 @@ void MatrixSubstitutionProcess::Propagate(double*** from, double*** to, double t
 	double length,max,maxup;
 	const int nstate = GetMatrix(sitemin)->GetNstate();
 	// double* bigaux = new double[(sitemax - sitemin) * GetNrate(0) * nstate];
-	double* aux = new double[GetNsite() * GetNrate(0) * nstate];
+	double* __restrict__ aux = new double[GetNsite() * GetNrate(0) * nstate];
+
+	// cout << "FOR LOOP 1: Site min " << sitemin << "Sitemax" << sitemax << endl;// DEBUG
+
 	for(i=sitemin; i<sitemax; i++)	{
 		SubMatrix* matrix = GetMatrix(i);
-		double** eigenvect = matrix->GetEigenVect();
-		double** inveigenvect = matrix->GetInvEigenVect();
-		double* eigenval = matrix->GetEigenVal();
+		double * __restrict__ const* __restrict__ const eigenvect    = matrix->GetEigenVect();
+		double * __restrict__ const* __restrict__ const inveigenvect = matrix->GetInvEigenVect();
+		double * const __restrict__  eigenval                        = matrix->GetEigenVal();
+
+	 	// cout << "FOR LOOP 2: Nrate " << GetNrate(i) << endl;  // DEBUG
+
 		for(j=0; j<GetNrate(i); j++)	{
 			if ((!condalloc) || (ratealloc[i] == j))	{
-				double* up = from[i][j];
-				double* down = to[i][j];
+				double * const  __restrict__ up = from[i][j];
+				double * const  __restrict__ down = to[i][j];
 				//SubMatrix* matrix = GetMatrix(i);
 				length = time * GetRate(i,j);
+	 			// cout << "FOR LOOPS 3: Nrate " << nstate << endl;    // DEBUG
 
 				//double** eigenvect = matrix->GetEigenVect();
 				//double** inveigenvect= matrix->GetInvEigenVect();
@@ -123,7 +131,7 @@ void MatrixSubstitutionProcess::Propagate(double*** from, double*** to, double t
 				offset = nstate*(i*GetNrate(0) + j);
 				// P^{-1} . up  -> aux
 				//double* tmpaux = aux;
-				for(k=0; k<nstate; k++)	{
+               	for(k=0; k<nstate; k++)	{
 					//(*tmpaux++) = 0;
 					aux[offset+k] = 0.0;
 				}
@@ -131,6 +139,7 @@ void MatrixSubstitutionProcess::Propagate(double*** from, double*** to, double t
 				//double* tmpup = up;
 				for(k=0; k<nstate; k++)	{
 					//double* tmpinveigen = inveigenvect[i];
+                    
 					for(l=0; l<nstate; l++)	{
 						//(*tmpaux) += (*tmpinveigen++) * (*tmpup++);
 						aux[offset+k] += inveigenvect[k][l] * up[l];
@@ -151,14 +160,13 @@ void MatrixSubstitutionProcess::Propagate(double*** from, double*** to, double t
 
 				// P . aux -> down
 				//double* tmpdown = down;
+                
 				for(k=0; k<nstate; k++)	{
 					//(*tmpdown++) = 0;
 					down[k] = 0.0;
 				}
 				//tmpdown -= nstate;
-
-				for(k=0; k<nstate; k++)	{
-					//double* tmpeigen = eigenvect[i];
+                for(k=0; k<nstate; k++) {
 					for(l=0; l<nstate; l++)	{
 						//(*tmpdown) += (*tmpeigen++) * (*tmpaux++);
 						down[k] += eigenvect[k][l] * aux[offset+l]; 
