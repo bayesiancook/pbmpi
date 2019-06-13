@@ -1,5 +1,5 @@
 CC=mpic++
-CPPFLAGS= -Wall -O3 -c -march=native -mtune=native -ffast-math
+CPPFLAGS= -Wall -O3 -c -march=native -mtune=native -funroll-loops -ffast-math -fopt-info
 
 ifeq ($(INTEL),1)
 CC=mpiicpc
