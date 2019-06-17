@@ -35,7 +35,7 @@ int main(int argc, char* argv[])	{
 	if (argc == 1)	{
 		cerr << "tracecomp [-ox] ChainName1 ChainName2 ... \n";
 		cerr << "\t-o <output> : detailed output into file\n"; 
-		cerr << "\t-x <burnin> [<every> <until>]. default burnin = 0\n";
+		cerr << "\t-x <burnin> [<every> <until>]. default burnin = 20% of the chain\n";
 		cerr << '\n';
 		cerr << "\t measure the effective sizes and overlap between 95% CI of several independent chains\n";
 		cerr << '\n';
