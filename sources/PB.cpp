@@ -459,7 +459,7 @@ int main(int argc, char* argv[])	{
 
 		}
 		MPI_Finalize();
-		exit(1);
+		exit(0);
 	}
 
 	if ((modeltype == -1) && (mixturetype == -1))	{
