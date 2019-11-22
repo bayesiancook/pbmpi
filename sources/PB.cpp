@@ -74,6 +74,7 @@ int main(int argc, char* argv[])	{
 	double mintotweight = 0;
 
 	int topoburnin = 0;
+    bool help = false;
 
 	try	{
 
@@ -94,6 +95,7 @@ int main(int argc, char* argv[])	{
 				exit(0);
 			}
 			else if ((s == "-h") || (s == "--help"))	{
+                help = true;
 				throw(0);
 			}
 			else if (s == "-f")	{
@@ -459,7 +461,12 @@ int main(int argc, char* argv[])	{
 
 		}
 		MPI_Finalize();
-		exit(0);
+        if (help)   {
+            exit(0);
+        }
+        else    {
+            exit(1);
+        }
 	}
 
 	if ((modeltype == -1) && (mixturetype == -1))	{
