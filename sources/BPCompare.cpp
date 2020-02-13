@@ -15,7 +15,6 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 
 #include "phylo.h"
 #include "Parallel.h"
-MPI_Datatype Propagate_arg;
 
 const double default_cutoff = 0.05;
 const int MaxChain = 10;

@@ -6,10 +6,6 @@
 
 using namespace std;
 
-MPI_Datatype Propagate_arg;
-
-
-
 int main(int argc, char* argv[])	{
 
 	if (argc != 6)	{

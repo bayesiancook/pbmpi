@@ -22,7 +22,6 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 
 #include <cassert>
 #include "Parallel.h"
-extern MPI_Datatype Propagate_arg;
 
 #include "TexTab.h"
 

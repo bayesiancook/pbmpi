@@ -11,7 +11,6 @@
 #include "StringStreamUtils.h"
 
 #include "Parallel.h"
-MPI_Datatype Propagate_arg;
 
 class Simulator : public NewickTree {
 

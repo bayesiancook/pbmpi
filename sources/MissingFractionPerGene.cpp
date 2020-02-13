@@ -3,8 +3,6 @@
 #include "SequenceAlignment.h"
 #include "Parallel.h"
 
-MPI_Datatype Propagate_arg;
-
 int main(int argc, char* argv[])	{
 
 
