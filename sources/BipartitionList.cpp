@@ -13,6 +13,7 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 
 **********************/
 
+#include <vector>
 #include "phylo.h"
 
 // ---------------------------------------------------------------------------------
@@ -57,7 +58,7 @@ double BPCompare(string* ChainName, int P, string reftreename, int burnin, int e
 		}
 	}
 	BipartitionList** bplist = new BipartitionList*[P];
-	TaxaParameters* taxaparam = 0; 
+	TaxaParameters* taxaparam = 0;
 	BipartitionList* refbplist = 0;
 
 	if (verbose)	{
@@ -141,13 +142,14 @@ double BPCompare(string* ChainName, int P, string reftreename, int burnin, int e
 
 	int bpsize = mergedbplist->GetSize();
 
-	double diff[bpsize];
-	double refdiff[bpsize];
-	double prob[Q][bpsize];
-	double length[Q][bpsize];
-	double meanprob[bpsize];
-	double refprob[bpsize];
-	double reflength[bpsize];
+	vector<double> diff(bpsize);
+    vector<double> refdiff(bpsize);
+    vector<vector<double> > prob(Q, vector<double>(bpsize));
+    vector<vector<double> > length(Q, vector<double>(bpsize));
+    vector<double> meanprob(bpsize);
+    vector<double> refprob(bpsize);
+    vector<double> reflength(bpsize);
+
 	for (int k=0; k<bpsize; k++)	{
 		meanprob[k] = 0;
 		refprob[k] = 0;
@@ -222,7 +224,7 @@ double BPCompare(string* ChainName, int P, string reftreename, int burnin, int e
 			meanprob[k] = mean;
 		}
 		meandiff /= weight;
-		
+
 		if (! bench)	{
 			osp << "total number of bp : " << bpsize << '\n';
 			osp << "cutoff : " << cutoff << '\n';
@@ -312,7 +314,7 @@ double BPCompare(string* ChainName, int P, string reftreename, int burnin, int e
 		}
 		meandiff /= weight;
 		// meandiff = sqrt(meandiff);
-		
+
 		if (! bench)	{
 			osp << "total number of bp : " << bpsize << '\n';
 			osp << "cutoff : " << cutoff << '\n';
@@ -408,7 +410,7 @@ double BPCompare(string* ChainName, int P, string reftreename, int burnin, int e
 			cout << "meandiff    : " << meandiff << '\n';
 			cout << '\n';
 		}
-	
+
 		ofstream sos((OutFile + ".bpdiff").c_str());
 		sos << '\n';
 		sos << "maxdiff     : " << maxdiff << '\n';
@@ -475,7 +477,7 @@ void BipartitionList::BasicAllocation()	{
 	mAllocatedSize = basicsize;
 	mSize = 0;
 	mWeight = 0;
-	
+
 	mCompatibleArray = 0;
 
 	mWeightArray = new double[mAllocatedSize];
@@ -511,7 +513,7 @@ BipartitionList::BipartitionList(TaxaParameters* inParam)	{
 BipartitionList::BipartitionList(string filename, int burnin, int every, int until, double cutoff, bool rootonly)	{
 
 	BasicAllocation();
-	
+
 	if (burnin <0)	{
 		if (burnin == -1)	{
 			burnin = -5;
@@ -525,16 +527,16 @@ BipartitionList::BipartitionList(string filename, int burnin, int every, int unt
 		}
 		burnin = - n / burnin;
 	}
-			
+
 	ifstream is(filename.c_str());
-	PBTree tree;	
+	PBTree tree;
 	int size = 0;
 	Ntree = 0;
 	if (! tree.ReadFromStream(is))	{
 		return;
 	}
 	size = 1;
-	mParam = new TaxaParameters(&tree);	
+	mParam = new TaxaParameters(&tree);
 	int cycle = 0;
 	if (size > burnin)	{
 		if (rootonly)	{
@@ -635,10 +637,10 @@ int BipartitionList::IsEqualTo(BipartitionList* comp)	{
 
 
 void BipartitionList::Prune(PBTree* inTree)	{
-	
+
 	if (inTree->IsDichotomous())	{
 		cerr << "in BipartitionList::Prune : warning, tree is dichotomous\n";
-	}	
+	}
 	Flush();
 	inTree->GetRoot()->BipartitionPruning(this);
 	Modulo();
@@ -647,7 +649,7 @@ void BipartitionList::Prune(PBTree* inTree)	{
 
 
 void BipartitionList::PruneWithSupports(PBTree* inTree)	{
-	
+
 	Flush();
 	inTree->GetRoot()->BipartitionPruningWithSupports(this);
 	Modulo();
@@ -664,7 +666,7 @@ BipartitionList::BipartitionList( TreeList* inTreeList, double* weightarray, dou
 
 	mParam = inTreeList->GetParameters();
 	BasicAllocation();
-	
+
 	for (int i=0; i<inTreeList->GetSize(); i++)	{
 		BipartitionList tempList(mParam);
 		inTreeList->GetTree(i)->Trichotomise();
@@ -694,7 +696,7 @@ BipartitionList::~BipartitionList()	{
 	delete[] mCompatibleArray;
 }
 
-		
+
 // ---------------------------------------------------------------------------------
 //		 Sort();		// reverse order !
 // ---------------------------------------------------------------------------------
@@ -723,12 +725,12 @@ void BipartitionList::Sort()	{
 		}
 	}
 }
-	
+
 // ---------------------------------------------------------------------------------
 //		 GetHisto();
 // ---------------------------------------------------------------------------------
 
-	
+
 void BipartitionList::GetHisto(int* histo, int ncat)	{
 	for (int i=0; i<ncat; i++)	{
 		histo[i] = 0;
@@ -739,12 +741,12 @@ void BipartitionList::GetHisto(int* histo, int ncat)	{
 		histo[k] ++;
 	}
 }
-			
+
 // ---------------------------------------------------------------------------------
 //		 RegisterWith();
 // ---------------------------------------------------------------------------------
 
-		
+
 int BipartitionList::RegisterWith(TaxaParameters* inParam)	{
 
 	int ok = 1;
@@ -770,7 +772,7 @@ int BipartitionList::RegisterWith(TaxaParameters* inParam)	{
 
 	for (int i=0; i<mSize; i++)	{
 		mBipartitionArray[i]->PermutTaxa(permut);
-	}	
+	}
 	delete[] permut;
 	}
 	return ok;
@@ -781,7 +783,7 @@ int BipartitionList::RegisterWith(TaxaParameters* inParam)	{
 // ---------------------------------------------------------------------------------
 
 void BipartitionList::Truncate(double cutoff)	{
-	
+
 	int i=0;
 	while ( (i<mSize) && (GetProb(i) >= cutoff))	{
 		i++;
@@ -802,21 +804,21 @@ void BipartitionList::Flush(){
 	mSize = 0;
 	mWeight = 0;
 }
-	
+
 
 // ---------------------------------------------------------------------------------
 //		 Pop()
 // ---------------------------------------------------------------------------------
 
 void BipartitionList::Pop(){
-	
+
 	if (! mSize)	{
 		cerr << "error in BipartitionList : pop called on list of size 0\n";
 		exit(1);
 	}
 	mSize--;
 }
-	
+
 
 // ---------------------------------------------------------------------------------
 //		 Modulo
@@ -890,20 +892,20 @@ void BipartitionList::Suppress(const Bipartition& bp)	{
 		mBipartitionArray[i]->Suppress(bp);
 	}
 }
-		
+
 
 // ---------------------------------------------------------------------------------
 //		 GetIndex()
 // ---------------------------------------------------------------------------------
 
 int BipartitionList::GetIndex(const Bipartition& inPartition){
-	
+
 	int i=0;
 	while ( (i<mSize) && (*mBipartitionArray[i] != inPartition))	{
 		i++;
 	}
 	if (i == mSize)	{
-		i = -1;	
+		i = -1;
 	}
 	return i;
 }
@@ -1015,7 +1017,7 @@ void BipartitionList::Insert(Bipartition inPartition, double weight, double leng
 			exit(1);
 		}
 	}
-	
+
 	mSize++;
 	if (mSize > mAllocatedSize)	{
 		Reallocate();
@@ -1077,7 +1079,7 @@ void BipartitionList::WriteToStream(ostream& os, int header, int verbose)	{
 	if (header)	{
 		mParam->WriteToStream(os);
 	}
-	os << "BipartitionList\n";	
+	os << "BipartitionList\n";
 	os << "Size " << mSize << '\n';
 	os << "Weight " << mWeight << '\n';
 	os << '\n';
@@ -1113,12 +1115,12 @@ void BipartitionList::ReadFromStream(istream& is)	{
 			mParam->ReadFromStream(is);
 		}
 		else if (temp == "BipartitionList")	{
-		
+
 			int size;
 			is >> temp >> size >> temp >> mWeight;
 			cerr << size << '\n';
 			mSize = 0;
-				
+
 			for (int i=0; i<size; i++)	{
 				double prob;
 				double length;
@@ -1136,4 +1138,3 @@ void BipartitionList::ReadFromStream(istream& is)	{
 		is >> temp;
 	}
 }
-
