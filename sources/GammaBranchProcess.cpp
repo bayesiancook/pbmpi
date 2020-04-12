@@ -151,6 +151,15 @@ double GammaBranchProcess::NonMPIMoveLength()	{
 
 double GammaBranchProcess::NonMPIMove(double tuning, int nrep)	{
 	NonMPIMoveLength();
-	MoveBranchBeta(tuning,nrep);
+	return MoveBranchBeta(tuning,nrep);
 }
+
+
+
+
+
+
+
+
+
 

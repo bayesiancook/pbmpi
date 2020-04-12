@@ -100,7 +100,7 @@ double MatrixSBDPProfileProcess::GlobalMixMove(int nrep, int nallocrep, double e
 			}
 		}
 
-		MPI_Barrier(MPI_COMM_WORLD);
+		// MPI_Barrier(MPI_COMM_WORLD);
 
 		// broadcast new allocations
 		MPI_Bcast(alloc,GetNsite(),MPI_INT,0,MPI_COMM_WORLD);
@@ -192,7 +192,7 @@ double MatrixSBDPProfileProcess::GlobalMixMove(int nrep, int nallocrep, double e
 		// resample empty profiles
 		ResampleEmptyProfiles();
 
-		MPI_Barrier(MPI_COMM_WORLD);
+		// MPI_Barrier(MPI_COMM_WORLD);
 		// resend all profiles
 		MPI_Bcast(allocprofile,Ncomponent*GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
 	}
@@ -321,7 +321,7 @@ void MatrixSBDPProfileProcess::SlaveMixMove()	{
 		}
 		MPI_Send(alloc,GetNsite(),MPI_INT,0,TAG1,MPI_COMM_WORLD);
 
-		MPI_Barrier(MPI_COMM_WORLD);
+		// MPI_Barrier(MPI_COMM_WORLD);
 		// profile move
 
 		// receive new allocations
@@ -403,7 +403,7 @@ void MatrixSBDPProfileProcess::SlaveMixMove()	{
 		tmp[l] = total;
 		
 		MPI_Send(tmp,(dmax-dmin)*GetDim()+1,MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
-		MPI_Barrier(MPI_COMM_WORLD);
+		// MPI_Barrier(MPI_COMM_WORLD);
 
 		// rereceive all profiles
 		MPI_Bcast(allocprofile,Ncomponent*GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);

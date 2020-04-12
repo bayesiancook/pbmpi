@@ -65,6 +65,7 @@ double Chrono::GetTime()	{
 		cerr << "error : negative time : " << TotalTime << '\t' << 1000 * TotalTime << '\t' << (int) (1000 * TotalTime) << '\n';
 		exit(1);
 	}
+	return tmp;
 }
 
 double Chrono::GetTimePerCount()	{
