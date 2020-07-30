@@ -13,11 +13,9 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 
 **********************/
 
-#ifndef CHRONO_H
-#define CHRONO_H
+#pragma once
 
-#include <ctime>
-#include <sys/time.h>
+#include <chrono>
 #include <iostream>
 #include <cstdlib>
 
@@ -31,32 +29,24 @@ class Chrono	{
 		Reset();
 	};
 	~Chrono() {};
+
 	void Reset();
 	void Start();
 	void Stop();
-
-	void ToStream(ostream& os);
-	void FromStream(istream& is);
+	double GetTime();
 
 	int operator++();
-
-	double GetTime();
-	double GetTimePerCount();
 	int GetCount();
+
+	void FromStream(std::istream& is);
+    void ToStream(std::ostream& os) const;
 
 	private:
 
-	// this is in milli seconds
-	double sec1;
-	double sec2;
-	double milli1;
-	double milli2;
-
-	double TotalTime;
+    // in milliseconds
+    std::chrono::steady_clock::time_point time1;
+    std::chrono::steady_clock::time_point time2;
+    double TotalTime;
 	int N;
+};
 
-}
-;
-
-
-#endif		
