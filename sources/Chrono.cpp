@@ -16,38 +16,20 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 #include "Chrono.h"
 
 void Chrono::Reset()	{
-	
 	TotalTime = 0;
 	N = 0;
 }
 
 void Chrono::Start()	{
-	// clock_gettime(CLOCK_REALTIME, &nano1);
-
-	struct timeval tod;
-	gettimeofday(&tod,NULL);
-	sec1 = ((double) tod.tv_sec);
-	milli1 = ((double) tod.tv_usec) / 1000;
+    time1 = std::chrono::steady_clock::now();
 }
 
 void Chrono::Stop()	{
-	/*
-	clock_gettime(CLOCK_REALTIME, &nano2);
-	double t1 = ((double) (nano2.tv_sec))  - ((double) (nano1.tv_sec));
-	double t2 = (nano2.tv_nsec - nano1.tv_nsec) * (1e-9);
-	double duration = t1 + t2;
-	*/
-
-	struct timeval tod;
-	gettimeofday(&tod,NULL);
-	sec2 = ((double) tod.tv_sec);
-	milli2 = ((double) tod.tv_usec) / 1000;
-	double duration = 1000*(sec2 - sec1) + milli2 - milli1;
-
-	TotalTime += duration;
+    time2 = std::chrono::steady_clock::now();
+    TotalTime += std::chrono::duration_cast<std::chrono::milliseconds>(time2 - time1).count();
 }
 
-void Chrono::ToStream(ostream& os)	{
+void Chrono::ToStream(ostream& os)	const {
 	os << TotalTime << '\t' << N << '\n';
 }
 
@@ -60,18 +42,6 @@ int Chrono::operator++()	{
 }
 
 double Chrono::GetTime()	{
-	double tmp = ((double) (((long) (1000 * TotalTime)) / 1000));
-	if (tmp < 0)	{
-		cerr << "error : negative time : " << TotalTime << '\t' << 1000 * TotalTime << '\t' << (int) (1000 * TotalTime) << '\n';
-		exit(1);
-	}
-}
-
-double Chrono::GetTimePerCount()	{
-	return TotalTime / N;
-}
-
-int Chrono::GetCount()	{
-	return N;
+    return TotalTime;
 }
 
