@@ -35,7 +35,9 @@ class PoissonFiniteProfileProcess: public virtual PoissonMixtureProfileProcess, 
 			// GlobalUpdateParameters();
 			// GlobalUpdateSiteProfileSuffStat();
 			UpdateModeProfileSuffStat();
-			GlobalIncrementalFiniteMove(1);
+            if (GetNcomponent() != GetNsite())	{
+                GlobalIncrementalFiniteMove(1);
+            }
 
 			if (! empmix)	{
 				GlobalUpdateParameters();

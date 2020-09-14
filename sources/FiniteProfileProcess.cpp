@@ -106,6 +106,7 @@ void FiniteProfileProcess::SampleAlloc()	{
 	if (GetNcomponent() == GetNsite())	{
 		for (int i=0; i<GetNsite(); i++)	{
 			AddSite(i,i);
+            weight[i] = 1.0 / GetNsite();
 		}	
 	}
 	else	{
@@ -113,8 +114,8 @@ void FiniteProfileProcess::SampleAlloc()	{
 			int choose = rnd::GetRandom().FiniteDiscrete(GetNcomponent(),weight);
 			AddSite(i,choose);
 		}
+        ResampleWeights();
 	}
-	ResampleWeights();
 }
 
 void FiniteProfileProcess::DrawProfileFromPrior()	{
