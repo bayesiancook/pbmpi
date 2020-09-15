@@ -51,8 +51,8 @@ void RASCATFiniteGammaPhyloProcess::GlobalUpdateParameters()	{
 	L2 = GetDim();
 	nd = 3 + nbranch + L1*L2 + GetDim() + 1;
 	ni = 1 + GetNsite();
-	int ivector[ni];
-	double dvector[nd]; 
+	int* ivector = new int[ni];
+	double* dvector = new double[nd]; 
 	MESSAGE signal = PARAMETER_DIFFUSION;
 	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 
@@ -90,6 +90,9 @@ void RASCATFiniteGammaPhyloProcess::GlobalUpdateParameters()	{
 	MPI_Bcast(ivector,ni,MPI_INT,0,MPI_COMM_WORLD);
 	MPI_Bcast(dvector,nd,MPI_DOUBLE,0,MPI_COMM_WORLD);
 	MPI_Bcast(weight,GetNcomponent(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+
+    delete[] ivector;
+    delete[] dvector;
 }
 
 void RASCATFiniteGammaPhyloProcess::SlaveExecute(MESSAGE signal)	{
