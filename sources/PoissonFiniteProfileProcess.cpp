@@ -132,8 +132,8 @@ double PoissonFiniteProfileProcess::SlaveIncrementalFiniteMove()	{
 
 	int NAccepted = 0;
 
-	double* bigarray = new double[Ncomponent * GetNsite()];
-	double* bigcumul = new double[Ncomponent * GetNsite()];
+    double* mLogSamplingArray = new double[Ncomponent];
+    double* cumul = new double[Ncomponent];
 
 	for (int rep=0; rep<nrep; rep++)	{
 
@@ -142,9 +142,6 @@ double PoissonFiniteProfileProcess::SlaveIncrementalFiniteMove()	{
 
 		// do the incremental reallocation move on my site range
 		for (int site=GetSiteMin(); site<GetSiteMax(); site++)	{
-
-			double* mLogSamplingArray = bigarray + site * Ncomponent;
-			double* cumul = bigcumul + site * Ncomponent;
 
 			int bk = alloc[site];
 
@@ -182,9 +179,10 @@ double PoissonFiniteProfileProcess::SlaveIncrementalFiniteMove()	{
 		// send new allocations to master
 		MPI_Send(alloc,GetNsite(),MPI_INT,0,TAG1,MPI_COMM_WORLD);
 	}
+
+    delete[] mLogSamplingArray;
+    delete[] cumul;
 	
-	delete[] bigarray;
-	delete[] bigcumul;
 	return ((double) NAccepted) / GetNsite() / nrep;
 }
 
