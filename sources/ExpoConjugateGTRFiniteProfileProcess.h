@@ -49,7 +49,9 @@ class ExpoConjugateGTRFiniteProfileProcess : public virtual MatrixFiniteProfileP
 			// no parallel version of the allocation move for the moment
 			incchrono.Start();
 			// IncrementalFiniteMove(1);
-			GlobalIncrementalFiniteMove(1);
+            if (GetNcomponent() != GetNsite())	{
+                GlobalIncrementalFiniteMove(1);
+            }
 			incchrono.Stop();
 
 			if (! empmix)	{
