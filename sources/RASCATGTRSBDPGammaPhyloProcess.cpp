@@ -471,7 +471,9 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadRelRates(string name, int burnin, int e
 void RASCATGTRSBDPGammaPhyloProcess::ReadSiteProfiles(string name, int burnin, int every, int until)	{
 
 	double** sitestat = new double*[GetNsite()];
+    double* Keff = new double[GetNsite()];
 	for (int i=0; i<GetNsite(); i++)	{
+        Keff[i] = 0;
 		sitestat[i] = new double[GetDim()];
 		for (int k=0; k<GetDim(); k++)	{
 			sitestat[i][k] = 0;
@@ -501,9 +503,14 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadSiteProfiles(string name, int burnin, i
 
 		for (int i=0; i<GetNsite(); i++)	{
 			double* p = GetProfile(i);
+            double ent = 0;
 			for (int k=0; k<GetDim(); k++)	{
 				sitestat[i][k] += p[k];
+                if (p[k] > 1e-8)    {
+                    ent -= p[k] * log(p[k]);
+                }
 			}
+            Keff[i] += exp(ent);
 		}
 		int nrep = 1;
 		while ((i<until) && (nrep < every))	{
@@ -515,21 +522,37 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadSiteProfiles(string name, int burnin, i
 	cerr << '\n';
 	
 	ofstream os((name + ".siteprofiles").c_str());
+	ofstream Kos((name + ".siteKeff").c_str());
+    Kos << "site\tpostmean(K(profile))\tK(postmean(profile))\n";
 	for (int k=0; k<GetDim(); k++)	{
 		os << GetStateSpace()->GetState(k) << ' ';
 	}
 	os << '\n';
 	os << '\n';
 	for (int i=0; i<GetNsite(); i++)	{
+        Keff[i] /= samplesize;
 		os << i+1;
+        double ent = 0;
 		for (int k=0; k<GetDim(); k++)	{
 			sitestat[i][k] /= samplesize;
 			os << '\t' << sitestat[i][k];
+            if  (sitestat[i][k] > 1e-8) {
+                ent -= sitestat[i][k] * log(sitestat[i][k]);
+            }
 		}
+        double K = exp(ent);
+        Kos << i+1 << '\t' << Keff[i] << '\t' << K << '\n';
 		os << '\n';
 	}
 	cerr << "mean site-specific profiles in " << name << ".siteprofiles\n";
+	cerr << "mean site-specific Keffs in " << name << ".siteKeff\n";
 	cerr << '\n';
+
+    delete[] Keff;
+    for (int i=0; i<GetNsite(); i++)    {
+        delete[] sitestat[i];
+    }
+    delete[] sitestat;
 }
 
 void RASCATGTRSBDPGammaPhyloProcess::SlaveComputeCVScore()	{
