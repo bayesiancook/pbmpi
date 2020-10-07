@@ -212,10 +212,7 @@ double PhyloProcess::SendRandomBranches(Link* from, double tuning, Link**& branc
 
 void PhyloProcess::SlaveNNI(Link* from, int n){
 	
-
-	MPI_Status stat;
 	Link* up = from->Next();
-
 	int* br;
 	double* m;
 	if(n){

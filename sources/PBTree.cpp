@@ -165,7 +165,6 @@ void PBTree::Clone(PolyNode* node, PolyNode* fromNode)	{
 		node->down = first;
 		Clone(first, fromfirst);
 		
-		PolyNode* fromcurrent = fromfirst;
 		PolyNode* fromnext = fromfirst->next;
 		PolyNode* thiscurrent = first;
 
@@ -176,7 +175,6 @@ void PBTree::Clone(PolyNode* node, PolyNode* fromNode)	{
 			thiscurrent->next = thisnext;
 			Clone(thisnext, fromnext);
 			thiscurrent = thisnext;
-			fromcurrent = fromnext;
 			fromnext = fromnext->next;
 		}
 		thiscurrent->next = first;

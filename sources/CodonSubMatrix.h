@@ -92,8 +92,8 @@ class AACodonMutSelProfileSubMatrix : public CodonSubMatrix	{
 	void ComputeArray(int state);
 	void ComputeStationary();
 	double GetRate();
-	double* aaprofile;
 	double* codonprofile;
+	double* aaprofile;
 	double* omega;
 };
 

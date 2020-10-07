@@ -92,8 +92,8 @@ double GammaBranchProcess::LogHyperPrior()	{
 	if (betaprior == 1)	{
 		total -= log(branchbeta);
 		if ((branchbeta < 1e-4) || (branchbeta > 1e4))	{
-			total -= 1.0 / 0;
-			// total = InfProb;
+			total = -std::numeric_limits<double>::infinity();
+			// total -= 1.0 / 0;
 		}
 	}
 	else	{
@@ -152,5 +152,6 @@ double GammaBranchProcess::NonMPIMoveLength()	{
 double GammaBranchProcess::NonMPIMove(double tuning, int nrep)	{
 	NonMPIMoveLength();
 	MoveBranchBeta(tuning,nrep);
+    return 1.0;
 }
 

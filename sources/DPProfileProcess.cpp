@@ -113,8 +113,7 @@ double DPProfileProcess::LogHyperPrior()	{
 	else 	{
 		total = -log(kappa);
 		if ((kappa < 1e-4) || (kappa > 1e4))	{
-			// total = InfProb;
-			total -= 1.0 / 0;
+			total = -std::numeric_limits<double>::infinity();
 		}
 	}
 	double sum = 0;
@@ -123,8 +122,7 @@ double DPProfileProcess::LogHyperPrior()	{
 		sum += dirweight[k];
 	}
 	if (sum < GetMinTotWeight())	{
-		// total += InfProb;
-		total -= 1.0 / 0;
+        total = -std::numeric_limits<double>::infinity();
 	}
 	return total;
 }

@@ -48,13 +48,10 @@ void compareChainsConvergence(string outname, Correlation ** corr, int nchain, d
 
  double maxCIoverlap[nbp];
 
-  int nbsesd[10];
   int nbrecci[20];
 
   for(int j=0;j<20;j++)
     nbrecci[j]=0;
-  for(int i=0;i<10;i++)
-    nbsesd[i]=0;
   double mean[nchain], se[nchain];
 
   ofstream os_conv((outname + ".contdiff").c_str());

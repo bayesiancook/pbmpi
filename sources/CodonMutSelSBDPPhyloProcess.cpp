@@ -191,7 +191,6 @@ void CodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
 	// 3 : compositional statistic
 
 	int cv = 0;
-	int sel = 0;
 	int map = 0;
 	string testdatafile = "";
 	int rateprior = 0;
@@ -212,10 +211,7 @@ void CodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
 		int i = 1;
 		while (i < argc)	{
 			string s = argv[i];
-			if (s == "-sel")	{
-				sel = 1;
-			}
-			else if (s == "-cv")	{
+			if (s == "-cv")	{
 				cv = 1;
 				i++;
 				testdatafile = argv[i];

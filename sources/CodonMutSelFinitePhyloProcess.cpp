@@ -28,7 +28,6 @@ void CodonMutSelFinitePhyloProcess::SlaveUpdateParameters()	{
 	int i,j,L1,L2,ni,nd,nbranch = GetNbranch(),nnucrr = GetNnucrr(),nnucstat = 4;
 	L1 = GetNmodeMax();
 	L2 = GetDim();
-	int nstate = data->GetNstate();
 	nd = 2+ nbranch + nnucrr + nnucstat + L2 + L1*(L2+1); // check if these last terms are correct in this context...
 	ni = 1 + ProfileProcess::GetNsite();
 	int* ivector = new int[ni];
@@ -117,7 +116,6 @@ void CodonMutSelFinitePhyloProcess::GlobalUpdateParameters() {
 	nnucstat = 4;	
 	L1 = GetNmodeMax();
 	L2 = GetDim();
-	int nstate = data->GetNstate();
 	nd = 2 + nbranch + nnucrr + nnucstat + L2 + L1*(L2+1);  // check if these last terms are correct in this context...
 	ni = 1 + ProfileProcess::GetNsite(); // 1 for the number of componenets, and the rest for allocations
 	int ivector[ni];
@@ -182,7 +180,6 @@ void CodonMutSelFinitePhyloProcess::ReadPB(int argc, char* argv[])	{
 	// 3 : compositional statistic
 
 	int cv = 0;
-	int sel = 0;
 	int map = 0;
 	string testdatafile = "";
 	int rateprior = 0;
@@ -203,10 +200,7 @@ void CodonMutSelFinitePhyloProcess::ReadPB(int argc, char* argv[])	{
 		int i = 1;
 		while (i < argc)	{
 			string s = argv[i];
-			if (s == "-sel")	{
-				sel = 1;
-			}
-			else if (s == "-cv")	{
+			if (s == "-cv")	{
 				cv = 1;
 				i++;
 				testdatafile = argv[i];

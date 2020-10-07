@@ -157,8 +157,7 @@ double FiniteProfileProcess::LogHyperPrior()	{
 		sum += dirweight[k];
 	}
 	if (sum < GetMinTotWeight())	{
-		// total += InfProb;
-		total -= 1.0 / 0;
+		total = -std::numeric_limits<double>::infinity();
 	}
 	total -= weightalpha;
 	return total;
@@ -166,7 +165,7 @@ double FiniteProfileProcess::LogHyperPrior()	{
 
 double FiniteProfileProcess::MoveHyper(double tuning, int nrep)	{
 	double total = 0;
-	if ((Ncomponent > 1) || (! fixncomp) && (! dirweightprior))	{
+	if ((Ncomponent > 1) || ((! fixncomp) && (! dirweightprior)))	{
 		total += MoveDirWeights(tuning,nrep);
 	}
 	return total;

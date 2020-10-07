@@ -84,15 +84,16 @@ class FiniteProfileProcess: public virtual MixtureProfileProcess	{
 	bool fixncomp;
 	bool empmix;
 	
+	int Ncat;
+
+	string mixtype;
+	double** statfix;
+	double* empweight;
+
 	int dirweightprior;
 	// 0 : flexible
 	// 1 : rigid
 
-	int Ncat;
-	double** statfix;
-	double* empweight;
-
-	string mixtype;
 };
 
 #endif

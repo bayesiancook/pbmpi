@@ -205,7 +205,6 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	// 3 : compositional statistic
 
 	int ss = 0;
-	int nocc = 0;
 	int cv = 0;
 	int sitelogl = 0;
 	int rr = 0;

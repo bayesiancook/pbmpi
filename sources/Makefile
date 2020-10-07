@@ -1,5 +1,5 @@
 CC=mpic++
-CPPFLAGS= -w -O3 -c
+CPPFLAGS= -Wall -O3 -std=c++11
 LDFLAGS= -O3
 SRCS=  TaxonSet.cpp Tree.cpp Random.cpp SequenceAlignment.cpp CodonSequenceAlignment.cpp \
 	StateSpace.cpp CodonStateSpace.cpp ZippedSequenceAlignment.cpp SubMatrix.cpp \

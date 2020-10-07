@@ -264,7 +264,6 @@ void AACodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
 	// 3 : compositional statistic
 
 	int cv = 0;
-	int sel = 0;
 	int map = 0;
 	int mapstats = 0;
 	string testdatafile = "";
@@ -286,10 +285,7 @@ void AACodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
 		int i = 1;
 		while (i < argc)	{
 			string s = argv[i];
-			if (s == "-sel")	{
-				sel = 1;
-			}
-			else if (s == "-cv")	{
+			if (s == "-cv")	{
 				cv = 1;
 				i++;
 				testdatafile = argv[i];
@@ -460,7 +456,6 @@ void AACodonMutSelSBDPPhyloProcess::ReadMapStats(string name, int burnin, int ev
 		FromStream(is);
 		i++;
 
-		MPI_Status stat;
 		MESSAGE signal = BCAST_TREE;
 		MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 		GlobalBroadcastTree();

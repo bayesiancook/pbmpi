@@ -45,7 +45,6 @@ int main(int argc, char* argv[])	{
 	int i = 1;
 	int P = 0; // number of chains to be compared
 
-	int every = 1;
 	int until = -1;
 
 	while (i < argc)	{
@@ -58,26 +57,6 @@ int main(int argc, char* argv[])	{
 				throw(0);
 			}
 			burnin = atoi(argv[i]);
-			i++;
-			if (i == argc) throw(0);
-			s = argv[i];
-			if (IsInt(s))	{
-				every = atoi(argv[i]);
-				/*
-				i++;
-				if (i == argc) throw(0);
-				s = argv[i];
-				if (IsInt(s))	{
-					until = atoi(argv[i]);
-				}
-				else	{
-					i--;
-				}
-				*/
-			}
-			else	{
-				i--;
-			}
 		}
 		else if (s == "-o")	{
 			i++;

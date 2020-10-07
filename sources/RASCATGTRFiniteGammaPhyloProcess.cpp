@@ -472,7 +472,6 @@ void RASCATGTRFiniteGammaPhyloProcess::SlaveComputeSiteLogL()	{
 			}
 		}
 		double tot = 0;
-		double totweight = 0;
 		for (int k=0; k<GetNcomponent(); k++)	{
 			tot += weight[k] * exp(sitelogl[i][k] - max);
             cumul[k] = tot;

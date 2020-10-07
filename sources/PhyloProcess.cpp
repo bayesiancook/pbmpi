@@ -707,7 +707,8 @@ void PhyloProcess::RecursiveGibbsSPRScan(Link* from, Link* fromup, Link* down, L
 		}
 		loglarray[n] = logl;
 		n++;
-		Link* tmp1 = GetTree()->Detach(down,up);
+		GetTree()->Detach(down,up);
+		// Link* tmp1 = GetTree()->Detach(down,up);
 	}
 	Link* trailer = from;
 	for (const Link* link=from->Next(); link!=from; link=link->Next())	{
@@ -820,7 +821,8 @@ void PhyloProcess::RecursiveNonMPIGibbsSPRScan(Link* from, Link* fromup, Link* d
 		Propagate(aux,GetConditionalLikelihoodVector(up->Out()),GetLength(up->GetBranch()));
 		double logl = ComputeNodeLikelihood(up->Out(),0);
 		loglmap[pair<Link*,Link*>(from,fromup)] = logl;
-		Link* tmp1 = GetTree()->Detach(down,up);
+		GetTree()->Detach(down,up);
+		// Link* tmp1 = GetTree()->Detach(down,up);
 	}
 	Link* trailer = from;
 	for (const Link* link=from->Next(); link!=from; link=link->Next())	{
@@ -1890,7 +1892,6 @@ void PhyloProcess::SlaveUpdateBranchLengthSuffStat()	{
 
 void PhyloProcess::GlobalUpdateSiteRateSuffStat()	{
 
-	MPI_Status stat;
 	MESSAGE signal = UPDATE_SRATE;
 	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 }
@@ -1913,7 +1914,7 @@ void PhyloProcess::GlobalGetMeanSiteRate()	{
 	}
 
 	assert(myid == 0);
-	int i,width,smin[nprocs-1],smax[nprocs-1],workload[nprocs-1];
+	int i,width,smin[nprocs-1],smax[nprocs-1];
 	MPI_Status stat;
 	MESSAGE signal = SITERATE;
 
@@ -2101,7 +2102,6 @@ void PhyloProcess::AllPostPred(string name, int burnin, int every, int until, in
 	}
 
 	double* obstaxstat = new double[GetNtaxa()];
-	SequenceAlignment* datacopy  = new SequenceAlignment(GetData());
 	int nstat = 5;
 	double obsarray[nstat];
 	obsarray[0] = data->GetMeanDiversity();
@@ -2121,7 +2121,7 @@ void PhyloProcess::AllPostPred(string name, int burnin, int every, int until, in
 	double meanstatarray[nstat];
 	double varstatarray[nstat];
 	double ppstatarray[nstat];
-	for (int k=0; k<6; k++)	{
+	for (int k=0; k<nstat; k++)	{
 		meanstatarray[k] = 0;
 		varstatarray[k] = 0;
 		ppstatarray[k] = 0;
@@ -2261,7 +2261,6 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 	}
 
 	double* obstaxstat = new double[GetNtaxa()];
-	SequenceAlignment* datacopy  = new SequenceAlignment(GetData());
 	double obs = 0;
 	double obs2 = 0;
 	if (ppredtype == 2)	{
@@ -2613,7 +2612,6 @@ void PhyloProcess::ReadAncestral(string name, int burnin, int every, int until)	
 		MESSAGE signal = STATEPOSTPROBS;
 		MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 
-		double total = 0;
 		for(int proc=1; proc<GetNprocs(); proc++) {
 			MPI_Recv(allocstatepostprob+smin[proc-1]*GetNnode()*GetGlobalNstate(),(smax[proc-1]-smin[proc-1])*GetNnode()*GetGlobalNstate(),MPI_DOUBLE,proc,TAG1,MPI_COMM_WORLD,&stat);
 			for (int i=smin[proc-1]; i<smax[proc-1]; i++)	{
@@ -2998,7 +2996,6 @@ void PhyloProcess::ReadMap(string name, int burnin, int every, int until){
 		ofstream sos(s.str().c_str());
 
 		// quick update and mapping on the fly
-		MPI_Status stat;
 		MESSAGE signal = BCAST_TREE;
 		MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 		GlobalBroadcastTree();
@@ -3066,7 +3063,6 @@ void PhyloProcess::ReadMap(string name, int burnin, int every, int until){
 }
 
 void PhyloProcess::GlobalWriteMappings(string name){
-	MPI_Status stat;
 	MESSAGE signal = WRITE_MAPPING;
 	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 
