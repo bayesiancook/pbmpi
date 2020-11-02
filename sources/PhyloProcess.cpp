@@ -242,7 +242,7 @@ double PhyloProcess::ComputeNodeLikelihood(const Link* from, int auxindex)	{
 	if (localaux)	{
 		DeleteConditionalLikelihoodVector(aux);
 	}
-	if (isnan(lnL))	{
+	if (std::isnan(lnL))	{
 		cerr << "in PhyloProcess::ComputeNodeLikelihood: nan\n";
 		exit(1);
 	}
@@ -635,11 +635,11 @@ int PhyloProcess::GibbsSPR()	{
 	double max = 0;
 	int j = 0;
 	for (map<pair<Link*,Link*>,double>::iterator i=loglmap.begin(); i!=loglmap.end(); i++)	{
-		if (isnan(i->second))	{
+		if (std::isnan(i->second))	{
 			cerr << "nan log prob in gibbs\n";
 			exit(1);
 		}
-		if (isinf(i->second))	{
+		if (std::isinf(i->second))	{
 			cerr << "inf log prob in gibbs\n";
 			exit(1);
 		}
@@ -657,10 +657,10 @@ int PhyloProcess::GibbsSPR()	{
 	double total = 0;
 	for (map<pair<Link*,Link*>,double>::iterator i=loglmap.begin(); i!=loglmap.end(); i++)	{
 		total += exp(i->second - max);
-		if (isinf(total))	{
+		if (std::isinf(total))	{
 			cerr << "error in gibbs: inf\n";
 		}
-		if (isnan(total))	{
+		if (std::isnan(total))	{
 			cerr << "error in gibbs: nan\n";
 		}
 	}
@@ -776,10 +776,10 @@ double PhyloProcess::NonMPIGibbsSPR()	{
 	double total = 0;
 	for (map<pair<Link*,Link*>,double>::iterator i=loglmap.begin(); i!=loglmap.end(); i++)	{
 		total += exp(i->second - max);
-		if (isinf(total))	{
+		if (std::isinf(total))	{
 			cerr << "error in gibbs: inf\n";
 		}
-		if (isnan(total))	{
+		if (std::isnan(total))	{
 			cerr << "error in gibbs: nan\n";
 		}
 	}
@@ -1867,7 +1867,7 @@ void PhyloProcess::GlobalUpdateBranchLengthSuffStat()	{
 	}
 	// check for nan
 	for(int j=0; j<GetNbranch(); ++j) {
-		if (isnan(branchlengthsuffstatbeta[j]))	{
+		if (std::isnan(branchlengthsuffstatbeta[j]))	{
 			cerr << "in PhyloProcess::GlobalUpdateBranchLengthSuffStat: nan\n";
 			exit(1);
 		}
@@ -1900,7 +1900,7 @@ void PhyloProcess::SlaveUpdateSiteRateSuffStat()	{
 
 	UpdateSiteRateSuffStat();
 	for (int i=GetSiteMin(); i<GetSiteMax(); i++)	{
-		if (isnan(siteratesuffstatbeta[i]))	{
+		if (std::isnan(siteratesuffstatbeta[i]))	{
 			cerr << "in PhyloProcess::GlobalUpdateSiteRateSuffStat: nan ratesuffstatbeta\n";
 			exit(1);
 		}
@@ -2807,7 +2807,7 @@ double PhyloProcess::GlobalGetFullLogLikelihood()  {
     for(int i=1; i<GetNprocs(); ++i) {
         MPI_Recv(tmp,GetNsite(),MPI_DOUBLE,i,TAG1,MPI_COMM_WORLD,&stat);
         for (int j=smin[i-1]; j<smax[i-1]; j++)	{
-            if (isnan(tmp[j]))	{
+            if (std::isnan(tmp[j]))	{
                 cerr << "error: nan logl received by master\n";
                 cerr << "site : " << j << '\n';
                 cerr << "proc : " << i << '\n';
@@ -2874,7 +2874,7 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until)	{
 			// for (int i=0; i<GetNsite(); i++)	{
 			// for (int i=GetSiteMin(i); i<GetSiteMax(i); i++)	{
 			for (int j=smin[i-1]; j<smax[i-1]; j++)	{
-				if (isnan(tmp[j]))	{
+				if (std::isnan(tmp[j]))	{
 					cerr << "error: nan logl received by master\n";
 					cerr << "site : " << j << '\n';
 					cerr << "proc : " << i << '\n';
@@ -2882,7 +2882,7 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until)	{
 				}
 				logl[j].push_back(tmp[j]);
 				mean[j] += tmp[j];
-				if (isnan(mean[j]))	{
+				if (std::isnan(mean[j]))	{
 					cerr << "error: mean logl is nan (when summing over replicates\n";
 					cerr << "site : " << j << '\n';
 					cerr << "proc : " << i << '\n';
@@ -2930,7 +2930,7 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until)	{
     double varlogl = 0;
 	for (int i=0; i<GetNsite(); i++)	{
 		mean[i] /= samplesize;
-		if (isnan(mean[i]))	{
+		if (std::isnan(mean[i]))	{
 			cerr << "error: mean logl is nan (when printing out)\n";
 			cerr << "site : " << i << '\n';
 			exit(1);

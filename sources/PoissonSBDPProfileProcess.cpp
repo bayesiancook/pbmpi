@@ -196,7 +196,7 @@ void PoissonSBDPProfileProcess::SlaveMixMove()	{
 					total += p;
 					cumul[mode] = total;
 				}
-				if (isnan(total))	{
+				if (std::isnan(total))	{
 					cerr << "nan\n";
 				}
 

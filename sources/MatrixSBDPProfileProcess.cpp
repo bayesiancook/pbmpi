@@ -280,7 +280,7 @@ void MatrixSBDPProfileProcess::SlaveMixMove()	{
 					total += p;
 					cumul[mode] = total;
 				}
-				if (isnan(total))	{
+				if (std::isnan(total))	{
 					cerr << "nan\n";
 				}
 
@@ -481,7 +481,7 @@ double MatrixSBDPProfileProcess::MixMove(int nrep, int nallocrep, double epsilon
 					total += p;
 					cumul[mode] = total;
 				}
-				if (isnan(total))	{
+				if (std::isnan(total))	{
 					cerr << "nan\n";
 				}
 

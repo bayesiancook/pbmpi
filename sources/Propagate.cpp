@@ -170,7 +170,7 @@ void MatrixSubstitutionProcess::Propagate(double*** from, double*** to, double t
 
 				// exit in case of numerical errors
 				for(k=0; k<nstate; k++)	{
-					if (isnan(down[k]))	{
+					if (std::isnan(down[k]))	{
 						cerr << "error in back prop\n";
 						for(l=0; l<nstate; l++)	{
 							cerr << up[l] << '\t' << down[l] << '\t' << matrix->Stationary(l) << '\n';

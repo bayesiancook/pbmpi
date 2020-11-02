@@ -78,7 +78,7 @@ double MixtureProfileProcess::GetStatEnt(int k)	{
 		}
 		total -= profile[k][i] * log(profile[k][i]);
 	}
-	if (isnan(total))	{
+	if (std::isnan(total))	{
 		cerr << "entropy is nan\n";
 		exit(1);
 	}

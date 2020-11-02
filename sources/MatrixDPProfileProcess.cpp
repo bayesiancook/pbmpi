@@ -337,7 +337,7 @@ double MatrixDPProfileProcess::GlobalMixMove(int Nrep, int Nprofile)	{
 						profile[i][k] = stat[site][Nadd*inc + i-Ncomponent][k];
 						totstat += profile[i][k];
 					}
-					if (isnan(totstat))	{
+					if (std::isnan(totstat))	{
 						cerr << "totstat is nan\n";
 						exit(1);
 					}
@@ -359,7 +359,7 @@ double MatrixDPProfileProcess::GlobalMixMove(int Nrep, int Nprofile)	{
 				for (int mode = 0; mode < h; mode++)	{
 					if (prob[site][mode] == -1)	{
 						prob[site][mode] = exp(LogStatProb(site,mode) - max);
-						if (isnan(prob[site][mode]))	{
+						if (std::isnan(prob[site][mode]))	{
 							cerr << site << '\t' << mode << '\t' << Ncomponent << '\t' << prob[site][mode] << '\t' << LogStatProb(site,mode) << '\n';
 							for (int k=0; k<GetDim(); k++)	{
 								cerr << profile[mode][k] << '\n';

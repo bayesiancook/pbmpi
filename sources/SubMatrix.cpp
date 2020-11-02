@@ -265,11 +265,11 @@ int SubMatrix::Diagonalise()	{
 		}
 		for (int i=0; i<Nstate; i++)	{
 			for (int j=0; j<Nstate; j++)	{
-				if (isnan(u[i][j]))	{
+				if (std::isnan(u[i][j]))	{
 					cerr << "nan in diag: u\n";
 					exit(1);
 				}
-				if (isnan(invu[i][j]))	{
+				if (std::isnan(invu[i][j]))	{
 					cerr << "nan in diag: invu\n";
 					exit(1);
 				}

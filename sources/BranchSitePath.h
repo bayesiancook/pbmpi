@@ -215,7 +215,7 @@ inline void Plink::Splice()	{
 
 inline void Plink::SetState(int instate) {state = instate;}
 inline void Plink::SetRelativeTime(double inrel_time) {
-	if (isnan(rel_time))	{
+	if (std::isnan(rel_time))	{
 		cerr << "in Plink::SetRelativeTime: setting to nan\n";
 		exit(1);
 	}

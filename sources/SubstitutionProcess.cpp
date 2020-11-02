@@ -290,7 +290,7 @@ double SubstitutionProcess::ComputeLikelihood(double*** aux, bool condalloc)	{
 					cerr << tot << '\n';
 					exit(1);
 				}
-				if (isnan(tot))	{
+				if (std::isnan(tot))	{
 					cerr << "error in SubstitutionProcess::ComputeLikelihood: tot is nan\n";
 					for (int k=0; k<nstate; k++)	{
 						cerr << GetStationary(i)[k] << '\t';
@@ -310,7 +310,7 @@ double SubstitutionProcess::ComputeLikelihood(double*** aux, bool condalloc)	{
 			}
 			double total = 0;
 			double meanrate = 0;
-			if (isinf(max))	{
+			if (std::isinf(max))	{
 				meanrate = 1.0;
 				sitelogL[i] = max;
 			}
@@ -322,7 +322,7 @@ double SubstitutionProcess::ComputeLikelihood(double*** aux, bool condalloc)	{
 				}
 				sitelogL[i] = log(total) + max;
 			}
-			if (isnan(sitelogL[i]))	{
+			if (std::isnan(sitelogL[i]))	{
 				cerr << "error in SubstitutionProcess::ComputeNodeLikelihood: nan\n";
 				cerr << total << '\t' << max << '\n';
 				for (int j=0; j<GetNrate(i); j++)	{

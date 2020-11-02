@@ -605,7 +605,7 @@ void RASCATGTRSBDPGammaPhyloProcess::SlaveComputeSiteLogL()	{
 		UpdateConditionalLikelihoods();
 		for (int i=sitemin; i<sitemax; i++)	{
 			sitelogl[i][k] = sitelogL[i];
-			if (isnan(sitelogl[i][k]))	{
+			if (std::isnan(sitelogl[i][k]))	{
 				cerr << "error in RASCATGTRSBDP::SlaveComputeSiteLogL: nan\n";
 				exit(1);
 			}
@@ -630,11 +630,11 @@ void RASCATGTRSBDPGammaPhyloProcess::SlaveComputeSiteLogL()	{
 			totweight += weight[k];
 		}
 		meansitelogl[i] = log(tot) + max;
-		if (isnan(meansitelogl[i]))	{
+		if (std::isnan(meansitelogl[i]))	{
 			cerr << "error: meansitelogl is nan\n";
 			exit(1);
 		}
-		if (isinf(meansitelogl[i]))	{
+		if (std::isinf(meansitelogl[i]))	{
 			cerr << "error: meansitelogl is inf\n";
 			exit(1);
 		}
