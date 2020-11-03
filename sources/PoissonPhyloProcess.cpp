@@ -316,6 +316,7 @@ void PoissonPhyloProcess::GlobalSetTestData()	{
 	// DeleteZip();
 	delete zipdata;
 	zipdata = new ZippedSequenceAlignment(truedata);
+    data = zipdata;
 	// CreateZip();
 	// GlobalUnfold();
 	
@@ -336,6 +337,7 @@ void PoissonPhyloProcess::SlaveSetTestData()	{
 	// DeleteZip();
 	delete zipdata;
 	zipdata = new ZippedSequenceAlignment(truedata);
+    data = zipdata;
 	// CreateZip();
 	Unfold();
 }
