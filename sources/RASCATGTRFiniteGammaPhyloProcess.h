@@ -128,11 +128,20 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 		int nratecat;
 		is >> nratecat;
 		int infixncomp;
+		int intmp;
 		int inempmix;
 		string inmixtype;
 		string inrrtype;
-		is >> infixncomp >> inempmix >> inmixtype;
+		is >> intmp >> inempmix >> inmixtype;
 		is >> inrrtype;
+        int ncat = 1;
+        if (intmp)  {
+            infixncomp = 1;
+            ncat = intmp;
+        }
+        else    {
+            infixncomp = 0;
+        }
 		if (atof(version.substr(0,3).c_str()) > 1.7)	{
             is >> dirweightprior;
         }
@@ -174,7 +183,7 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 		}
 		tree->RegisterWith(taxonset,0);
 
-		Create(tree,plaindata,nratecat,1,infixncomp,inempmix,inmixtype,inrrtype,insitemin,insitemax);
+		Create(tree,plaindata,nratecat,ncat,infixncomp,inempmix,inmixtype,inrrtype,insitemin,insitemax);
 
 		if (myid == 0)	{
 			FromStream(is);
@@ -285,7 +294,15 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 		PhyloProcess::ToStreamHeader(os);
 		os << datafile << '\n';
 		os << GetNcat() << '\n';
-		os << fixncomp << '\t' << empmix << '\t' << mixtype << '\n';
+        int tmp = 0;
+        if (fixncomp)   {
+            tmp = GetNcomponent();
+        }
+        else    {
+            tmp = 0;
+        }
+		os << tmp << '\t' << empmix << '\t' << mixtype << '\n';
+		// os << fixncomp << '\t' << empmix << '\t' << mixtype << '\n';
 		os << rrtype << '\n';
         os << dirweightprior << '\n';
 		os << fixtopo << '\n';
