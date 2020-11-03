@@ -33,11 +33,12 @@ class ZippedSequenceAlignment : public SequenceAlignment	{
 		statespace = from->statespace;
 		Nstate = statespace->GetNstate();
 
+        CreateZipArrays();
 		ComputeZipArrays();
 	}
 
 	~ZippedSequenceAlignment()	{
-		// things here !!!
+        DeleteZipArrays();
 	}
 
 	SequenceAlignment* GetTemplate() {return from;}
@@ -54,9 +55,12 @@ class ZippedSequenceAlignment : public SequenceAlignment	{
 		return Orbit[site][state];
 	}
 
+	void ComputeZipArrays();
+
 	private:
 
-	void ComputeZipArrays();
+    void CreateZipArrays();
+    void DeleteZipArrays();
 
 	SequenceAlignment* from;
 	int Nstate;

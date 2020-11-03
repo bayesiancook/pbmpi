@@ -18,7 +18,7 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 
 
-void ZippedSequenceAlignment::ComputeZipArrays()	{
+void ZippedSequenceAlignment::CreateZipArrays()	{
 
 	Data = new int*[Ntaxa];
 	for (int i=0; i<Ntaxa; i++)	{
@@ -39,6 +39,33 @@ void ZippedSequenceAlignment::ComputeZipArrays()	{
 	for (int i=0; i<Nsite; i++)	{
 		Orbit[i] = new bool[Nstate];
 	}
+}
+
+void ZippedSequenceAlignment::DeleteZipArrays()	{
+
+	for (int i=0; i<Ntaxa; i++)	{
+        delete[] Data[i];
+    }
+    delete[] Data;
+
+	for (int i=0; i<Nsite; i++)	{
+        delete[] ZipIndices[i];
+        delete[] Indices[i];
+	}
+    delete[] ZipIndices;
+    delete[] Indices;
+
+    delete[] ZipSize;
+
+    delete[] OrbitSize;
+
+	for (int i=0; i<Nsite; i++)	{
+        delete[] Orbit[i];
+	}
+    delete[] Orbit;
+}
+
+void ZippedSequenceAlignment::ComputeZipArrays()	{
 
 	for (int i=0; i<Nsite; i++)	{
 
@@ -78,13 +105,6 @@ void ZippedSequenceAlignment::ComputeZipArrays()	{
 				ZipIndices[i][j] = OrbitSize[i];
 			}
 		}	
-
-		/*
-		if (OrbitSize[i] == 0)	{
-			cerr << "PhyloParameters::RegisterWithData : missing column\n";
-			// exit(1);
-		}
-		*/
 
 		if (OrbitSize[i] < Nstate)	{
 			ZipSize[i] = OrbitSize[i] + 1;
