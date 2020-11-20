@@ -39,6 +39,9 @@ void RASCATSBDPGammaPhyloProcess::SlaveExecute(MESSAGE signal)	{
 
 	switch(signal) {
 
+    case SITELOGLCUTOFF:
+        SlaveSetSiteLogLCutoff();
+        break;
 	case MIX_MOVE:
 		SlaveMixMove();
 		break;
@@ -52,15 +55,33 @@ void RASCATSBDPGammaPhyloProcess::SlaveExecute(MESSAGE signal)	{
 
 void RASCATSBDPGammaPhyloProcess::SlaveComputeCVScore()	{
 
+    // determine cutoff on stick-breaking process
+    // as a way to speed up computation
+    // (most very low weight components in the trail of the mixture
+    // don't make any meaningful contribution to the total log likelihood)
+    // this will result in a slight underestimate of the fit of the model
+
+    int ncomp = GetNcomponent();
+    double totw = 0;
+    while (ncomp && (totw < siteloglcutoff))    {
+        ncomp--;
+        totw += weight[ncomp];
+    }
+    if (myid == 1)  {
+        cerr << ncomp << '\t';
+    }
+
 	sitemax = sitemin + testsitemax - testsitemin;
 	double** sitelogl = new double*[GetNsite()];
 	for (int i=sitemin; i<sitemax; i++)	{
-		sitelogl[i] = new double[GetNcomponent()];
+		sitelogl[i] = new double[ncomp];
+		// sitelogl[i] = new double[GetNcomponent()];
 	}
 	
 	// UpdateMatrices();
 
-	for (int k=0; k<GetNcomponent(); k++)	{
+	for (int k=0; k<ncomp; k++) {
+	// for (int k=0; k<GetNcomponent(); k++)	{
 		for (int i=sitemin; i<sitemax; i++)	{
 			PoissonSBDPProfileProcess::alloc[i] = k;
 			UpdateZip(i);
@@ -74,14 +95,16 @@ void RASCATSBDPGammaPhyloProcess::SlaveComputeCVScore()	{
 	double total = 0;
 	for (int i=sitemin; i<sitemax; i++)	{
 		double max = 0;
-		for (int k=0; k<GetNcomponent(); k++)	{
+        for (int k=0; k<ncomp; k++) {
+		// for (int k=0; k<GetNcomponent(); k++)	{
 			if ((!k) || (max < sitelogl[i][k]))	{
 				max = sitelogl[i][k];
 			}
 		}
 		double tot = 0;
 		double totweight = 0;
-		for (int k=0; k<GetNcomponent(); k++)	{
+        for (int k=0; k<ncomp; k++) {
+		// for (int k=0; k<GetNcomponent(); k++)	{
 			tot += weight[k] * exp(sitelogl[i][k] - max);
 			totweight += weight[k];
 		}
@@ -106,14 +129,32 @@ void RASCATSBDPGammaPhyloProcess::SlaveComputeSiteLogL()	{
 		exit(1);
 	}
 
+    // determine cutoff on stick-breaking process
+    // as a way to speed up computation
+    // (most very low weight components in the trail of the mixture
+    // don't make any meaningful contribution to the total log likelihood)
+    // this will result in a slight underestimate of the fit of the model
+
+    int ncomp = GetNcomponent();
+    double totw = 0;
+    while (ncomp && (totw < siteloglcutoff))    {
+        ncomp--;
+        totw += weight[ncomp];
+    }
+    if (myid == 1)  {
+        cerr << ncomp << '\t';
+    }
+
 	double** sitelogl = new double*[GetNsite()];
 	for (int i=sitemin; i<sitemax; i++)	{
-		sitelogl[i] = new double[GetNcomponent()];
+		sitelogl[i] = new double[ncomp];
+		// sitelogl[i] = new double[GetNcomponent()];
 	}
 	
 	// UpdateMatrices();
 
-	for (int k=0; k<GetNcomponent(); k++)	{
+	for (int k=0; k<ncomp; k++)	{
+	// for (int k=0; k<GetNcomponent(); k++)	{
 		for (int i=sitemin; i<sitemax; i++)	{
 			PoissonSBDPProfileProcess::alloc[i] = k;
             UpdateZip(i);
@@ -131,14 +172,16 @@ void RASCATSBDPGammaPhyloProcess::SlaveComputeSiteLogL()	{
 	double total = 0;
 	for (int i=sitemin; i<sitemax; i++)	{
 		double max = 0;
-		for (int k=0; k<GetNcomponent(); k++)	{
+		for (int k=0; k<ncomp; k++) {
+		// for (int k=0; k<GetNcomponent(); k++)	{
 			if ((!k) || (max < sitelogl[i][k]))	{
 				max = sitelogl[i][k];
 			}
 		}
 		double tot = 0;
 		double totweight = 0;
-		for (int k=0; k<GetNcomponent(); k++)	{
+		for (int k=0; k<ncomp; k++)	{
+		// for (int k=0; k<GetNcomponent(); k++)	{
 			tot += weight[k] * exp(sitelogl[i][k] - max);
 			totweight += weight[k];
 		}

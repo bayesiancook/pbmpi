@@ -55,9 +55,12 @@ class RASCATGammaPhyloProcess : public virtual PoissonPhyloProcess, public virtu
 
 	public:
 
-        virtual void SlaveExecute(MESSAGE);
+    virtual void SlaveExecute(MESSAGE);
 	virtual void GlobalUpdateParameters();
 	virtual void SlaveUpdateParameters();
+
+    void GlobalSetSiteLogLCutoff();
+    void SlaveSetSiteLogLCutoff();
 
 	RASCATGammaPhyloProcess() {}
 
@@ -317,6 +320,7 @@ class RASCATGammaPhyloProcess : public virtual PoissonPhyloProcess, public virtu
 	int NSPR;
 	int NNNI;
 	int dc;
+    double siteloglcutoff;
 };
 
 #endif

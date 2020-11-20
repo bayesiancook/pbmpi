@@ -2892,6 +2892,7 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until)	{
 			}
 		}
 		
+		cerr << total << '\n';
 		int nrep = 1;
 		while ((i<until) && (nrep < every))	{
 			FromStream(is);
@@ -2903,27 +2904,44 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until)	{
 	double meancpo = 0;
 	double varcpo = 0;
 	double* cpo = new double[GetNsite()];
+	double* siteess = new double[GetNsite()];
+    double meaness = 0;
+    double miness = 0;
+
 	for (int i=0; i<GetNsite(); i++)	{
 		double min = 0;
+		int count = 0;
 		for (vector<double>::iterator j=logl[i].begin(); j != logl[i].end(); j++)	{
 			if (min > (*j))	{
 				min = *j;
 			}
-		}
-		double hmean = 0;
-		int count = 0;
-		for (vector<double>::iterator j=logl[i].begin(); j != logl[i].end(); j++)	{
-			hmean += exp(min - (*j));
 			count++;
 		}
+		double hmean = 0;
+        vector<double> weight;
+		for (vector<double>::iterator j=logl[i].begin(); j != logl[i].end(); j++)	{
+			hmean += exp(min - (*j));
+            weight.push_back(exp(min-(*j)));
+		}
+        double invess = 0;
+        for (int j=0; j<count; j++) {
+            weight[j] /= hmean;
+            invess += weight[j]*weight[j];
+        }
 		hmean /= count;
 		cpo[i] = min - log(hmean);
 		meancpo += cpo[i];
 		varcpo += cpo[i] * cpo[i];
+        siteess[i] = 1.0 / invess;
+        meaness += siteess[i];
+        if ((!i) || (miness > siteess[i]))  {
+            miness = siteess[i];
+        }
 	}
 	meancpo /= GetNsite();
 	varcpo /= GetNsite();
 	varcpo -= meancpo * meancpo;
+    meaness /= GetNsite();
 
 	ofstream os((name + ".sitelogl").c_str());
 	double meanlogl = 0;
@@ -2937,7 +2955,7 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until)	{
 		}
 		meanlogl += mean[i];
 		varlogl += mean[i] * mean[i];
-		os << i+1 << '\t' << mean[i] << '\t' << cpo[i] << '\n';
+		os << i+1 << '\t' << mean[i] << '\t' << cpo[i] << '\t' << siteess[i] << '\n';
 	}
 
     meanlogl /= GetNsite();
@@ -2947,11 +2965,11 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until)	{
 
 	ofstream cos((name + ".cpo").c_str());
 	cos << "posterior mean ln L : " << total << '\t' << meanlogl << '\t' << sqrt(varlogl) << '\n';
-	cos << "CPO : " << GetNsite() * meancpo << '\t' << meancpo << '\t' << sqrt(varcpo) << '\n';
+	cos << "CPO : " << GetNsite() * meancpo << '\t' << meancpo << '\t' << sqrt(varcpo) << '\t' << meaness << '\t' << miness << '\n';
 
 	cerr << '\n';
 	cerr << "posterior mean ln L : " << total << '\t' << meanlogl << '\t' << sqrt(varlogl) << '\n';
-	cerr << "CPO: " << GetNsite() * meancpo << '\t' << meancpo << '\t' << sqrt(varcpo) << '\n';
+	cerr << "CPO: " << GetNsite() * meancpo << '\t' << meancpo << '\t' << sqrt(varcpo) << '\t' << meaness << '\t' << miness << '\n';
 	cerr << "site-specific posterior mean ln L in " << name << ".sitelogl\n";
 	cerr << '\n';
 
