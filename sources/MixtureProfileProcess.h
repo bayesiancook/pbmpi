@@ -46,6 +46,22 @@ class MixtureProfileProcess: public virtual ProfileProcess	{
 		return n;
 	}
 
+    double GetEffectiveComponentNumber()    {
+        double m1 = 0;
+        double m2 = 0;
+        for (int k=0; k<Ncomponent; k++)    {
+            double tmp = ((double) occupancy[k]) / GetNsite();
+            m1 += tmp;
+            m2 += tmp*tmp;
+        }
+        if (fabs(m1 - 1) > 1e-6)    {
+            cerr << "error: total relative occupancies do not sum to 1\n";
+            cerr << m1 << '\n';
+            exit(1);
+        }
+        return 1.0 / m2;
+    }
+
 	virtual int GetNmodeMax() {return GetNsite();}
 	// virtual int GetNmodeMax() {return 100;}
 

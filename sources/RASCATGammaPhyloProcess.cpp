@@ -178,6 +178,7 @@ void RASCATGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	int profileprior = 0;
 	int rootprior = 1;
 	int savetrees = 0;
+    int clusters = 0;
 
 	int ancstatepostprobs = 0;
 
@@ -199,6 +200,9 @@ void RASCATGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 			else if (s == "-comp")	{
 				ppred = 3;
 			}
+            else if (s == "-ncomp") {
+                clusters = 1;
+            }
             else if (s == "-siteconvprob")   {
                 ppred = 4;
             }
@@ -348,6 +352,9 @@ void RASCATGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	else if (ancstatepostprobs)	{
 		ReadAncestral(name,burnin,every,until);
 	}
+    else if (clusters)  {
+        ReadClusters(name, burnin, every, until);
+    }
 	else if (sitelogl)	{
         GlobalSetSiteLogLCutoff();
 		ReadSiteLogL(name,burnin,every,until);
@@ -440,4 +447,63 @@ void RASCATGammaPhyloProcess::ReadSiteProfiles(string name, int burnin, int ever
 
 	cerr << "mean site-specific profiles in " << name << ".siteprofiles\n";
 	cerr << '\n';
+}
+
+void RASCATGammaPhyloProcess::ReadClusters(string name, int burnin, int every, int until)	{
+
+    double meanncomp = 0;
+    double varncomp = 0;
+    double meaneffncomp = 0;
+    double vareffncomp = 0;
+
+	ifstream is((name + ".chain").c_str());
+	if (!is)	{
+		cerr << "error: no .chain file found\n";
+		exit(1);
+	}
+
+	cerr << "burnin : " << burnin << "\n";
+	cerr << "until : " << until << '\n';
+	int i=0;
+	while ((i < until) && (i < burnin))	{
+		FromStream(is);
+		i++;
+	}
+	int samplesize = 0;
+
+	while (i < until)	{
+		cerr << ".";
+		cerr.flush();
+		samplesize++;
+		FromStream(is);
+		i++;
+
+        UpdateOccupancyNumbers();
+        double k = GetNOccupiedComponent();
+        double keff = GetEffectiveComponentNumber();
+        meanncomp += k;
+        varncomp += k*k;
+        meaneffncomp += keff;
+        vareffncomp += keff*keff;
+		int nrep = 1;
+		while ((i<until) && (nrep < every))	{
+			FromStream(is);
+			i++;
+			nrep++;
+		}
+	}
+	cerr << '\n';
+	
+    meanncomp /= samplesize;
+    varncomp /= samplesize;
+    varncomp -= meanncomp*meanncomp;
+    meaneffncomp /= samplesize;
+    vareffncomp /= samplesize;
+    vareffncomp -= meaneffncomp*meaneffncomp;
+
+	ofstream os((name + ".effncomp").c_str());
+    os << "Ncomp             : " << meanncomp << " +/- " << sqrt(varncomp) << '\n';
+    os << "effective Ncomp   : " << meaneffncomp << " +/- " << sqrt(vareffncomp) << '\n';
+    cerr << "Ncomp             : " << meanncomp << " +/- " << sqrt(varncomp) << '\n';
+    cerr << "effective Ncomp   : " << meaneffncomp << " +/- " << sqrt(vareffncomp) << '\n';
 }
