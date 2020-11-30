@@ -2944,6 +2944,7 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until)	{
     meaness /= GetNsite();
 
 	ofstream os((name + ".sitelogl").c_str());
+    os << "site\tlogl\tcpo\tess\n";
 	double meanlogl = 0;
     double varlogl = 0;
 	for (int i=0; i<GetNsite(); i++)	{
@@ -2964,13 +2965,20 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until)	{
     double total = GetNsite() * meanlogl;
 
 	ofstream cos((name + ".cpo").c_str());
-	cos << "posterior mean ln L : " << total << '\t' << meanlogl << '\t' << sqrt(varlogl) << '\n';
-	cos << "CPO : " << GetNsite() * meancpo << '\t' << meancpo << '\t' << sqrt(varcpo) << '\t' << meaness << '\t' << miness << '\n';
+	cos << "posterior mean ln L : " << total << '\n';
+    // cos << "mean site logl      : " << meanlogl << '\t' << sqrt(varlogl) << '\n';
+	cos << "CPO                 : " << GetNsite() * meancpo << '\n';
+    // cos << "site CPO            : " << meancpo << '\t' << sqrt(varcpo) << '\n';
+    cos << "eff # params        : " << 2*(total - GetNsite()*meancpo) << '\n';
+    cos << "ESS (mean / min)    : " << meaness << '\t' << miness << '\n';
 
 	cerr << '\n';
-	cerr << "posterior mean ln L : " << total << '\t' << meanlogl << '\t' << sqrt(varlogl) << '\n';
-	cerr << "CPO: " << GetNsite() * meancpo << '\t' << meancpo << '\t' << sqrt(varcpo) << '\t' << meaness << '\t' << miness << '\n';
-	cerr << "site-specific posterior mean ln L in " << name << ".sitelogl\n";
+	cerr << "posterior mean ln L : " << total << '\n';
+    // cerr << "mean site logl      : " << meanlogl << '\t' << sqrt(varlogl) << '\n';
+	cerr << "CPO                 : " << GetNsite() * meancpo << '\n';
+    // cerr << "site CPO            : " << meancpo << '\t' << sqrt(varcpo) << '\n';
+    cerr << "eff # params        : " << 2*(total - GetNsite()*meancpo) << '\n';
+    cerr << "ESS (mean / min)    : " << meaness << '\t' << miness << '\n';
 	cerr << '\n';
 
 }
