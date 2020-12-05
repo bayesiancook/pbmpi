@@ -209,6 +209,7 @@ class RASCATSBDPGammaPhyloProcess : public virtual RASCATGammaPhyloProcess, publ
 	virtual void SlaveUpdateParameters();
 	void SlaveComputeCVScore();
 	void SlaveComputeSiteLogL();
+	void SlaveComputeSiteLogCVScore();
 
 	void FromStream(istream& is)	{
 		GammaBranchProcess::FromStream(is);

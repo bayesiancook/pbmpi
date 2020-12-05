@@ -103,6 +103,9 @@ void RASCATFiniteGammaPhyloProcess::SlaveExecute(MESSAGE signal)	{
 		SlavePrintTree();
 		break;
 	*/
+    case SITELOGCV:
+        SlaveComputeSiteLogCVScore();
+        break;
 	case UPDATE_RATE:
 		SlaveUpdateRateSuffStat();
 		break;
@@ -278,6 +281,11 @@ void RASCATFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 				i++;
 				testdatafile = argv[i];
 			}
+			else if (s == "-sitecv")	{
+				cv = 2;
+				i++;
+				testdatafile = argv[i];
+			}
 			else if ( (s == "-x") || (s == "-extract") )	{
 				i++;
 				if (i == argc) throw(0);
@@ -329,8 +337,11 @@ void RASCATFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 		exit(1);
 	}
 
-	if (cv)	{
+	if (cv == 1)	{
 		ReadCV(testdatafile,name,burnin,every,until);
+	}
+    else if (cv == 2)	{
+		ReadSiteCV(testdatafile,name,burnin,every,until);
 	}
 	else if (ancstatepostprobs)	{
 		ReadAncestral(name,burnin,every,until);
@@ -403,6 +414,78 @@ void RASCATFiniteGammaPhyloProcess::SlaveComputeCVScore()	{
 
 	sitemax = bksitemax;
 
+}
+
+void RASCATFiniteGammaPhyloProcess::SlaveComputeSiteLogCVScore()	{
+
+	if (! SumOverRateAllocations())	{
+		cerr << "rate error\n";
+		exit(1);
+	}
+
+	sitemax = sitemin + testsitemax - testsitemin;
+	double** sitelogl = new double*[GetNsite()];
+	for (int i=sitemin; i<sitemax; i++)	{
+		sitelogl[i] = new double[GetNcomponent()];
+	}
+	
+	// UpdateMatrices();
+
+	for (int k=0; k<GetNcomponent(); k++)	{
+		for (int i=sitemin; i<sitemax; i++)	{
+            // bkalloc[i] = PoissonFiniteProfileProcess::alloc[i];
+			PoissonFiniteProfileProcess::alloc[i] = k;
+			UpdateZip(i);
+		}
+		UpdateConditionalLikelihoods();
+		for (int i=sitemin; i<sitemax; i++)	{
+			sitelogl[i][k] = sitelogL[i];
+		}
+	}
+
+	double* meansitelogl = new double[GetNsite()];
+	for (int i=0; i<GetNsite(); i++)	{
+		meansitelogl[i] = 0;
+	}
+    double* cumul = new double[GetNcomponent()];
+
+	for (int i=sitemin; i<sitemax; i++)	{
+		double max = 0;
+		for (int k=0; k<GetNcomponent(); k++)	{
+			if ((!k) || (max < sitelogl[i][k]))	{
+				max = sitelogl[i][k];
+			}
+		}
+		double tot = 0;
+		for (int k=0; k<GetNcomponent(); k++)	{
+			tot += weight[k] * exp(sitelogl[i][k] - max);
+            cumul[k] = tot;
+		}
+		meansitelogl[i] = log(tot) + max;
+        int k = 0;
+        double u = tot*rnd::GetRandom().Uniform();
+        while ((k < GetNcomponent()) && (u>cumul[k]))   {
+            k++;
+        }
+        if (k == GetNcomponent())   {
+            cerr << "error in RASCATFiniteGammaPhyloProcess::SlaveComputeSiteLogL: overflow\n";
+            exit(1);
+        }
+        PoissonFiniteProfileProcess::alloc[i] = k;
+        UpdateZip(i);
+	}
+    UpdateConditionalLikelihoods();
+
+	MPI_Send(meansitelogl,GetNsite(),MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
+	
+	for (int i=sitemin; i<sitemax; i++)	{
+		delete[] sitelogl[i];
+	}
+	delete[] sitelogl;
+	delete[] meansitelogl;
+    delete[] cumul;
+
+	sitemax = bksitemax;
 }
 
 void RASCATFiniteGammaPhyloProcess::SlaveComputeSiteLogL()	{

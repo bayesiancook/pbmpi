@@ -267,6 +267,12 @@ void RASCATGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 				testdatafile = argv[i];
 			}
 
+			else if (s == "-sitecv")	{
+				cv = 2;
+				i++;
+				testdatafile = argv[i];
+			}
+
 			else if (s == "-anc")	{
 				ancstatepostprobs = 1;
 			}
@@ -345,9 +351,13 @@ void RASCATGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	else if (map)	{
 		ReadMap(name,burnin,every,until);
 	}
-	else if (cv)	{
+	else if (cv == 1)	{
         GlobalSetSiteLogLCutoff();
 		ReadCV(testdatafile,name,burnin,every,until);
+	}
+	else if (cv == 2)	{
+        GlobalSetSiteLogLCutoff();
+		ReadSiteCV(testdatafile,name,burnin,every,until);
 	}
 	else if (ancstatepostprobs)	{
 		ReadAncestral(name,burnin,every,until);
