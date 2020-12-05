@@ -2837,13 +2837,12 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until)	{
 	}
 	int samplesize = 0;
 
+    vector<double> meansitelogl(GetNsite(),0);
+    vector<double> varsitelogl(GetNsite(),0);
+    double meantotlogl = 0;
+    double vartotlogl = 0;
 	double* tmp = new double[GetNsite()];
-	double* mean = new double[GetNsite()];
 	vector<double>* logl = new vector<double>[GetNsite()];
-
-	for (int i=0; i<GetNsite(); i++)	{
-		mean[i] = 0;
-	}
 
 	int width = GetNsite()/(GetNprocs()-1);
 	int smin[GetNprocs()-1];
@@ -2871,8 +2870,6 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until)	{
 		double total = 0;
 		for(int i=1; i<GetNprocs(); ++i) {
 			MPI_Recv(tmp,GetNsite(),MPI_DOUBLE,i,TAG1,MPI_COMM_WORLD,&stat);
-			// for (int i=0; i<GetNsite(); i++)	{
-			// for (int i=GetSiteMin(i); i<GetSiteMax(i); i++)	{
 			for (int j=smin[i-1]; j<smax[i-1]; j++)	{
 				if (std::isnan(tmp[j]))	{
 					cerr << "error: nan logl received by master\n";
@@ -2881,8 +2878,9 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until)	{
 					exit(1);
 				}
 				logl[j].push_back(tmp[j]);
-				mean[j] += tmp[j];
-				if (std::isnan(mean[j]))	{
+				meansitelogl[j] += tmp[j];
+                varsitelogl[j] += tmp[j]*tmp[j];
+				if (std::isnan(meansitelogl[j]))	{
 					cerr << "error: mean logl is nan (when summing over replicates\n";
 					cerr << "site : " << j << '\n';
 					cerr << "proc : " << i << '\n';
@@ -2893,6 +2891,8 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until)	{
 		}
 		
 		cerr << total << '\n';
+        meantotlogl += total;
+        vartotlogl += total*total;
 		int nrep = 1;
 		while ((i<until) && (nrep < every))	{
 			FromStream(is);
@@ -2900,6 +2900,36 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until)	{
 			nrep++;
 		}
 	}
+
+    meantotlogl /= samplesize;
+    vartotlogl /= samplesize;
+    vartotlogl -= meantotlogl*meantotlogl;
+	for (int i=0; i<GetNsite(); i++)	{
+		meansitelogl[i] /= samplesize;
+        varsitelogl[i] /= samplesize;
+        varsitelogl[i] -= meansitelogl[i]*meansitelogl[i];
+    }
+
+    // estimate of T0 = Trace(I_0^(-1) . H_0)
+    double totvarlogl = 0;
+	for (int i=0; i<GetNsite(); i++)	{
+        totvarlogl += varsitelogl[i];
+    }
+
+    // mean and var across sites
+	double acrosssites_meanlogl = 0;
+    double acrosssites_varlogl = 0;
+	for (int i=0; i<GetNsite(); i++)	{
+		acrosssites_meanlogl += meansitelogl[i];
+		acrosssites_varlogl += meansitelogl[i] * meansitelogl[i];
+	}
+    acrosssites_meanlogl /= GetNsite();
+    acrosssites_varlogl /= GetNsite();
+    acrosssites_varlogl -= acrosssites_meanlogl*acrosssites_meanlogl;
+    if (fabs(GetNsite()*acrosssites_meanlogl - meantotlogl) > 1e-6)   {
+        cerr << "error: non matching mean tot logl\n";
+        exit(1);
+    }
 
 	double meancpo = 0;
 	double varcpo = 0;
@@ -2944,41 +2974,38 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until)	{
     meaness /= GetNsite();
 
 	ofstream os((name + ".sitelogl").c_str());
-    os << "site\tlogl\tcpo\tess\n";
-	double meanlogl = 0;
-    double varlogl = 0;
+    os << "site\tlogl\tvar\tcpo\tess\n";
 	for (int i=0; i<GetNsite(); i++)	{
-		mean[i] /= samplesize;
-		if (std::isnan(mean[i]))	{
-			cerr << "error: mean logl is nan (when printing out)\n";
-			cerr << "site : " << i << '\n';
-			exit(1);
-		}
-		meanlogl += mean[i];
-		varlogl += mean[i] * mean[i];
-		os << i+1 << '\t' << mean[i] << '\t' << cpo[i] << '\t' << siteess[i] << '\n';
+		os << i+1 << '\t' << meansitelogl[i] << '\t' << varsitelogl[i] << '\t' << cpo[i] << '\t' << siteess[i] << '\n';
 	}
 
-    meanlogl /= GetNsite();
-    varlogl /= GetNsite();
-    varlogl -= meanlogl*meanlogl;
-    double total = GetNsite() * meanlogl;
-
 	ofstream cos((name + ".cpo").c_str());
-	cos << "posterior mean ln L : " << total << '\n';
-    // cos << "mean site logl      : " << meanlogl << '\t' << sqrt(varlogl) << '\n';
-	cos << "CPO                 : " << GetNsite() * meancpo << '\n';
-    // cos << "site CPO            : " << meancpo << '\t' << sqrt(varcpo) << '\n';
-    cos << "eff # params        : " << 2*(total - GetNsite()*meancpo) << '\n';
-    cos << "ESS (mean / min)    : " << meaness << '\t' << miness << '\n';
+	cos << "post mean tot logl    : " << meantotlogl << '\n';
+    cos << "2*post var totlogl (d): " << 2*vartotlogl << '\n';
+    cos << "tot post var logl (T0): " << totvarlogl << '\n';
+    cos << "violation index (T0/d): " << totvarlogl / vartotlogl << '\n';
+    cos << "Bayes TIC             : " << meantotlogl - 0.5*totvarlogl << '\n';
+    cos << "Bayes AIC             : " << meantotlogl - 0.5*vartotlogl << '\n';
+    cos << '\n';
+    // cos << "mean site logl        : " << meanlogl << '\t' << sqrt(varlogl) << '\n';
+	cos << "CPO                   : " << GetNsite() * meancpo << '\n';
+    // cos << "site CPO              : " << meancpo << '\t' << sqrt(varcpo) << '\n';
+    // cos << "eff # params          : " << 2*(total - GetNsite()*meancpo) << '\n';
+    cos << "ESS (mean / min)      : " << meaness << '\t' << miness << '\n';
 
 	cerr << '\n';
-	cerr << "posterior mean ln L : " << total << '\n';
-    // cerr << "mean site logl      : " << meanlogl << '\t' << sqrt(varlogl) << '\n';
-	cerr << "CPO                 : " << GetNsite() * meancpo << '\n';
-    // cerr << "site CPO            : " << meancpo << '\t' << sqrt(varcpo) << '\n';
-    cerr << "eff # params        : " << 2*(total - GetNsite()*meancpo) << '\n';
-    cerr << "ESS (mean / min)    : " << meaness << '\t' << miness << '\n';
+	cerr << "post mean tot logl    : " << meantotlogl << '\n';
+    cerr << "2*post var totlogl (d): " << 2*vartotlogl << '\n';
+    cerr << "tot post var logl (T0): " << totvarlogl << '\n';
+    cerr << "violation index (T0/d): " << totvarlogl / 2 / vartotlogl << '\n';
+    cerr << "Bayes TIC             : " << meantotlogl - 0.5*totvarlogl << '\n';
+    cerr << "Bayes AIC             : " << meantotlogl - vartotlogl << '\n';
+    cerr << '\n';
+    // cerr << "mean site logl        : " << meanlogl << '\t' << sqrt(varlogl) << '\n';
+	cerr << "CPO                   : " << GetNsite() * meancpo << '\n';
+    // cerr << "site CPO              : " << meancpo << '\t' << sqrt(varcpo) << '\n';
+    // cerr << "eff # params          : " << 2*(total - GetNsite()*meancpo) << '\n';
+    cerr << "ESS (mean / min)      : " << meaness << '\t' << miness << '\n';
 	cerr << '\n';
 
 }
