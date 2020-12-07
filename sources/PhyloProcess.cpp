@@ -3183,9 +3183,9 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until)	{
 	cos << "post mean tot logl    : " << meantotlogl << '\n';
     cos << "2*post var totlogl (d): " << 2*vartotlogl << '\n';
     cos << "tot post var logl (T0): " << totvarlogl << '\n';
-    cos << "violation index (T0/d): " << totvarlogl / vartotlogl << '\n';
+    cos << "violation index (T0/d): " << totvarlogl / 2 / vartotlogl << '\n';
     cos << "Bayes TIC             : " << meantotlogl - 0.5*totvarlogl << '\n';
-    cos << "Bayes AIC             : " << meantotlogl - 0.5*vartotlogl << '\n';
+    cos << "Bayes AIC             : " << meantotlogl - vartotlogl << '\n';
     cos << '\n';
     // cos << "mean site logl        : " << meanlogl << '\t' << sqrt(varlogl) << '\n';
 	cos << "CPO                   : " << GetNsite() * meancpo << '\n';
