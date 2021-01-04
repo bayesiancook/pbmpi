@@ -36,7 +36,7 @@ ALL_SRCS=$(wildcard *.cpp)
 ALL_OBJS=$(patsubst %.cpp,%.o,$(ALL_SRCS))
 
 PROGSDIR=../data
-ALL= pb_mpi readpb_mpi tracecomp bpcomp cvrep
+ALL= sitecv pb_mpi readpb_mpi tracecomp bpcomp cvrep
 PROGS=$(addprefix $(PROGSDIR)/, $(ALL))
 
 .PHONY: all clean
@@ -60,6 +60,9 @@ ifneq ($(MAKECMDGOALS),clean)
 endif
 
 # Targets
+
+$(PROGSDIR)/sitecv : SiteCV.o $(OBJS)
+	$(CC) SiteCV.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@
 
 $(PROGSDIR)/cvrep : CVrep.o $(OBJS)
 	$(CC) CVrep.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@

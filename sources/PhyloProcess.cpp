@@ -2906,7 +2906,19 @@ void PhyloProcess::ReadSiteCV(string testdatafile, string name, int burnin, int 
 			nrep++;
 		}
 	}
+    cerr << '\n';
 
+    ofstream sos((name + ".cvsitelogl").c_str());
+    for (int j=0; j<samplesize; j++)    {
+        for (int i=0; i<testnsite; i++) {
+            sos << logl[i][j] << '\t';
+        }
+        sos << '\n';
+    }
+
+    cerr << "site log likelihoods over the mcmc in " << name << ".cvsitelogl\n";
+
+    /*
     double* cvscore = new double[testnsite];
     double meancvscore = 0;
 
@@ -2959,13 +2971,14 @@ void PhyloProcess::ReadSiteCV(string testdatafile, string name, int burnin, int 
     cos << testnsite * meancvscore << '\t' << meancvscore << '\t' << meaness << '\t' << miness << '\n';
 
     int K = testnsite;
-    int nrepmax = 100*testnsite;
+    int nrepmax = 1000*testnsite;
     double tmpscore[samplesize];
 
     cerr << '\n';
 
     ofstream kos((name + ".ksitecv").c_str());
-    for (int k=1; k<=K; k++) {
+    int step = 10;
+    for (int k=1; k<=K; k+=step) {
 
         int sites[k];
         double kmeancvscore = 0;
@@ -3010,14 +3023,53 @@ void PhyloProcess::ReadSiteCV(string testdatafile, string name, int burnin, int 
         kmeaness /= nrep;
         cerr << k << '\t' << testnsite * kmeancvscore << '\t' << kmeancvscore << '\t' << kmeaness << '\t' << kminess << '\n';
         kos << k << '\t' << testnsite * kmeancvscore << '\t' << kmeancvscore << '\t' << kmeaness << '\t' << kminess << '\n';
+        if (k > 100)    {
+            step = 100;
+        }
     }
+    */
 
+    /*
+    ofstream kos((name + ".ksitecv").c_str());
+    for (int k=1; k<=K; k++) {
+        double max = 0;
+        for (int j=0; j<samplesize; j++)	{
+            tmpscore[j] = 0;
+            for (int i=0; i<k; i++) {
+                tmpscore[j] += logl[i][j];
+            }
+            if ((!j) || (max < tmpscore[j]))    {
+                max = tmpscore[j];
+            }
+        }
+
+        double tot = 0;
+        for (int j=0; j<samplesize; j++)	{
+            tot += exp(tmpscore[j] - max);
+        }
+
+        double invess = 0;
+        for (int j=0; j<samplesize; j++)	{
+            double w = exp(tmpscore[j] - max) / tot;
+            invess += w*w;
+        }
+        double ess = 1.0/invess;
+        tot /= samplesize;
+        
+        double cvscore = (log(tot) + max)/k;
+
+        cerr << k << '\t' << cvscore << '\t' << ess << '\n';
+        kos << k << '\t' << cvscore << '\t' << ess << '\n';
+    }
+    */
+
+    /*
 	cerr << '\n';
     cerr << "mean site cv : " << meancvscore << '\n';
     cerr << "tot site cv  : " << testnsite * meancvscore << '\n';
     cerr << "ess : " << meaness << '\t' << miness << '\n';
 	cerr << '\n';
-
+    */
 }
 
 void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until)	{
