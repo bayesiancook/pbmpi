@@ -299,8 +299,14 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 				map = 1;
 			}
 
-			else if (s == "-cv")	{
+			else if (s == "-oldcv")	{
 				cv = 1;
+				i++;
+				testdatafile = argv[i];
+			}
+
+			else if ((s == "-cv") || (s == "-sitecv"))	{
+				cv = 2;
 				i++;
 				testdatafile = argv[i];
 			}
@@ -370,8 +376,11 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 		exit(1);
 	}
 
-	if (cv)	{
+	if (cv == 1)	{
 		ReadCV(testdatafile,name,burnin,every,until);
+	}
+    else if (cv == 2)	{
+		ReadSiteCV(testdatafile,name,burnin,every,until);
 	}
 	else if (rates)	{
 		ReadSiteRates(name,burnin,every,until);

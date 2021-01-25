@@ -2555,6 +2555,410 @@ void PhyloProcess::ReadCV(string testdatafile, string name, int burnin, int ever
 	cerr << meanscore << '\n';
 }
 
+void PhyloProcess::ReadSiteCV(string testdatafile, string name, int burnin, int every, int until, int iscodon, GeneticCodeType codetype)	{
+
+	ifstream is((name + ".chain").c_str());
+	if (!is)	{
+		cerr << "error: no .chain file found\n";
+		exit(1);
+	}
+
+	if (iscodon)	{
+		SequenceAlignment* tempdata = new FileSequenceAlignment(testdatafile,0,myid);
+		testdata = new CodonSequenceAlignment(tempdata,true,codetype);
+	}
+	else	{
+		testdata = new FileSequenceAlignment(testdatafile,0,myid);
+	}
+	GlobalSetTestData();
+
+	cerr << "burnin: " << burnin << '\n';
+	cerr << "every " << every << " points until " << until << '\n';
+	int i=0;
+	while ((i < until) && (i < burnin))	{
+		FromStream(is);
+		i++;
+	}
+	int samplesize = 0;
+
+    int testwidth = testnsite/(nprocs-1);
+	int testsmin[GetNprocs()-1];
+	int testsmax[GetNprocs()-1];
+	for(int i=0; i<GetNprocs()-1; ++i) {
+		testsmin[i] = testwidth*i;
+		testsmax[i] = testwidth*(i+1);
+		if (i == (GetNprocs()-2)) testsmax[i] = testnsite;
+	}
+
+    int width = GetNsite()/(nprocs-1);
+	int smin[GetNprocs()-1];
+	int smax[GetNprocs()-1];
+	int maxwidth = 0;
+	for(int i=0; i<GetNprocs()-1; ++i) {
+		smin[i] = width*i;
+		smax[i] = smin[i] + testsmax[i] - testsmin[i];
+		if (maxwidth < (smax[i] - smin[i]))	{
+			maxwidth = smax[i] - smin[i];
+		}
+	}
+
+	double* tmp = new double[GetNsite()];
+	vector<double>* logl = new vector<double>[testnsite];
+
+	while (i < until)	{
+		cerr << ".";
+		samplesize++;
+		FromStream(is);
+		i++;
+		QuickUpdate();
+		MPI_Status stat;
+		MESSAGE signal = SITELOGL;
+		MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+
+        int count = 0;
+		for(int i=1; i<GetNprocs(); ++i) {
+			MPI_Recv(tmp,GetNsite(),MPI_DOUBLE,i,TAG1,MPI_COMM_WORLD,&stat);
+			for (int j=smin[i-1]; j<smax[i-1]; j++)	{
+				if (std::isnan(tmp[j]))	{
+					cerr << "error: nan logl received by master\n";
+					cerr << "site : " << j << '\n';
+					cerr << "proc : " << i << '\n';
+					exit(1);
+				}
+				logl[count].push_back(tmp[j]);
+                count++;
+			}
+		}
+        if (count != testnsite) {
+            cerr << "error in read site cv: non matching number of sites (testnsite)\n";
+            exit(1);
+        }
+		
+		int nrep = 1;
+		while ((i<until) && (nrep < every))	{
+			FromStream(is);
+			i++;
+			nrep++;
+		}
+	}
+    cerr << '\n';
+
+    ofstream sos((name + ".cvsitelogl").c_str());
+    for (int j=0; j<samplesize; j++)    {
+        for (int i=0; i<testnsite; i++) {
+            sos << logl[i][j] << '\t';
+        }
+        sos << '\n';
+    }
+
+    cerr << "site log likelihoods over the mcmc in " << name << ".cvsitelogl\n";
+
+    ofstream los((name + ".cvlog").c_str());
+    los << samplesize << '\t' << testnsite << '\n';
+
+    double* cvscore = new double[testnsite];
+    double meancvscore = 0;
+
+	double* siteess = new double[testnsite];
+    double meaness = 0;
+    double miness = 0;
+
+    for (int i=0; i<testnsite; i++) {
+        double max = 0;
+        for (int j=0; j<samplesize; j++)	{
+            if ((!j) || (max < logl[i][j]))	{
+                max = logl[i][j];
+            }
+        }
+
+        double tot = 0;
+        for (int j=0; j<samplesize; j++)	{
+            tot += exp(logl[i][j] - max);
+        }
+
+        double invess = 0;
+        for (int j=0; j<samplesize; j++)	{
+            double w = exp(logl[i][j] - max) / tot;
+            invess += w*w;
+        }
+        siteess[i] = 1.0 / invess;
+        if ((!i) || (miness > siteess[i]))  {
+            miness = siteess[i];
+        }
+        meaness += siteess[i];
+
+        tot /= samplesize;
+        
+        cvscore[i] = log(tot) + max;
+        meancvscore += cvscore[i];
+    }
+    meancvscore /= testnsite;
+    meaness /= testnsite;
+        
+	ofstream scos((name + ".sitecv").c_str());
+    scos << "site\tcv\tess\n";
+	for (int i=0; i<testnsite; i++) {
+		scos << i+1 << '\t' << cvscore[i] << '\t' << siteess[i] << '\n';
+	}
+
+    // joint cv
+	double max = 0;
+    double* scorelist = new double[samplesize];
+
+	for (int j=0; j<samplesize; j++)	{
+        double tot = 0;
+        for (int i=0; i<testnsite; i++) {
+            tot += logl[i][j];
+        }
+        scorelist[j] = tot;
+		if ((!j) || (max < scorelist[j]))	{
+			max = scorelist[j];
+		}
+	}
+
+    double meanlog = 0;
+    double varlog = 0;
+    for (int j=0; j<samplesize; j++)    {
+        meanlog += scorelist[j];
+        varlog += scorelist[j]*scorelist[j];
+    }
+    meanlog /= samplesize;
+    varlog /= samplesize;
+    varlog -= meanlog*meanlog;
+    double normapproxcv = meanlog + 0.5*varlog;
+
+	double tot = 0;
+    double invess = 0;
+	for (int j=0; j<samplesize; j++)	{
+		tot += exp(scorelist[j] - max);
+        double w = exp(scorelist[j] - max) / tot;
+        invess += w*w;
+	}
+	tot /= samplesize;
+    double ess = 1.0 / invess;
+
+	double meanscore = log(tot) + max;
+	
+	ofstream os((name + ".cv").c_str());
+	os << "score       : " << meanscore << '\n';
+    os << "ess         : " << ess << '\n';
+    os << "norm approx : " << normapproxcv << '\n';
+
+	ofstream cos((name + ".meansitecv").c_str());
+    cos << "mean site cv : " << meancvscore << '\n';
+    cos << "tot site cv  : " << testnsite * meancvscore << '\n';
+    cos << "ess : " << meaness << '\t' << miness << '\n';
+
+	cerr << '\n';
+	cerr << "joint cv (posterior average of the product of site-likelihoods of validation set)\n";
+    cerr << "mcmc estimate : " << meanscore << '\n';
+    cerr << "ess           :  " << ess << '\n';
+    if (ess < 30.0) {
+        cerr << "warning: low eff sample size, unreliable mcmc estimate for joint cv score\n";
+    }
+    cerr << "normal approx : " << normapproxcv << '\n';
+
+    cerr << '\n';
+	cerr << "site cv (posterior average taken separately for each site of the validation set)\n";
+    cerr << "mcmc estimate : " << testnsite * meancvscore << '\n';
+    cerr << "per site      : " << meancvscore << '\n';
+    cerr << "ess           :  " << meaness << '\t' << "(min over sites: " << miness << ")\n";
+    if (meaness < 30.0) {
+        cerr << "warning: low eff sample size, unreliable mcmc estimate for site cv score\n";
+    }
+	cerr << '\n';
+}
+
+void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until)	{
+
+	ifstream is((name + ".chain").c_str());
+	if (!is)	{
+		cerr << "error: no .chain file found\n";
+		exit(1);
+	}
+
+	cerr << "burnin: " << burnin << '\n';
+	cerr << "every " << every << " points until " << until << '\n';
+	int i=0;
+	while ((i < until) && (i < burnin))	{
+		FromStream(is);
+		i++;
+	}
+	int samplesize = 0;
+
+    vector<double> meansitelogl(GetNsite(),0);
+    vector<double> varsitelogl(GetNsite(),0);
+    double meantotlogl = 0;
+    double vartotlogl = 0;
+	double* tmp = new double[GetNsite()];
+	vector<double>* logl = new vector<double>[GetNsite()];
+
+	int width = GetNsite()/(GetNprocs()-1);
+	int smin[GetNprocs()-1];
+	int smax[GetNprocs()-1];
+	int maxwidth = 0;
+	for(int i=0; i<GetNprocs()-1; ++i) {
+		smin[i] = width*i;
+		smax[i] = width*(1+i);
+		if (i == (GetNprocs()-2)) smax[i] = GetNsite();
+		if (maxwidth < (smax[i] - smin[i]))	{
+			maxwidth = smax[i] - smin[i];
+		}
+	}
+
+	while (i < until)	{
+		cerr << ".";
+		samplesize++;
+		FromStream(is);
+		i++;
+		QuickUpdate();
+		MPI_Status stat;
+		MESSAGE signal = SITELOGL;
+		MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+
+		double total = 0;
+		for(int i=1; i<GetNprocs(); ++i) {
+			MPI_Recv(tmp,GetNsite(),MPI_DOUBLE,i,TAG1,MPI_COMM_WORLD,&stat);
+			for (int j=smin[i-1]; j<smax[i-1]; j++)	{
+				if (std::isnan(tmp[j]))	{
+					cerr << "error: nan logl received by master\n";
+					cerr << "site : " << j << '\n';
+					cerr << "proc : " << i << '\n';
+					exit(1);
+				}
+				logl[j].push_back(tmp[j]);
+				meansitelogl[j] += tmp[j];
+                varsitelogl[j] += tmp[j]*tmp[j];
+				if (std::isnan(meansitelogl[j]))	{
+					cerr << "error: mean logl is nan (when summing over replicates\n";
+					cerr << "site : " << j << '\n';
+					cerr << "proc : " << i << '\n';
+					exit(1);
+				}
+				total += tmp[j];
+			}
+		}
+		
+		cerr << total << '\n';
+        meantotlogl += total;
+        vartotlogl += total*total;
+		int nrep = 1;
+		while ((i<until) && (nrep < every))	{
+			FromStream(is);
+			i++;
+			nrep++;
+		}
+	}
+
+    meantotlogl /= samplesize;
+    vartotlogl /= samplesize;
+    vartotlogl -= meantotlogl*meantotlogl;
+	for (int i=0; i<GetNsite(); i++)	{
+		meansitelogl[i] /= samplesize;
+        varsitelogl[i] /= samplesize;
+        varsitelogl[i] -= meansitelogl[i]*meansitelogl[i];
+    }
+
+    // estimate of T0 = Trace(I_0^(-1) . H_0)
+    double totvarlogl = 0;
+	for (int i=0; i<GetNsite(); i++)	{
+        totvarlogl += varsitelogl[i];
+    }
+
+    // mean and var across sites
+	double acrosssites_meanlogl = 0;
+    double acrosssites_varlogl = 0;
+	for (int i=0; i<GetNsite(); i++)	{
+		acrosssites_meanlogl += meansitelogl[i];
+		acrosssites_varlogl += meansitelogl[i] * meansitelogl[i];
+	}
+    acrosssites_meanlogl /= GetNsite();
+    acrosssites_varlogl /= GetNsite();
+    acrosssites_varlogl -= acrosssites_meanlogl*acrosssites_meanlogl;
+    if (fabs(GetNsite()*acrosssites_meanlogl - meantotlogl) > 1e-6)   {
+        cerr << "error: non matching mean tot logl\n";
+        exit(1);
+    }
+
+	double meancpo = 0;
+	double varcpo = 0;
+	double* cpo = new double[GetNsite()];
+	double* siteess = new double[GetNsite()];
+    double meaness = 0;
+    double miness = 0;
+
+	for (int i=0; i<GetNsite(); i++)	{
+		double min = 0;
+		int count = 0;
+		for (vector<double>::iterator j=logl[i].begin(); j != logl[i].end(); j++)	{
+			if (min > (*j))	{
+				min = *j;
+			}
+			count++;
+		}
+		double hmean = 0;
+        vector<double> weight;
+		for (vector<double>::iterator j=logl[i].begin(); j != logl[i].end(); j++)	{
+			hmean += exp(min - (*j));
+            weight.push_back(exp(min-(*j)));
+		}
+        double invess = 0;
+        for (int j=0; j<count; j++) {
+            weight[j] /= hmean;
+            invess += weight[j]*weight[j];
+        }
+		hmean /= count;
+		cpo[i] = min - log(hmean);
+		meancpo += cpo[i];
+		varcpo += cpo[i] * cpo[i];
+        siteess[i] = 1.0 / invess;
+        meaness += siteess[i];
+        if ((!i) || (miness > siteess[i]))  {
+            miness = siteess[i];
+        }
+	}
+	meancpo /= GetNsite();
+	varcpo /= GetNsite();
+	varcpo -= meancpo * meancpo;
+    meaness /= GetNsite();
+
+	ofstream os((name + ".sitelogl").c_str());
+    os << "site\tlogl\tvar\tcpo\tess\n";
+	for (int i=0; i<GetNsite(); i++)	{
+		os << i+1 << '\t' << meansitelogl[i] << '\t' << varsitelogl[i] << '\t' << cpo[i] << '\t' << siteess[i] << '\n';
+	}
+
+	ofstream cos((name + ".cpo").c_str());
+	cos << "post mean tot logl    : " << meantotlogl << '\n';
+    cos << "2*post var totlogl (d): " << 2*vartotlogl << '\n';
+    cos << "tot post var logl (T0): " << totvarlogl << '\n';
+    cos << "violation index (T0/d): " << totvarlogl / 2 / vartotlogl << '\n';
+    cos << "Bayes TIC             : " << meantotlogl - 0.5*totvarlogl << '\n';
+    cos << "Bayes AIC             : " << meantotlogl - vartotlogl << '\n';
+    cos << '\n';
+    // cos << "mean site logl        : " << meanlogl << '\t' << sqrt(varlogl) << '\n';
+	cos << "CPO                   : " << GetNsite() * meancpo << '\n';
+    // cos << "site CPO              : " << meancpo << '\t' << sqrt(varcpo) << '\n';
+    // cos << "eff # params          : " << 2*(total - GetNsite()*meancpo) << '\n';
+    cos << "ESS (mean / min)      : " << meaness << '\t' << miness << '\n';
+
+	cerr << '\n';
+	cerr << "post mean tot logl    : " << meantotlogl << '\n';
+    cerr << "2*post var totlogl (d): " << 2*vartotlogl << '\n';
+    cerr << "tot post var logl (T0): " << totvarlogl << '\n';
+    cerr << "violation index (T0/d): " << totvarlogl / 2 / vartotlogl << '\n';
+    cerr << "Bayes TIC             : " << meantotlogl - 0.5*totvarlogl << '\n';
+    cerr << "Bayes AIC             : " << meantotlogl - vartotlogl << '\n';
+    cerr << '\n';
+    // cerr << "mean site logl        : " << meanlogl << '\t' << sqrt(varlogl) << '\n';
+	cerr << "CPO                   : " << GetNsite() * meancpo << '\n';
+    // cerr << "site CPO              : " << meancpo << '\t' << sqrt(varcpo) << '\n';
+    // cerr << "eff # params          : " << 2*(total - GetNsite()*meancpo) << '\n';
+    cerr << "ESS (mean / min)      : " << meaness << '\t' << miness << '\n';
+	cerr << '\n';
+
+}
+
 void PhyloProcess::ReadAncestral(string name, int burnin, int every, int until)	{
 
 	ifstream is((name + ".chain").c_str());
@@ -2818,448 +3222,6 @@ double PhyloProcess::GlobalGetFullLogLikelihood()  {
     }
     delete[] tmp;
     return total;
-}
-
-void PhyloProcess::ReadSiteCV(string testdatafile, string name, int burnin, int every, int until, int iscodon, GeneticCodeType codetype)	{
-
-	ifstream is((name + ".chain").c_str());
-	if (!is)	{
-		cerr << "error: no .chain file found\n";
-		exit(1);
-	}
-
-	if (iscodon)	{
-		SequenceAlignment* tempdata = new FileSequenceAlignment(testdatafile,0,myid);
-		testdata = new CodonSequenceAlignment(tempdata,true,codetype);
-	}
-	else	{
-		testdata = new FileSequenceAlignment(testdatafile,0,myid);
-	}
-	GlobalSetTestData();
-
-	cerr << "burnin: " << burnin << '\n';
-	cerr << "every " << every << " points until " << until << '\n';
-	int i=0;
-	while ((i < until) && (i < burnin))	{
-		FromStream(is);
-		i++;
-	}
-	int samplesize = 0;
-
-    int testwidth = testnsite/(nprocs-1);
-	int testsmin[GetNprocs()-1];
-	int testsmax[GetNprocs()-1];
-	for(int i=0; i<GetNprocs()-1; ++i) {
-		testsmin[i] = testwidth*i;
-		testsmax[i] = testwidth*(i+1);
-		if (i == (GetNprocs()-2)) testsmax[i] = testnsite;
-	}
-
-    int width = GetNsite()/(nprocs-1);
-	int smin[GetNprocs()-1];
-	int smax[GetNprocs()-1];
-	int maxwidth = 0;
-	for(int i=0; i<GetNprocs()-1; ++i) {
-		smin[i] = width*i;
-		smax[i] = smin[i] + testsmax[i] - testsmin[i];
-		if (maxwidth < (smax[i] - smin[i]))	{
-			maxwidth = smax[i] - smin[i];
-		}
-	}
-
-	double* tmp = new double[GetNsite()];
-	vector<double>* logl = new vector<double>[testnsite];
-
-	while (i < until)	{
-		cerr << ".";
-		samplesize++;
-		FromStream(is);
-		i++;
-		QuickUpdate();
-		MPI_Status stat;
-		MESSAGE signal = SITELOGL;
-		MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
-
-        int count = 0;
-		for(int i=1; i<GetNprocs(); ++i) {
-			MPI_Recv(tmp,GetNsite(),MPI_DOUBLE,i,TAG1,MPI_COMM_WORLD,&stat);
-			for (int j=smin[i-1]; j<smax[i-1]; j++)	{
-				if (std::isnan(tmp[j]))	{
-					cerr << "error: nan logl received by master\n";
-					cerr << "site : " << j << '\n';
-					cerr << "proc : " << i << '\n';
-					exit(1);
-				}
-				logl[count].push_back(tmp[j]);
-                count++;
-			}
-		}
-        if (count != testnsite) {
-            cerr << "error in read site cv: non matching number of sites (testnsite)\n";
-            exit(1);
-        }
-		
-		int nrep = 1;
-		while ((i<until) && (nrep < every))	{
-			FromStream(is);
-			i++;
-			nrep++;
-		}
-	}
-    cerr << '\n';
-
-    ofstream sos((name + ".cvsitelogl").c_str());
-    for (int j=0; j<samplesize; j++)    {
-        for (int i=0; i<testnsite; i++) {
-            sos << logl[i][j] << '\t';
-        }
-        sos << '\n';
-    }
-
-    cerr << "site log likelihoods over the mcmc in " << name << ".cvsitelogl\n";
-
-    /*
-    double* cvscore = new double[testnsite];
-    double meancvscore = 0;
-
-	double* siteess = new double[testnsite];
-    double meaness = 0;
-    double miness = 0;
-
-    for (int i=0; i<testnsite; i++) {
-        double max = 0;
-        for (int j=0; j<samplesize; j++)	{
-            if ((!j) || (max < logl[i][j]))	{
-                max = logl[i][j];
-            }
-        }
-
-        double tot = 0;
-        for (int j=0; j<samplesize; j++)	{
-            tot += exp(logl[i][j] - max);
-        }
-
-        double invess = 0;
-        for (int j=0; j<samplesize; j++)	{
-            double w = exp(logl[i][j] - max) / tot;
-            invess += w*w;
-        }
-        siteess[i] = 1.0 / invess;
-        if ((!i) || (miness > siteess[i]))  {
-            miness = siteess[i];
-        }
-        meaness += siteess[i];
-
-        tot /= samplesize;
-        
-        cvscore[i] = log(tot) + max;
-        meancvscore += cvscore[i];
-    }
-    meancvscore /= testnsite;
-    meaness /= testnsite;
-        
-	ofstream os((name + ".sitecv").c_str());
-    os << "site\tcv\tess\n";
-	for (int i=0; i<testnsite; i++) {
-		os << i+1 << '\t' << cvscore[i] << '\t' << siteess[i] << '\n';
-	}
-
-	ofstream cos((name + ".meansitecv").c_str());
-    // cos << "mean site cv : " << meancvscore << '\n';
-    // cos << "tot site cv  : " << testnsite * meancvscore << '\n';
-    // cos << "ess : " << meaness << '\t' << miness << '\n';
-    cos << testnsite * meancvscore << '\t' << meancvscore << '\t' << meaness << '\t' << miness << '\n';
-
-    int K = testnsite;
-    int nrepmax = 1000*testnsite;
-    double tmpscore[samplesize];
-
-    cerr << '\n';
-
-    ofstream kos((name + ".ksitecv").c_str());
-    int step = 10;
-    for (int k=1; k<=K; k+=step) {
-
-        int sites[k];
-        double kmeancvscore = 0;
-        double kmeaness = 0;
-        double kminess = 0;
-
-        int nrep = nrepmax / k;
-        for (int rep=0; rep<nrep; rep++)    {
-            rnd::GetRandom().DrawFromUrn(sites,k,testnsite);
-            double max = 0;
-            for (int j=0; j<samplesize; j++)	{
-                tmpscore[j] = 0;
-                for (int i=0; i<k; i++) {
-                    tmpscore[j] += logl[sites[i]][j];
-                }
-                if ((!j) || (max < tmpscore[j]))    {
-                    max = tmpscore[j];
-                }
-            }
-
-            double tot = 0;
-            for (int j=0; j<samplesize; j++)	{
-                tot += exp(tmpscore[j] - max);
-            }
-
-            double invess = 0;
-            for (int j=0; j<samplesize; j++)	{
-                double w = exp(tmpscore[j] - max) / tot;
-                invess += w*w;
-            }
-            double ess = 1.0/invess;
-            kmeaness += ess;
-            if ((!rep) || (kminess > ess))  {
-                kminess = ess;
-            }
-            tot /= samplesize;
-            
-            double cvscore = (log(tot) + max)/k;
-            kmeancvscore += cvscore;
-        }
-        kmeancvscore /= nrep;
-        kmeaness /= nrep;
-        cerr << k << '\t' << testnsite * kmeancvscore << '\t' << kmeancvscore << '\t' << kmeaness << '\t' << kminess << '\n';
-        kos << k << '\t' << testnsite * kmeancvscore << '\t' << kmeancvscore << '\t' << kmeaness << '\t' << kminess << '\n';
-        if (k > 100)    {
-            step = 100;
-        }
-    }
-    */
-
-    /*
-    ofstream kos((name + ".ksitecv").c_str());
-    for (int k=1; k<=K; k++) {
-        double max = 0;
-        for (int j=0; j<samplesize; j++)	{
-            tmpscore[j] = 0;
-            for (int i=0; i<k; i++) {
-                tmpscore[j] += logl[i][j];
-            }
-            if ((!j) || (max < tmpscore[j]))    {
-                max = tmpscore[j];
-            }
-        }
-
-        double tot = 0;
-        for (int j=0; j<samplesize; j++)	{
-            tot += exp(tmpscore[j] - max);
-        }
-
-        double invess = 0;
-        for (int j=0; j<samplesize; j++)	{
-            double w = exp(tmpscore[j] - max) / tot;
-            invess += w*w;
-        }
-        double ess = 1.0/invess;
-        tot /= samplesize;
-        
-        double cvscore = (log(tot) + max)/k;
-
-        cerr << k << '\t' << cvscore << '\t' << ess << '\n';
-        kos << k << '\t' << cvscore << '\t' << ess << '\n';
-    }
-    */
-
-    /*
-	cerr << '\n';
-    cerr << "mean site cv : " << meancvscore << '\n';
-    cerr << "tot site cv  : " << testnsite * meancvscore << '\n';
-    cerr << "ess : " << meaness << '\t' << miness << '\n';
-	cerr << '\n';
-    */
-}
-
-void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until)	{
-
-	ifstream is((name + ".chain").c_str());
-	if (!is)	{
-		cerr << "error: no .chain file found\n";
-		exit(1);
-	}
-
-	cerr << "burnin: " << burnin << '\n';
-	cerr << "every " << every << " points until " << until << '\n';
-	int i=0;
-	while ((i < until) && (i < burnin))	{
-		FromStream(is);
-		i++;
-	}
-	int samplesize = 0;
-
-    vector<double> meansitelogl(GetNsite(),0);
-    vector<double> varsitelogl(GetNsite(),0);
-    double meantotlogl = 0;
-    double vartotlogl = 0;
-	double* tmp = new double[GetNsite()];
-	vector<double>* logl = new vector<double>[GetNsite()];
-
-	int width = GetNsite()/(GetNprocs()-1);
-	int smin[GetNprocs()-1];
-	int smax[GetNprocs()-1];
-	int maxwidth = 0;
-	for(int i=0; i<GetNprocs()-1; ++i) {
-		smin[i] = width*i;
-		smax[i] = width*(1+i);
-		if (i == (GetNprocs()-2)) smax[i] = GetNsite();
-		if (maxwidth < (smax[i] - smin[i]))	{
-			maxwidth = smax[i] - smin[i];
-		}
-	}
-
-	while (i < until)	{
-		cerr << ".";
-		samplesize++;
-		FromStream(is);
-		i++;
-		QuickUpdate();
-		MPI_Status stat;
-		MESSAGE signal = SITELOGL;
-		MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
-
-		double total = 0;
-		for(int i=1; i<GetNprocs(); ++i) {
-			MPI_Recv(tmp,GetNsite(),MPI_DOUBLE,i,TAG1,MPI_COMM_WORLD,&stat);
-			for (int j=smin[i-1]; j<smax[i-1]; j++)	{
-				if (std::isnan(tmp[j]))	{
-					cerr << "error: nan logl received by master\n";
-					cerr << "site : " << j << '\n';
-					cerr << "proc : " << i << '\n';
-					exit(1);
-				}
-				logl[j].push_back(tmp[j]);
-				meansitelogl[j] += tmp[j];
-                varsitelogl[j] += tmp[j]*tmp[j];
-				if (std::isnan(meansitelogl[j]))	{
-					cerr << "error: mean logl is nan (when summing over replicates\n";
-					cerr << "site : " << j << '\n';
-					cerr << "proc : " << i << '\n';
-					exit(1);
-				}
-				total += tmp[j];
-			}
-		}
-		
-		cerr << total << '\n';
-        meantotlogl += total;
-        vartotlogl += total*total;
-		int nrep = 1;
-		while ((i<until) && (nrep < every))	{
-			FromStream(is);
-			i++;
-			nrep++;
-		}
-	}
-
-    meantotlogl /= samplesize;
-    vartotlogl /= samplesize;
-    vartotlogl -= meantotlogl*meantotlogl;
-	for (int i=0; i<GetNsite(); i++)	{
-		meansitelogl[i] /= samplesize;
-        varsitelogl[i] /= samplesize;
-        varsitelogl[i] -= meansitelogl[i]*meansitelogl[i];
-    }
-
-    // estimate of T0 = Trace(I_0^(-1) . H_0)
-    double totvarlogl = 0;
-	for (int i=0; i<GetNsite(); i++)	{
-        totvarlogl += varsitelogl[i];
-    }
-
-    // mean and var across sites
-	double acrosssites_meanlogl = 0;
-    double acrosssites_varlogl = 0;
-	for (int i=0; i<GetNsite(); i++)	{
-		acrosssites_meanlogl += meansitelogl[i];
-		acrosssites_varlogl += meansitelogl[i] * meansitelogl[i];
-	}
-    acrosssites_meanlogl /= GetNsite();
-    acrosssites_varlogl /= GetNsite();
-    acrosssites_varlogl -= acrosssites_meanlogl*acrosssites_meanlogl;
-    if (fabs(GetNsite()*acrosssites_meanlogl - meantotlogl) > 1e-6)   {
-        cerr << "error: non matching mean tot logl\n";
-        exit(1);
-    }
-
-	double meancpo = 0;
-	double varcpo = 0;
-	double* cpo = new double[GetNsite()];
-	double* siteess = new double[GetNsite()];
-    double meaness = 0;
-    double miness = 0;
-
-	for (int i=0; i<GetNsite(); i++)	{
-		double min = 0;
-		int count = 0;
-		for (vector<double>::iterator j=logl[i].begin(); j != logl[i].end(); j++)	{
-			if (min > (*j))	{
-				min = *j;
-			}
-			count++;
-		}
-		double hmean = 0;
-        vector<double> weight;
-		for (vector<double>::iterator j=logl[i].begin(); j != logl[i].end(); j++)	{
-			hmean += exp(min - (*j));
-            weight.push_back(exp(min-(*j)));
-		}
-        double invess = 0;
-        for (int j=0; j<count; j++) {
-            weight[j] /= hmean;
-            invess += weight[j]*weight[j];
-        }
-		hmean /= count;
-		cpo[i] = min - log(hmean);
-		meancpo += cpo[i];
-		varcpo += cpo[i] * cpo[i];
-        siteess[i] = 1.0 / invess;
-        meaness += siteess[i];
-        if ((!i) || (miness > siteess[i]))  {
-            miness = siteess[i];
-        }
-	}
-	meancpo /= GetNsite();
-	varcpo /= GetNsite();
-	varcpo -= meancpo * meancpo;
-    meaness /= GetNsite();
-
-	ofstream os((name + ".sitelogl").c_str());
-    os << "site\tlogl\tvar\tcpo\tess\n";
-	for (int i=0; i<GetNsite(); i++)	{
-		os << i+1 << '\t' << meansitelogl[i] << '\t' << varsitelogl[i] << '\t' << cpo[i] << '\t' << siteess[i] << '\n';
-	}
-
-	ofstream cos((name + ".cpo").c_str());
-	cos << "post mean tot logl    : " << meantotlogl << '\n';
-    cos << "2*post var totlogl (d): " << 2*vartotlogl << '\n';
-    cos << "tot post var logl (T0): " << totvarlogl << '\n';
-    cos << "violation index (T0/d): " << totvarlogl / 2 / vartotlogl << '\n';
-    cos << "Bayes TIC             : " << meantotlogl - 0.5*totvarlogl << '\n';
-    cos << "Bayes AIC             : " << meantotlogl - vartotlogl << '\n';
-    cos << '\n';
-    // cos << "mean site logl        : " << meanlogl << '\t' << sqrt(varlogl) << '\n';
-	cos << "CPO                   : " << GetNsite() * meancpo << '\n';
-    // cos << "site CPO              : " << meancpo << '\t' << sqrt(varcpo) << '\n';
-    // cos << "eff # params          : " << 2*(total - GetNsite()*meancpo) << '\n';
-    cos << "ESS (mean / min)      : " << meaness << '\t' << miness << '\n';
-
-	cerr << '\n';
-	cerr << "post mean tot logl    : " << meantotlogl << '\n';
-    cerr << "2*post var totlogl (d): " << 2*vartotlogl << '\n';
-    cerr << "tot post var logl (T0): " << totvarlogl << '\n';
-    cerr << "violation index (T0/d): " << totvarlogl / 2 / vartotlogl << '\n';
-    cerr << "Bayes TIC             : " << meantotlogl - 0.5*totvarlogl << '\n';
-    cerr << "Bayes AIC             : " << meantotlogl - vartotlogl << '\n';
-    cerr << '\n';
-    // cerr << "mean site logl        : " << meanlogl << '\t' << sqrt(varlogl) << '\n';
-	cerr << "CPO                   : " << GetNsite() * meancpo << '\n';
-    // cerr << "site CPO              : " << meancpo << '\t' << sqrt(varcpo) << '\n';
-    // cerr << "eff # params          : " << 2*(total - GetNsite()*meancpo) << '\n';
-    cerr << "ESS (mean / min)      : " << meaness << '\t' << miness << '\n';
-	cerr << '\n';
-
 }
 
 

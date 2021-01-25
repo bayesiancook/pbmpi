@@ -276,16 +276,19 @@ void RASCATFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 			else if (s == "-map")	{
 				map = 1;
 			}
-			else if (s == "-cv")	{
+
+			else if (s == "-oldcv")	{
 				cv = 1;
 				i++;
 				testdatafile = argv[i];
 			}
-			else if (s == "-sitecv")	{
+
+			else if ((s == "-cv") || (s == "-sitecv"))	{
 				cv = 2;
 				i++;
 				testdatafile = argv[i];
 			}
+
 			else if ( (s == "-x") || (s == "-extract") )	{
 				i++;
 				if (i == argc) throw(0);
