@@ -332,6 +332,7 @@ void AACodonMutSelSBDPPhyloProcess::SlaveComputeSiteLogL()	{
 		for (int i=sitemin; i<sitemax; i++)	{
 			AACodonMutSelSBDPProfileProcess::alloc[i] = k;
 		}
+		UpdateMatrix(k);
 		UpdateConditionalLikelihoods();
 		for (int i=sitemin; i<sitemax; i++)	{
 			sitelogl[i][k] = sitelogL[i];

@@ -481,6 +481,7 @@ void CodonMutSelSBDPPhyloProcess::SlaveComputeSiteLogL()	{
 		for (int i=sitemin; i<sitemax; i++)	{
 			CodonMutSelSBDPProfileProcess::alloc[i] = k;
 		}
+        UpdateMatrix(k);
 		UpdateConditionalLikelihoods();
 		for (int i=sitemin; i<sitemax; i++)	{
 			sitelogl[i][k] = sitelogL[i];

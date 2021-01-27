@@ -166,8 +166,9 @@ class AACodonMutSelFinitePhyloProcess : public virtual AACodonMutSelFiniteSubsti
 	// MPI: these two functions are responsible for broadcasting/receiving the current state of the parameter vector
 	// are model dependent
 	// should be implemented in .cpp file
-        virtual void SlaveExecute(MESSAGE);
+    virtual void SlaveExecute(MESSAGE);
 	void SlaveComputeCVScore();
+	void SlaveComputeSiteLogL();
 	void SlaveUpdateParameters();
 	void GlobalUpdateParameters();
 

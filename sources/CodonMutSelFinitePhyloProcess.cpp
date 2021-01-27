@@ -200,11 +200,19 @@ void CodonMutSelFinitePhyloProcess::ReadPB(int argc, char* argv[])	{
 		int i = 1;
 		while (i < argc)	{
 			string s = argv[i];
-			if (s == "-cv")	{
+
+			if (s == "-oldcv")	{
 				cv = 1;
 				i++;
 				testdatafile = argv[i];
 			}
+
+			else if ((s == "-cv") || (s == "-sitecv"))	{
+				cv = 2;
+				i++;
+				testdatafile = argv[i];
+			}
+
 			else if (s == "-ppred")	{
 				ppred = 1;
 			}
@@ -316,8 +324,11 @@ void CodonMutSelFinitePhyloProcess::ReadPB(int argc, char* argv[])	{
 	if (map)	{
 		ReadMap(name,burnin,every,until);
 	}
-	else if (cv)	{
-		ReadCV(testdatafile,name,burnin,every,until,1,codetype);
+    else if (cv == 1)	{
+		ReadCV(testdatafile,name,burnin,every,until);
+	}
+    else if (cv == 2)	{
+		ReadSiteCV(testdatafile,name,burnin,every,until);
 	}
 	else if (ancstatepostprobs)	{
 		ReadAncestral(name,burnin,every,until);
@@ -339,5 +350,120 @@ void CodonMutSelFinitePhyloProcess::ReadPB(int argc, char* argv[])	{
 	else	{
 		Read(name,burnin,every,until);
 	}
+}
+
+void CodonMutSelFinitePhyloProcess::SlaveComputeCVScore()	{
+
+	sitemax = sitemin + testsitemax - testsitemin;
+	double** sitelogl = new double*[ProfileProcess::GetNsite()];
+	for (int i=sitemin; i<sitemax; i++)	{
+		sitelogl[i] = new double[GetNcomponent()];
+	}
+	
+	for (int k=0; k<GetNcomponent(); k++)	{
+		for (int i=sitemin; i<sitemax; i++)	{
+			CodonMutSelFiniteProfileProcess::alloc[i] = k;
+			//UpdateMatrix(i);
+		}
+		UpdateMatrix(k);
+		UpdateConditionalLikelihoods();
+		for (int i=sitemin; i<sitemax; i++)	{
+			sitelogl[i][k] = sitelogL[i];
+		}
+	}
+
+	double total = 0;
+	for (int i=sitemin; i<sitemax; i++)	{
+		double max = 0;
+		for (int k=0; k<GetNcomponent(); k++)	{
+			if ((!k) || (max < sitelogl[i][k]))	{
+				max = sitelogl[i][k];
+			}
+		}
+		double tot = 0;
+		double totweight = 0;
+		for (int k=0; k<GetNcomponent(); k++)	{
+			tot += weight[k] * exp(sitelogl[i][k] - max);
+			totweight += weight[k];
+		}
+		total += log(tot) + max;
+	}
+
+	MPI_Send(&total,1,MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
+	
+	for (int i=sitemin; i<sitemax; i++)	{
+		delete[] sitelogl[i];
+	}
+	delete[] sitelogl;
+
+	sitemax = bksitemax;
+
+}
+
+void CodonMutSelFinitePhyloProcess::SlaveComputeSiteLogL()	{
+
+	if (! SumOverRateAllocations())	{
+		cerr << "rate error\n";
+		exit(1);
+	}
+
+	double** sitelogl = new double*[ProfileProcess::GetNsite()];
+	for (int i=sitemin; i<sitemax; i++)	{
+		sitelogl[i] = new double[GetNcomponent()];
+	}
+	
+	// UpdateMatrices();
+
+	for (int k=0; k<GetNcomponent(); k++)	{
+		for (int i=sitemin; i<sitemax; i++)	{
+			CodonMutSelFiniteProfileProcess::alloc[i] = k;
+		}
+		UpdateMatrix(k);
+		UpdateConditionalLikelihoods();
+		for (int i=sitemin; i<sitemax; i++)	{
+			sitelogl[i][k] = sitelogL[i];
+		}
+	}
+
+	double* meansitelogl = new double[ProfileProcess::GetNsite()];
+    double* cumul = new double[GetNcomponent()];
+	for (int i=0; i<ProfileProcess::GetNsite(); i++)	{
+		meansitelogl[i] = 0;
+	}
+	for (int i=sitemin; i<sitemax; i++)	{
+		double max = 0;
+		for (int k=0; k<GetNcomponent(); k++)	{
+			if ((!k) || (max < sitelogl[i][k]))	{
+				max = sitelogl[i][k];
+			}
+		}
+		double tot = 0;
+		for (int k=0; k<GetNcomponent(); k++)	{
+			tot += weight[k] * exp(sitelogl[i][k] - max);
+            cumul[k] = tot;
+		}
+		meansitelogl[i] = log(tot) + max;
+        int k = 0;
+        double u = tot*rnd::GetRandom().Uniform();
+        while ((k < GetNcomponent()) && (u>cumul[k]))   {
+            k++;
+        }
+        if (k == GetNcomponent())   {
+            cerr << "error in RASCATFiniteGammaPhyloProcess::SlaveComputeSiteLogL: overflow\n";
+            exit(1);
+        }
+        CodonMutSelFiniteProfileProcess::alloc[i] = k;
+	}
+	UpdateMatrices();
+    UpdateConditionalLikelihoods();
+
+	MPI_Send(meansitelogl,ProfileProcess::GetNsite(),MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
+	
+	for (int i=sitemin; i<sitemax; i++)	{
+		delete[] sitelogl[i];
+	}
+	delete[] sitelogl;
+	delete[] meansitelogl;
+    delete[] cumul;
 }
 
