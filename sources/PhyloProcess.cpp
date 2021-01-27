@@ -2839,7 +2839,7 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until)	{
 			}
 		}
 		
-		cerr << total << '\n';
+		// cerr << total << '\n';
         meantotlogl += total;
         vartotlogl += total*total;
 		int nrep = 1;
@@ -2849,6 +2849,7 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until)	{
 			nrep++;
 		}
 	}
+    cerr << '\n';
 
     meantotlogl /= samplesize;
     vartotlogl /= samplesize;
@@ -2929,6 +2930,16 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until)	{
 	}
 
 	ofstream cos((name + ".cpo").c_str());
+	cos << "CPO                   : " << GetNsite() * meancpo << '\n';
+    cos << "CPO per site          : " << meancpo << '\n';
+    cos << "ESS (mean / min)      : " << meaness << '\t' << miness << '\n';
+
+	cerr << "CPO                   : " << GetNsite() * meancpo << '\n';
+    cerr << "CPO per site          : " << meancpo << '\n';
+    cerr << "ESS (mean / min)      : " << meaness << '\t' << miness << '\n';
+
+    /*
+	ofstream cos((name + ".cpo").c_str());
 	cos << "post mean tot logl    : " << meantotlogl << '\n';
     cos << "2*post var totlogl (d): " << 2*vartotlogl << '\n';
     cos << "tot post var logl (T0): " << totvarlogl << '\n';
@@ -2937,10 +2948,8 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until)	{
     cos << "Bayes AIC             : " << meantotlogl - vartotlogl << '\n';
     cos << '\n';
     // cos << "mean site logl        : " << meanlogl << '\t' << sqrt(varlogl) << '\n';
-	cos << "CPO                   : " << GetNsite() * meancpo << '\n';
     // cos << "site CPO              : " << meancpo << '\t' << sqrt(varcpo) << '\n';
     // cos << "eff # params          : " << 2*(total - GetNsite()*meancpo) << '\n';
-    cos << "ESS (mean / min)      : " << meaness << '\t' << miness << '\n';
 
 	cerr << '\n';
 	cerr << "post mean tot logl    : " << meantotlogl << '\n';
@@ -2956,7 +2965,7 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until)	{
     // cerr << "eff # params          : " << 2*(total - GetNsite()*meancpo) << '\n';
     cerr << "ESS (mean / min)      : " << meaness << '\t' << miness << '\n';
 	cerr << '\n';
-
+    */
 }
 
 void PhyloProcess::ReadAncestral(string name, int burnin, int every, int until)	{
