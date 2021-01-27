@@ -131,17 +131,6 @@ void AACodonMutSelSBDPPhyloProcess::SlaveExecute(MESSAGE signal)	{
 	}
 }
 
-void AACodonMutSelSBDPPhyloProcess::GlobalSetSiteLogLCutoff()  {
-
-	MESSAGE signal = SITELOGLCUTOFF;
-	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
-	MPI_Bcast(&siteloglcutoff,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
-}
-
-void AACodonMutSelSBDPPhyloProcess::SlaveSetSiteLogLCutoff()  {
-	MPI_Bcast(&siteloglcutoff,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
-}
-
 void AACodonMutSelSBDPPhyloProcess::GlobalUpdateParameters() {
 	// MPI2
 	// should send the slaves the relevant information
@@ -221,6 +210,17 @@ void AACodonMutSelSBDPPhyloProcess::GlobalUpdateParameters() {
 	MPI_Bcast(dvector,nd,MPI_DOUBLE,0,MPI_COMM_WORLD);
 	MPI_Bcast(V,GetNcomponent(),MPI_DOUBLE,0,MPI_COMM_WORLD);
 	MPI_Bcast(weight,GetNcomponent(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+}
+
+void AACodonMutSelSBDPPhyloProcess::GlobalSetSiteLogLCutoff()  {
+
+	MESSAGE signal = SITELOGLCUTOFF;
+	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(&siteloglcutoff,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+}
+
+void AACodonMutSelSBDPPhyloProcess::SlaveSetSiteLogLCutoff()  {
+	MPI_Bcast(&siteloglcutoff,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
 }
 
 void AACodonMutSelSBDPPhyloProcess::GlobalSetTestData()	{

@@ -151,6 +151,15 @@ class CodonMutSelSBDPPhyloProcess : public virtual CodonMutSelSBDPSubstitutionPr
 	void SlaveUpdateParameters();
 	void GlobalUpdateParameters();
 
+	void SlaveComputeCVScore();
+	void SlaveComputeSiteLogL();
+
+    void GlobalSetSiteLogLCutoff();
+    void SlaveSetSiteLogLCutoff();
+
+    void GlobalSetTestData();
+    void SlaveSetTestData();
+
 	double GetLogProb()	{
 		return GetLogPrior() + GetLogLikelihood();
 	}
@@ -319,6 +328,7 @@ class CodonMutSelSBDPPhyloProcess : public virtual CodonMutSelSBDPSubstitutionPr
 	int NSPR;
 	int NNNI;
 	int dc;
+    double siteloglcutoff;
 
 	Chrono chronopruning;
 	Chrono chronosuffstat;

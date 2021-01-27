@@ -75,6 +75,10 @@ void CodonMutSelSBDPPhyloProcess::SlaveUpdateParameters()	{
 	//GetBranchLengthsFromArray();
 	delete[] dvector;
 	delete[] ivector;
+
+	MPI_Bcast(V,GetNcomponent(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+	MPI_Bcast(weight,GetNcomponent(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+
 	// this one is really important
 	// in those cases where new components have appeared, or some old ones have disappeared
 	// during allocation move on the master node.
@@ -98,6 +102,9 @@ void CodonMutSelSBDPPhyloProcess::SlaveExecute(MESSAGE signal)	{
 	case PROFILE_MOVE:
 		SlaveMoveProfile();
 		break;
+    case SITELOGLCUTOFF:
+        SlaveSetSiteLogLCutoff();
+        break;
 	case MIX_MOVE:
 		SlaveMixMove();
 		break;
@@ -176,6 +183,8 @@ void CodonMutSelSBDPPhyloProcess::GlobalUpdateParameters() {
 	// Now send out the doubles and ints over the wire...
 	MPI_Bcast(ivector,ni,MPI_INT,0,MPI_COMM_WORLD);
 	MPI_Bcast(dvector,nd,MPI_DOUBLE,0,MPI_COMM_WORLD);
+	MPI_Bcast(V,GetNcomponent(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+	MPI_Bcast(weight,GetNcomponent(),MPI_DOUBLE,0,MPI_COMM_WORLD);
 }
 
 void CodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
@@ -350,6 +359,176 @@ void CodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
 	else	{
 		Read(name,burnin,every,until);
 	}
+}
+
+void CodonMutSelSBDPPhyloProcess::GlobalSetSiteLogLCutoff()  {
+
+	MESSAGE signal = SITELOGLCUTOFF;
+	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(&siteloglcutoff,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+}
+
+void CodonMutSelSBDPPhyloProcess::SlaveSetSiteLogLCutoff()  {
+	MPI_Bcast(&siteloglcutoff,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+}
+
+void CodonMutSelSBDPPhyloProcess::GlobalSetTestData()	{
+    int testnnuc = testdata->GetNsite();
+	testnsite = testnnuc / 3;
+	int* tmp = new int[testnnuc * GetNtaxa()];
+	testdata->GetDataVector(tmp);
+
+	MESSAGE signal = SETTESTDATA;
+	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(&testnnuc,1,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(tmp,testnnuc*GetNtaxa(),MPI_INT,0,MPI_COMM_WORLD);
+
+	delete[] tmp;
+}
+
+void CodonMutSelSBDPPhyloProcess::SlaveSetTestData()	{
+
+    int testnnuc;
+	MPI_Bcast(&testnnuc,1,MPI_INT,0,MPI_COMM_WORLD);
+	int* tmp = new int[testnnuc * GetNtaxa()];
+	MPI_Bcast(tmp,testnnuc*GetNtaxa(),MPI_INT,0,MPI_COMM_WORLD);
+    testnsite = testnnuc / 3;
+	
+	SetTestSiteMinAndMax();
+	data->SetTestData(testnsite,sitemin,testsitemin,testsitemax,tmp);
+
+	delete[] tmp;
+}
+
+void CodonMutSelSBDPPhyloProcess::SlaveComputeCVScore()	{
+
+    int ncomp = GetNcomponent();
+    double totw = 0;
+    while (ncomp && (totw < siteloglcutoff))    {
+        ncomp--;
+        totw += weight[ncomp];
+    }
+
+	sitemax = sitemin + testsitemax - testsitemin;
+	double** sitelogl = new double*[ProfileProcess::GetNsite()];
+	for (int i=sitemin; i<sitemax; i++)	{
+		sitelogl[i] = new double[ncomp];
+		// sitelogl[i] = new double[GetNcomponent()];
+	}
+	
+	for (int k=0; k<ncomp; k++)	{
+	// for (int k=0; k<GetNcomponent(); k++)	{
+		for (int i=sitemin; i<sitemax; i++)	{
+			CodonMutSelSBDPProfileProcess::alloc[i] = k;
+			//UpdateMatrix(i);
+		}
+		UpdateMatrix(k);
+		UpdateConditionalLikelihoods();
+		for (int i=sitemin; i<sitemax; i++)	{
+			sitelogl[i][k] = sitelogL[i];
+		}
+	}
+
+	double total = 0;
+	for (int i=sitemin; i<sitemax; i++)	{
+		double max = 0;
+		for (int k=0; k<ncomp; k++)	{
+		// for (int k=0; k<GetNcomponent(); k++)	{
+			if ((!k) || (max < sitelogl[i][k]))	{
+				max = sitelogl[i][k];
+			}
+		}
+		double tot = 0;
+		double totweight = 0;
+		for (int k=0; k<ncomp; k++)	{
+		// for (int k=0; k<GetNcomponent(); k++)	{
+			tot += weight[k] * exp(sitelogl[i][k] - max);
+			totweight += weight[k];
+		}
+		total += log(tot) + max;
+	}
+
+	MPI_Send(&total,1,MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
+	
+	for (int i=sitemin; i<sitemax; i++)	{
+		delete[] sitelogl[i];
+	}
+	delete[] sitelogl;
+
+	sitemax = bksitemax;
+
+}
+
+void CodonMutSelSBDPPhyloProcess::SlaveComputeSiteLogL()	{
+
+    int ncomp = GetNcomponent();
+    double totw = 0;
+    while (ncomp && (totw < siteloglcutoff))    {
+        ncomp--;
+        totw += weight[ncomp];
+    }
+
+	double** sitelogl = new double*[ProfileProcess::GetNsite()];
+	for (int i=sitemin; i<sitemax; i++)	{
+		sitelogl[i] = new double[ncomp];
+		// sitelogl[i] = new double[GetNcomponent()];
+	}
+	
+	// UpdateMatrices();
+
+	for (int k=0; k<ncomp; k++)	{
+	// for (int k=0; k<GetNcomponent(); k++)	{
+		for (int i=sitemin; i<sitemax; i++)	{
+			CodonMutSelSBDPProfileProcess::alloc[i] = k;
+		}
+		UpdateConditionalLikelihoods();
+		for (int i=sitemin; i<sitemax; i++)	{
+			sitelogl[i][k] = sitelogL[i];
+			if (std::isnan(sitelogl[i][k]))	{
+				cerr << "error in RASCATGTRSBDP::SlaveComputeSiteLogL: nan\n";
+				exit(1);
+			}
+		}
+	}
+
+	double* meansitelogl = new double[ProfileProcess::GetNsite()];
+	for (int i=0; i<ProfileProcess::GetNsite(); i++)	{
+		meansitelogl[i] = 0;
+	}
+	for (int i=sitemin; i<sitemax; i++)	{
+		double max = 0;
+		for (int k=0; k<ncomp; k++)	{
+		// for (int k=0; k<GetNcomponent(); k++)	{
+			if ((!k) || (max < sitelogl[i][k]))	{
+				max = sitelogl[i][k];
+			}
+		}
+		double tot = 0;
+		double totweight = 0;
+		for (int k=0; k<ncomp; k++)	{
+		// for (int k=0; k<GetNcomponent(); k++)	{
+			tot += weight[k] * exp(sitelogl[i][k] - max);
+			totweight += weight[k];
+		}
+		meansitelogl[i] = log(tot) + max;
+		if (std::isnan(meansitelogl[i]))	{
+			cerr << "error: meansitelogl is nan\n";
+			exit(1);
+		}
+		if (std::isinf(meansitelogl[i]))	{
+			cerr << "error: meansitelogl is inf\n";
+			exit(1);
+		}
+	}
+
+	MPI_Send(meansitelogl,ProfileProcess::GetNsite(),MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
+	
+	for (int i=sitemin; i<sitemax; i++)	{
+		delete[] sitelogl[i];
+	}
+	delete[] sitelogl;
+	delete[] meansitelogl;
+
 }
 
 void CodonMutSelSBDPPhyloProcess::Read(string name, int burnin, int every, int until)	{
