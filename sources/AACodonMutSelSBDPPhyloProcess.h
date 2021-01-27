@@ -24,9 +24,6 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 
 class AACodonMutSelSBDPPhyloProcess : public virtual AACodonMutSelSBDPSubstitutionProcess, public virtual GeneralPathSuffStatMatrixPhyloProcess, public virtual GammaBranchProcess	{
 
-	// s'inspirer de GeneralPathSuffStatGTRPhyloProcess
-	// et GeneralPathSuffStatRASCATGTRPhyloProcess
-
 	public:
 
 	AACodonMutSelSBDPPhyloProcess(string indatafile, string treefile, GeneticCodeType incodetype, int infixtopo, int infixbl, int inNSPR, int inNNNI, int infixcodonprofile, int infixomega, int inomegaprior, int inkappaprior, int indirweightprior, double inmintotweight, int indc, int me, int np)	{
@@ -165,7 +162,13 @@ class AACodonMutSelSBDPPhyloProcess : public virtual AACodonMutSelSBDPSubstituti
 	void GlobalUpdateParameters();
 	
 	void SlaveComputeCVScore();
+	void SlaveComputeSiteLogL();
 
+    void GlobalSetSiteLogLCutoff();
+    void SlaveSetSiteLogLCutoff();
+
+    void GlobalSetTestData();
+    void SlaveSetTestData();
 
 	double GetLogProb()	{
 		return GetLogPrior() + GetLogLikelihood();
@@ -360,6 +363,7 @@ class AACodonMutSelSBDPPhyloProcess : public virtual AACodonMutSelSBDPSubstituti
 	int fixcodonprofile;
 	int fixomega;
 	int dc;
+    double siteloglcutoff;
 
 	Chrono chronopruning;
 	Chrono chronosuffstat;

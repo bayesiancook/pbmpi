@@ -90,6 +90,10 @@ void AACodonMutSelSBDPPhyloProcess::SlaveUpdateParameters()	{
 	//GetBranchLengthsFromArray();
 	delete[] dvector;
 	delete[] ivector;
+
+	MPI_Bcast(V,GetNcomponent(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+	MPI_Bcast(weight,GetNcomponent(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+
 	// this one is really important
 	// in those cases where new components have appeared, or some old ones have disappeared
 	// during allocation move on the master node.
@@ -116,12 +120,26 @@ void AACodonMutSelSBDPPhyloProcess::SlaveExecute(MESSAGE signal)	{
 	case MIX_MOVE:
 		SlaveMixMove();
 		break;
+    case SITELOGLCUTOFF:
+        SlaveSetSiteLogLCutoff();
+        break;
 	case NONSYNMAPPING:
 		SlaveNonSynMapping();
 		break;
 	default:
 		PhyloProcess::SlaveExecute(signal);
 	}
+}
+
+void AACodonMutSelSBDPPhyloProcess::GlobalSetSiteLogLCutoff()  {
+
+	MESSAGE signal = SITELOGLCUTOFF;
+	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(&siteloglcutoff,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+}
+
+void AACodonMutSelSBDPPhyloProcess::SlaveSetSiteLogLCutoff()  {
+	MPI_Bcast(&siteloglcutoff,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
 }
 
 void AACodonMutSelSBDPPhyloProcess::GlobalUpdateParameters() {
@@ -201,17 +219,56 @@ void AACodonMutSelSBDPPhyloProcess::GlobalUpdateParameters() {
 	// Now send out the doubles and ints over the wire...
 	MPI_Bcast(ivector,ni,MPI_INT,0,MPI_COMM_WORLD);
 	MPI_Bcast(dvector,nd,MPI_DOUBLE,0,MPI_COMM_WORLD);
+	MPI_Bcast(V,GetNcomponent(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+	MPI_Bcast(weight,GetNcomponent(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+}
+
+void AACodonMutSelSBDPPhyloProcess::GlobalSetTestData()	{
+    int testnnuc = testdata->GetNsite();
+	testnsite = testnnuc / 3;
+	int* tmp = new int[testnnuc * GetNtaxa()];
+	testdata->GetDataVector(tmp);
+
+	MESSAGE signal = SETTESTDATA;
+	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(&testnnuc,1,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(tmp,testnnuc*GetNtaxa(),MPI_INT,0,MPI_COMM_WORLD);
+
+	delete[] tmp;
+}
+
+void AACodonMutSelSBDPPhyloProcess::SlaveSetTestData()	{
+
+    int testnnuc;
+	MPI_Bcast(&testnnuc,1,MPI_INT,0,MPI_COMM_WORLD);
+	int* tmp = new int[testnnuc * GetNtaxa()];
+	MPI_Bcast(tmp,testnnuc*GetNtaxa(),MPI_INT,0,MPI_COMM_WORLD);
+    testnsite = testnnuc / 3;
+	
+	SetTestSiteMinAndMax();
+	data->SetTestData(testnsite,sitemin,testsitemin,testsitemax,tmp);
+
+	delete[] tmp;
 }
 
 void AACodonMutSelSBDPPhyloProcess::SlaveComputeCVScore()	{
 
+    int ncomp = GetNcomponent();
+    double totw = 0;
+    while (ncomp && (totw < siteloglcutoff))    {
+        ncomp--;
+        totw += weight[ncomp];
+    }
+
 	sitemax = sitemin + testsitemax - testsitemin;
 	double** sitelogl = new double*[ProfileProcess::GetNsite()];
 	for (int i=sitemin; i<sitemax; i++)	{
-		sitelogl[i] = new double[GetNcomponent()];
+		sitelogl[i] = new double[ncomp];
+		// sitelogl[i] = new double[GetNcomponent()];
 	}
 	
-	for (int k=0; k<GetNcomponent(); k++)	{
+	for (int k=0; k<ncomp; k++)	{
+	// for (int k=0; k<GetNcomponent(); k++)	{
 		for (int i=sitemin; i<sitemax; i++)	{
 			AACodonMutSelSBDPProfileProcess::alloc[i] = k;
 			//UpdateMatrix(i);
@@ -226,14 +283,16 @@ void AACodonMutSelSBDPPhyloProcess::SlaveComputeCVScore()	{
 	double total = 0;
 	for (int i=sitemin; i<sitemax; i++)	{
 		double max = 0;
-		for (int k=0; k<GetNcomponent(); k++)	{
+		for (int k=0; k<ncomp; k++)	{
+		// for (int k=0; k<GetNcomponent(); k++)	{
 			if ((!k) || (max < sitelogl[i][k]))	{
 				max = sitelogl[i][k];
 			}
 		}
 		double tot = 0;
 		double totweight = 0;
-		for (int k=0; k<GetNcomponent(); k++)	{
+		for (int k=0; k<ncomp; k++)	{
+		// for (int k=0; k<GetNcomponent(); k++)	{
 			tot += weight[k] * exp(sitelogl[i][k] - max);
 			totweight += weight[k];
 		}
@@ -248,6 +307,78 @@ void AACodonMutSelSBDPPhyloProcess::SlaveComputeCVScore()	{
 	delete[] sitelogl;
 
 	sitemax = bksitemax;
+
+}
+
+void AACodonMutSelSBDPPhyloProcess::SlaveComputeSiteLogL()	{
+
+    int ncomp = GetNcomponent();
+    double totw = 0;
+    while (ncomp && (totw < siteloglcutoff))    {
+        ncomp--;
+        totw += weight[ncomp];
+    }
+
+	double** sitelogl = new double*[ProfileProcess::GetNsite()];
+	for (int i=sitemin; i<sitemax; i++)	{
+		sitelogl[i] = new double[ncomp];
+		// sitelogl[i] = new double[GetNcomponent()];
+	}
+	
+	// UpdateMatrices();
+
+	for (int k=0; k<ncomp; k++)	{
+	// for (int k=0; k<GetNcomponent(); k++)	{
+		for (int i=sitemin; i<sitemax; i++)	{
+			AACodonMutSelSBDPProfileProcess::alloc[i] = k;
+		}
+		UpdateConditionalLikelihoods();
+		for (int i=sitemin; i<sitemax; i++)	{
+			sitelogl[i][k] = sitelogL[i];
+			if (std::isnan(sitelogl[i][k]))	{
+				cerr << "error in RASCATGTRSBDP::SlaveComputeSiteLogL: nan\n";
+				exit(1);
+			}
+		}
+	}
+
+	double* meansitelogl = new double[ProfileProcess::GetNsite()];
+	for (int i=0; i<ProfileProcess::GetNsite(); i++)	{
+		meansitelogl[i] = 0;
+	}
+	for (int i=sitemin; i<sitemax; i++)	{
+		double max = 0;
+		for (int k=0; k<ncomp; k++)	{
+		// for (int k=0; k<GetNcomponent(); k++)	{
+			if ((!k) || (max < sitelogl[i][k]))	{
+				max = sitelogl[i][k];
+			}
+		}
+		double tot = 0;
+		double totweight = 0;
+		for (int k=0; k<ncomp; k++)	{
+		// for (int k=0; k<GetNcomponent(); k++)	{
+			tot += weight[k] * exp(sitelogl[i][k] - max);
+			totweight += weight[k];
+		}
+		meansitelogl[i] = log(tot) + max;
+		if (std::isnan(meansitelogl[i]))	{
+			cerr << "error: meansitelogl is nan\n";
+			exit(1);
+		}
+		if (std::isinf(meansitelogl[i]))	{
+			cerr << "error: meansitelogl is inf\n";
+			exit(1);
+		}
+	}
+
+	MPI_Send(meansitelogl,ProfileProcess::GetNsite(),MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
+	
+	for (int i=sitemin; i<sitemax; i++)	{
+		delete[] sitelogl[i];
+	}
+	delete[] sitelogl;
+	delete[] meansitelogl;
 
 }
 
@@ -275,6 +406,7 @@ void AACodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
 	int sitelogl = 0;
 
 	int ancstatepostprobs = 0;
+    siteloglcutoff = 0;
 
 	try	{
 
@@ -285,11 +417,20 @@ void AACodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
 		int i = 1;
 		while (i < argc)	{
 			string s = argv[i];
-			if (s == "-cv")	{
+			if (s == "-oldcv")	{
 				cv = 1;
 				i++;
 				testdatafile = argv[i];
 			}
+			else if ((s == "-cv") || (s == "-sitecv"))	{
+				cv = 2;
+				i++;
+				testdatafile = argv[i];
+			}
+            else if (s == "-cutoff")    {
+                i++;
+                siteloglcutoff = atof(argv[i]);
+            }
 			else if (s == "-ppred")	{
 				ppred = 1;
 			}
@@ -404,13 +545,19 @@ void AACodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
 	if (map)	{
 		ReadMap(name,burnin,every,until);
 	}
-	else if (cv)	{
-		ReadCV(testdatafile,name,burnin,every,until,1,codetype);
+    else if (cv == 1)	{
+        GlobalSetSiteLogLCutoff();
+		ReadCV(testdatafile,name,burnin,every,until);
+	}
+    else if (cv == 2)	{
+        GlobalSetSiteLogLCutoff();
+		ReadSiteCV(testdatafile,name,burnin,every,until);
 	}
 	else if (ancstatepostprobs)	{
 		ReadAncestral(name,burnin,every,until);
 	}
 	else if (sitelogl)	{
+        GlobalSetSiteLogLCutoff();
 		ReadSiteLogL(name,burnin,every,until);
 	}
 	//else if (sel)	{
