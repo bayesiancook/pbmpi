@@ -39,9 +39,11 @@ void RASCATSBDPGammaPhyloProcess::SlaveExecute(MESSAGE signal)	{
 
 	switch(signal) {
 
+    /*
     case SITELOGCV:
         SlaveComputeSiteLogCVScore();
         break;
+    */
     case SITELOGLCUTOFF:
         SlaveSetSiteLogLCutoff();
         break;
@@ -69,9 +71,6 @@ void RASCATSBDPGammaPhyloProcess::SlaveComputeCVScore()	{
     while (ncomp && (totw < siteloglcutoff))    {
         ncomp--;
         totw += weight[ncomp];
-    }
-    if (myid == 1)  {
-        cerr << ncomp << '\t';
     }
 
 	sitemax = sitemin + testsitemax - testsitemin;
@@ -125,6 +124,7 @@ void RASCATSBDPGammaPhyloProcess::SlaveComputeCVScore()	{
 
 }
 
+/*
 void RASCATSBDPGammaPhyloProcess::SlaveComputeSiteLogCVScore()	{
 
 	if (! SumOverRateAllocations())	{
@@ -143,9 +143,6 @@ void RASCATSBDPGammaPhyloProcess::SlaveComputeSiteLogCVScore()	{
     while (ncomp && (totw < siteloglcutoff))    {
         ncomp--;
         totw += weight[ncomp];
-    }
-    if (myid == 1)  {
-        cerr << ncomp << '\t';
     }
 
 	sitemax = sitemin + testsitemax - testsitemin;
@@ -204,6 +201,7 @@ void RASCATSBDPGammaPhyloProcess::SlaveComputeSiteLogCVScore()	{
 
 	sitemax = bksitemax;
 }
+*/
 
 void RASCATSBDPGammaPhyloProcess::SlaveComputeSiteLogL()	{
 
@@ -223,9 +221,6 @@ void RASCATSBDPGammaPhyloProcess::SlaveComputeSiteLogL()	{
     while (ncomp && (totw < siteloglcutoff))    {
         ncomp--;
         totw += weight[ncomp];
-    }
-    if (myid == 1)  {
-        cerr << ncomp << '\t';
     }
 
 	double** sitelogl = new double*[GetNsite()];

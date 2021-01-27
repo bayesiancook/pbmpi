@@ -58,10 +58,12 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 
 	using MixtureProfileProcess::LogStatPrior;
 
-        virtual void SlaveExecute(MESSAGE);
+    virtual void SlaveExecute(MESSAGE);
 	void GlobalUpdateParameters();
 	void SlaveUpdateParameters();
 
+    void GlobalSetSiteLogLCutoff();
+    void SlaveSetSiteLogLCutoff();
 
 	RASCATGTRSBDPGammaPhyloProcess(string indatafile, string treefile, int nratecat, int iniscodon, GeneticCodeType incodetype, string inrrtype, int infixtopo, int inNSPR, int inNNNI, int inkappaprior, double indirweightprior, double inmintotweight, int indc, int incinit, int me, int np)	{
 		myid = me;
@@ -368,6 +370,7 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 	int iscodon;
 	GeneticCodeType codetype;
 	int dc;
+    double siteloglcutoff;
 };
 
 #endif
