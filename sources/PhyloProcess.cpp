@@ -2523,7 +2523,7 @@ void PhyloProcess::ReadCV(string testdatafile, string name, int burnin, int ever
 			score += tmp;
 		}
 		scorelist.push_back(score);
-		cerr << score << '\n';
+		// cerr << score << '\n';
 		
 		int nrep = 1;
 		while ((i<until) && (nrep < every))	{
