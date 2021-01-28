@@ -195,7 +195,6 @@ void AACodonMutSelFinitePhyloProcess::SlaveComputeCVScore()	{
 	for (int k=0; k<GetNcomponent(); k++)	{
 		for (int i=sitemin; i<sitemax; i++)	{
 			AACodonMutSelFiniteProfileProcess::alloc[i] = k;
-			//UpdateMatrix(i);
 		}
 		UpdateMatrix(k);
 		UpdateConditionalLikelihoods();
@@ -244,8 +243,6 @@ void AACodonMutSelFinitePhyloProcess::SlaveComputeSiteLogL()	{
 		sitelogl[i] = new double[GetNcomponent()];
 	}
 	
-	// UpdateMatrices();
-
 	for (int k=0; k<GetNcomponent(); k++)	{
 		for (int i=sitemin; i<sitemax; i++)	{
 			AACodonMutSelFiniteProfileProcess::alloc[i] = k;

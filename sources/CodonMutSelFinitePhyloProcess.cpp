@@ -363,7 +363,6 @@ void CodonMutSelFinitePhyloProcess::SlaveComputeCVScore()	{
 	for (int k=0; k<GetNcomponent(); k++)	{
 		for (int i=sitemin; i<sitemax; i++)	{
 			CodonMutSelFiniteProfileProcess::alloc[i] = k;
-			//UpdateMatrix(i);
 		}
 		UpdateMatrix(k);
 		UpdateConditionalLikelihoods();
@@ -412,8 +411,6 @@ void CodonMutSelFinitePhyloProcess::SlaveComputeSiteLogL()	{
 		sitelogl[i] = new double[GetNcomponent()];
 	}
 	
-	// UpdateMatrices();
-
 	for (int k=0; k<GetNcomponent(); k++)	{
 		for (int i=sitemin; i<sitemax; i++)	{
 			CodonMutSelFiniteProfileProcess::alloc[i] = k;
