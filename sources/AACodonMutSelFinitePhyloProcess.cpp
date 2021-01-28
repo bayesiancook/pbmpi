@@ -184,6 +184,34 @@ void AACodonMutSelFinitePhyloProcess::GlobalUpdateParameters() {
 }
 
 
+void AACodonMutSelFinitePhyloProcess::GlobalSetTestData()	{
+    int testnnuc = testdata->GetNsite();
+	testnsite = testnnuc / 3;
+	int* tmp = new int[testnnuc * GetNtaxa()];
+	testdata->GetDataVector(tmp);
+
+	MESSAGE signal = SETTESTDATA;
+	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(&testnnuc,1,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(tmp,testnnuc*GetNtaxa(),MPI_INT,0,MPI_COMM_WORLD);
+
+	delete[] tmp;
+}
+
+void AACodonMutSelFinitePhyloProcess::SlaveSetTestData()	{
+
+    int testnnuc;
+	MPI_Bcast(&testnnuc,1,MPI_INT,0,MPI_COMM_WORLD);
+	int* tmp = new int[testnnuc * GetNtaxa()];
+	MPI_Bcast(tmp,testnnuc*GetNtaxa(),MPI_INT,0,MPI_COMM_WORLD);
+    testnsite = testnnuc / 3;
+	
+	SetTestSiteMinAndMax();
+	data->SetTestData(testnsite,sitemin,testsitemin,testsitemax,tmp);
+
+	delete[] tmp;
+}
+
 void AACodonMutSelFinitePhyloProcess::SlaveComputeCVScore()	{
 
 	sitemax = sitemin + testsitemax - testsitemin;

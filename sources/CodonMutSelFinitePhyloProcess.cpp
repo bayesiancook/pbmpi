@@ -352,6 +352,34 @@ void CodonMutSelFinitePhyloProcess::ReadPB(int argc, char* argv[])	{
 	}
 }
 
+void CodonMutSelFinitePhyloProcess::GlobalSetTestData()	{
+    int testnnuc = testdata->GetNsite();
+	testnsite = testnnuc / 3;
+	int* tmp = new int[testnnuc * GetNtaxa()];
+	testdata->GetDataVector(tmp);
+
+	MESSAGE signal = SETTESTDATA;
+	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(&testnnuc,1,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(tmp,testnnuc*GetNtaxa(),MPI_INT,0,MPI_COMM_WORLD);
+
+	delete[] tmp;
+}
+
+void CodonMutSelFinitePhyloProcess::SlaveSetTestData()	{
+
+    int testnnuc;
+	MPI_Bcast(&testnnuc,1,MPI_INT,0,MPI_COMM_WORLD);
+	int* tmp = new int[testnnuc * GetNtaxa()];
+	MPI_Bcast(tmp,testnnuc*GetNtaxa(),MPI_INT,0,MPI_COMM_WORLD);
+    testnsite = testnnuc / 3;
+	
+	SetTestSiteMinAndMax();
+	data->SetTestData(testnsite,sitemin,testsitemin,testsitemax,tmp);
+
+	delete[] tmp;
+}
+
 void CodonMutSelFinitePhyloProcess::SlaveComputeCVScore()	{
 
 	sitemax = sitemin + testsitemax - testsitemin;

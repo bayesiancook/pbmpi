@@ -167,8 +167,12 @@ class AACodonMutSelFinitePhyloProcess : public virtual AACodonMutSelFiniteSubsti
 	// are model dependent
 	// should be implemented in .cpp file
     virtual void SlaveExecute(MESSAGE);
+
 	void SlaveComputeCVScore();
 	void SlaveComputeSiteLogL();
+    void GlobalSetTestData();
+    void SlaveSetTestData();
+
 	void SlaveUpdateParameters();
 	void GlobalUpdateParameters();
 
