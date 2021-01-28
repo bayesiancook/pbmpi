@@ -98,9 +98,18 @@ class CodonMutSelFinitePhyloProcess : public virtual CodonMutSelFiniteSubstituti
 		is >> datafile;
 		is >> codetype;
 		int infixncomp;
+		int intmp;
 		int inempmix;
 		string inmixtype;
-		is >> infixncomp >> inempmix >> inmixtype;
+		is >> intmp >> inempmix >> inmixtype;
+        int ncat = 1;
+        if (intmp)  {
+            infixncomp = 1;
+            ncat = intmp;
+        }
+        else    {
+            infixncomp = 0;
+        }
 		is >> fixtopo;
 		is >> fixbl;
 		if (atof(version.substr(0,3).c_str()) > 1.4)	{
@@ -140,7 +149,7 @@ class CodonMutSelFinitePhyloProcess : public virtual CodonMutSelFiniteSubstituti
 		}
 		tree->RegisterWith(taxonset,0);
 
-		Create(tree,codondata,1,infixncomp,inempmix,inmixtype,insitemin,insitemax,statespace);
+		Create(tree,codondata,ncat,infixncomp,inempmix,inmixtype,insitemin,insitemax,statespace);
 
 		if (myid == 0)	{
 			FromStream(is);
@@ -246,7 +255,15 @@ class CodonMutSelFinitePhyloProcess : public virtual CodonMutSelFiniteSubstituti
 		PhyloProcess::ToStreamHeader(os);
 		os << datafile << '\n';
 		os << codetype << '\n';
-		os << fixncomp << '\t' << empmix << '\t' << mixtype << '\n';
+        int tmp = 0;
+        if (fixncomp)   {
+            tmp = GetNcomponent();
+        }
+        else    {
+            tmp = 0;
+        }
+		os << tmp << '\t' << empmix << '\t' << mixtype << '\n';
+		// os << fixncomp << '\t' << empmix << '\t' << mixtype << '\n';
 		os << fixtopo << '\n';
 		os << fixbl << '\n';
 		os << NSPR << '\t' << NNNI << '\n';
