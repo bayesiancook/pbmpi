@@ -20,7 +20,7 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 #include <cmath>
 #include "DPProfileProcess.h"
 
-const int refnmodemax = 5000;
+const int refnmodemax = 1000;
 
 // general superclass for all finite process mixtures on site-specific profiles
 class SBDPProfileProcess: public virtual DPProfileProcess	{

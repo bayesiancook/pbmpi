@@ -276,6 +276,7 @@ class RASCATGammaPhyloProcess : public virtual PoissonPhyloProcess, public virtu
 		PhyloProcess::ToStreamHeader(os);
 		os << datafile << '\n';
 		os << GetNcat() << '\n';
+        os << GetNmodeMax() << '\n';
 		os << iscodon << '\n';
 		os << codetype << '\n';
 		os << kappaprior << '\n';

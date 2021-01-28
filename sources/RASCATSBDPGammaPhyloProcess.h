@@ -64,7 +64,7 @@ class RASCATSBDPGammaPhyloProcess : public virtual RASCATGammaPhyloProcess, publ
 
 	public:
 
-	RASCATSBDPGammaPhyloProcess(string indatafile, string treefile, int nratecat, int iniscodon, GeneticCodeType incodetype, int infixtopo, int inNSPR, int inNNNI, int inkappaprior, double indirweightprior, double inmintotweight, int indc, int ininc, int me, int np)	{
+	RASCATSBDPGammaPhyloProcess(string indatafile, string treefile, int nratecat, int innmodemax, int iniscodon, GeneticCodeType incodetype, int infixtopo, int inNSPR, int inNNNI, int inkappaprior, double indirweightprior, double inmintotweight, int indc, int ininc, int me, int np)	{
 		myid = me;
 		nprocs = np;
 
@@ -120,6 +120,8 @@ class RASCATSBDPGammaPhyloProcess : public virtual RASCATGammaPhyloProcess, publ
 			}
 		}
 
+        SetNmodeMax(innmodemax);
+
 		Create(tree,plaindata,nratecat,insitemin,insitemax);
 
 		if (myid == 0)	{
@@ -136,6 +138,11 @@ class RASCATSBDPGammaPhyloProcess : public virtual RASCATGammaPhyloProcess, publ
 		is >> datafile;
 		int nratecat;
 		is >> nratecat;
+		if (atof(version.substr(0,3).c_str()) > 1.8)	{
+            int nmax;
+            is >> nmax;
+            SetNmodeMax(nmax);
+        }
 		if (atof(version.substr(0,3).c_str()) > 1.3)	{
 			is >> iscodon;
 			is >> codetype;

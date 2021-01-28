@@ -48,7 +48,7 @@ class Model	{
 	int saveall;
 	int incinit;
 
-	Model(string datafile, string treefile, int modeltype, int nratecat, int mixturetype, int ncat, GeneticCodeType codetype, int suffstat, int fixncomp, int empmix, string mixtype, string rrtype, int iscodon, int fixtopo, int NSPR, int NNNI, int fixcodonprofile, int fixomega, int fixbl, int omegaprior, int kappaprior, int dirweightprior, double mintotweight, int dc, int inevery, int inuntil, int insaveall, int inincinit, int topoburnin, string inname, int myid, int nprocs)	{
+	Model(string datafile, string treefile, int modeltype, int nratecat, int mixturetype, int ncat, int nmodemax, GeneticCodeType codetype, int suffstat, int fixncomp, int empmix, string mixtype, string rrtype, int iscodon, int fixtopo, int NSPR, int NNNI, int fixcodonprofile, int fixomega, int fixbl, int omegaprior, int kappaprior, int dirweightprior, double mintotweight, int dc, int inevery, int inuntil, int insaveall, int inincinit, int topoburnin, string inname, int myid, int nprocs)	{
 
 		every = inevery;
 		until = inuntil;
@@ -79,7 +79,7 @@ class Model	{
 			}
 			else	{
 				type = "CATSBDP";
-				process = new RASCATSBDPGammaPhyloProcess(datafile,treefile,nratecat,iscodon,codetype,fixtopo,NSPR,NNNI,kappaprior,dirweightprior,mintotweight,dc,incinit,myid,nprocs); 
+				process = new RASCATSBDPGammaPhyloProcess(datafile,treefile,nratecat,nmodemax,iscodon,codetype,fixtopo,NSPR,NNNI,kappaprior,dirweightprior,mintotweight,dc,incinit,myid,nprocs); 
 			}
 		}
 
@@ -105,7 +105,7 @@ class Model	{
 			else if (mixturetype == 3)	{
 				if (suffstat)	{
 					type = "CATGTRSBDP";
-					process = new RASCATGTRSBDPGammaPhyloProcess(datafile,treefile,nratecat,iscodon,codetype,rrtype,fixtopo,NSPR,NNNI,kappaprior,dirweightprior,mintotweight,dc,incinit,myid,nprocs); 
+					process = new RASCATGTRSBDPGammaPhyloProcess(datafile,treefile,nratecat,nmodemax,iscodon,codetype,rrtype,fixtopo,NSPR,NNNI,kappaprior,dirweightprior,mintotweight,dc,incinit,myid,nprocs); 
 				}
 				else	{
 					cerr << "gpss deprecated\n";

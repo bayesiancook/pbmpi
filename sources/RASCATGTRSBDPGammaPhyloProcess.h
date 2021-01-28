@@ -37,9 +37,9 @@ class RASCATGTRSBDPSubstitutionProcess : public virtual ExpoConjugateGTRSubstitu
 		exit(1);
 	}
 
-	virtual void Create(int nsite, int ncat, int nstate, string inrrtype, int insitemin,int insitemax)	{
+	virtual void Create(int nsite, int nratecat, int nstate, string inrrtype, int insitemin,int insitemax)	{
 		ExpoConjugateGTRSubstitutionProcess::Create(nsite,nstate,insitemin,insitemax);
-		DGamRateProcess::Create(nsite,ncat);
+		DGamRateProcess::Create(nsite,nratecat);
 		ExpoConjugateGTRSBDPProfileProcess::Create(nsite,nstate);
 		SetRR(inrrtype);
 	}
@@ -65,7 +65,7 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
     void GlobalSetSiteLogLCutoff();
     void SlaveSetSiteLogLCutoff();
 
-	RASCATGTRSBDPGammaPhyloProcess(string indatafile, string treefile, int nratecat, int iniscodon, GeneticCodeType incodetype, string inrrtype, int infixtopo, int inNSPR, int inNNNI, int inkappaprior, double indirweightprior, double inmintotweight, int indc, int incinit, int me, int np)	{
+	RASCATGTRSBDPGammaPhyloProcess(string indatafile, string treefile, int nratecat, int innmodemax, int iniscodon, GeneticCodeType incodetype, string inrrtype, int infixtopo, int inNSPR, int inNNNI, int inkappaprior, double indirweightprior, double inmintotweight, int indc, int incinit, int me, int np)	{
 		myid = me;
 		nprocs = np;
 
@@ -121,6 +121,8 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 			}
 		}
 
+        SetNmodeMax(innmodemax);
+
 		Create(tree,plaindata,nratecat,inrrtype,insitemin,insitemax);
 		/*
 		if (fixbl)	{
@@ -142,6 +144,11 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 		is >> datafile;
 		int nratecat;
 		is >> nratecat;
+		if (atof(version.substr(0,3).c_str()) > 1.8)	{
+            int nmax;
+            is >> nmax;
+            SetNmodeMax(nmax);
+        }
 		if (atof(version.substr(0,3).c_str()) > 1.3)	{
 			is >> iscodon;
 			is >> codetype;
@@ -317,7 +324,9 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 	void ToStreamHeader(ostream& os)	{
 		PhyloProcess::ToStreamHeader(os);
 		os << datafile << '\n';
+        // number of rate categories
 		os << GetNcat() << '\n';
+        os << GetNmodeMax() << '\n';
 		os << iscodon << '\n';
 		os << codetype << '\n';
 		os << kappaprior << '\n';
@@ -352,9 +361,9 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 
 	protected:
 
-	virtual void Create(Tree* intree, SequenceAlignment* indata, int ncat, string inrrtype, int insitemin,int insitemax)	{
+	virtual void Create(Tree* intree, SequenceAlignment* indata, int nratecat, string inrrtype, int insitemin,int insitemax)	{
 		ExpoConjugateGTRPhyloProcess::Create(intree,indata,indata->GetNstate(),insitemin,insitemax);
-		RASCATGTRSBDPSubstitutionProcess::Create(indata->GetNsite(),ncat,indata->GetNstate(),inrrtype,insitemin,insitemax);
+		RASCATGTRSBDPSubstitutionProcess::Create(indata->GetNsite(),nratecat,indata->GetNstate(),inrrtype,insitemin,insitemax);
 		GammaBranchProcess::Create(intree);
 	}
 		
