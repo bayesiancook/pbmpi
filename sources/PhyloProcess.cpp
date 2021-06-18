@@ -2728,15 +2728,18 @@ void PhyloProcess::ReadSiteCV(string testdatafile, string name, int burnin, int 
     double normapproxcv = meanlog + 0.5*varlog;
 
 	double tot = 0;
-    double invess = 0;
 	for (int j=0; j<samplesize; j++)	{
 		tot += exp(scorelist[j] - max);
+	}
+
+    double invess = 0;
+	for (int j=0; j<samplesize; j++)	{
         double w = exp(scorelist[j] - max) / tot;
         invess += w*w;
 	}
-	tot /= samplesize;
     double ess = 1.0 / invess;
 
+	tot /= samplesize;
 	double meanscore = log(tot) + max;
 	
 	ofstream os((name + ".cv").c_str());

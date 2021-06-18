@@ -15,7 +15,7 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 
 
 #ifndef TEXTAB_H
-#define TAXTAB_H
+#define TEXTAB_H
 
 #include <sstream>
 #include <list>
