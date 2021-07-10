@@ -191,6 +191,78 @@ double FiniteProfileProcess::MoveWeightAlpha(double tuning, int nrep)	{
 	}
 	return naccepted / nrep;
 }
+
+double FiniteProfileProcess::MoveNcomponent(int nrep)	{
+
+    UpdateOccupancyNumbers();
+	int Kmax = GetNmodeMax();
+    int K = GetNcomponent();
+    int N = GetNsite();
+
+    int k0 = 0;
+    for (int k=0; k<K; k++) {
+        if (! occupancy[k])   {
+            k0++;
+        }
+    }
+
+    if (k0 == 0)    {
+        double ratio = 0.5 * (K+1) / (k0+1) * K / (N+K);
+        if (K == Kmax-1)  {
+            ratio = 0;
+        }
+        if (rnd::GetRandom().Uniform() < ratio)  {
+            occupancy[K] = 0;
+            K++;
+        }
+    }
+    else    {
+        if (rnd::GetRandom().Uniform() < 0.5)    {
+            double ratio = (K+1.0) / (k0+1.0) * K / (N+K);
+            if (K == Kmax-1)  {
+                ratio = 0;
+            }
+            if (rnd::GetRandom().Uniform() < ratio)  {
+                occupancy[K] = 0;
+                K++;
+            }
+        }
+        else    {
+            double ratio = 1.0 * k0 / K * (N+K-1) / (K-1);
+            if (k0 == 1)    {
+                ratio *= 2;
+            }
+            if (rnd::GetRandom().Uniform() < ratio)  {
+                int k = K-1;
+                while ((k > 0) && occupancy[k]) k--;
+                if (k == 0) {
+                    cerr << "error when scanning for empty component\n";
+                    exit(1);
+                }
+                K--;
+                if (k != K) {
+                    SwapComponents(k,K);
+                }
+            }
+        }
+    }
+
+	if (K > Ncomponent)	{
+		for (int k=Ncomponent; k<K; k++)	{
+			CreateComponent(k);
+		}
+	}
+	else if (K < Ncomponent)	{
+		for (int k=K; k<Ncomponent; k++)	{
+			DeleteComponent(k);
+		}
+	}
+	Ncomponent = K;
+    ResampleEmptyProfiles();
+    return 1.0;
+}
+
+/* old version
 double FiniteProfileProcess::MoveNcomponent(int nrep)	{
 
 	int Kmax = GetNmodeMax();
@@ -268,6 +340,7 @@ double FiniteProfileProcess::MoveNcomponent(int nrep)	{
 	Ncomponent = K;
 	return ((double) nacc) / nrep;
 }
+*/
 
 
 void FiniteProfileProcess::ReadNcomponent(string filename)	{

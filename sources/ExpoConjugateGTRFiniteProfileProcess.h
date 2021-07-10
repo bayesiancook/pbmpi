@@ -78,7 +78,7 @@ class ExpoConjugateGTRFiniteProfileProcess : public virtual MatrixFiniteProfileP
 
 			if (! fixncomp)	{
 				MoveNcomponent(10);
-				MoveWeightAlpha(tuning,10);
+				// MoveWeightAlpha(tuning,10);
 			}
 			// MoveWeightAlpha(tuning,10);
 		}

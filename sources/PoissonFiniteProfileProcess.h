@@ -46,6 +46,10 @@ class PoissonFiniteProfileProcess: public virtual PoissonMixtureProfileProcess, 
 				GlobalUpdateSiteProfileSuffStat();
 				MoveHyper(tuning,10);
 			}
+
+			if (! fixncomp)	{
+				MoveNcomponent(10);
+            }
 		}
 		return 1;
 	}
