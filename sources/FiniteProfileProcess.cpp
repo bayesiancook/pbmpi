@@ -206,42 +206,47 @@ double FiniteProfileProcess::MoveNcomponent(int nrep)	{
         }
     }
 
-    if (k0 == 0)    {
-        double ratio = 0.5 * (K+1) / (k0+1) * K / (N+K);
-        if (K == Kmax-1)  {
-            ratio = 0;
-        }
-        if (rnd::GetRandom().Uniform() < ratio)  {
-            occupancy[K] = 0;
-            K++;
-        }
-    }
-    else    {
-        if (rnd::GetRandom().Uniform() < 0.5)    {
-            double ratio = (K+1.0) / (k0+1.0) * K / (N+K);
+    for (int rep=0; rep<nrep; rep++)    {
+        if (k0 == 0)    {
+            double ratio = 0.5 * (K+1) / (k0+1) * K / (N+K);
             if (K == Kmax-1)  {
                 ratio = 0;
             }
             if (rnd::GetRandom().Uniform() < ratio)  {
                 occupancy[K] = 0;
                 K++;
+                k0++;
             }
         }
         else    {
-            double ratio = 1.0 * k0 / K * (N+K-1) / (K-1);
-            if (k0 == 1)    {
-                ratio *= 2;
-            }
-            if (rnd::GetRandom().Uniform() < ratio)  {
-                int k = K-1;
-                while ((k > 0) && occupancy[k]) k--;
-                if (k == 0) {
-                    cerr << "error when scanning for empty component\n";
-                    exit(1);
+            if (rnd::GetRandom().Uniform() < 0.5)    {
+                double ratio = (K+1.0) / (k0+1.0) * K / (N+K);
+                if (K == Kmax-1)  {
+                    ratio = 0;
                 }
-                K--;
-                if (k != K) {
-                    SwapComponents(k,K);
+                if (rnd::GetRandom().Uniform() < ratio)  {
+                    occupancy[K] = 0;
+                    K++;
+                    k0++;
+                }
+            }
+            else    {
+                double ratio = 1.0 * k0 / K * (N+K-1) / (K-1);
+                if (k0 == 1)    {
+                    ratio *= 2;
+                }
+                if (rnd::GetRandom().Uniform() < ratio)  {
+                    int k = K-1;
+                    while ((k >= 0) && occupancy[k]) k--;
+                    if (k < 0) {
+                        cerr << "error when scanning for empty component\n";
+                        exit(1);
+                    }
+                    K--;
+                    k0--;
+                    if (k != K) {
+                        SwapComponents(k,K);
+                    }
                 }
             }
         }
@@ -259,6 +264,7 @@ double FiniteProfileProcess::MoveNcomponent(int nrep)	{
 	}
 	Ncomponent = K;
     ResampleEmptyProfiles();
+    ResampleWeights();
     return 1.0;
 }
 

@@ -48,7 +48,7 @@ class PoissonFiniteProfileProcess: public virtual PoissonMixtureProfileProcess, 
 			}
 
 			if (! fixncomp)	{
-				MoveNcomponent(10);
+				MoveNcomponent(100);
             }
 		}
 		return 1;
