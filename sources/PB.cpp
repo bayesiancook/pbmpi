@@ -346,7 +346,7 @@ int main(int argc, char* argv[])	{
 			else if ((s == "-dp") || (s == "-sbdp")	|| (s == "-cat")){
 				mixturetype = 3;
 			}
-            else if (s == "-dpnmax")    {
+            else if (s == "-nmax")    {
                 i++;
                 nmodemax = atoi(argv[i]);
             }
