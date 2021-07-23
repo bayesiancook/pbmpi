@@ -303,7 +303,9 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 		PhyloProcess::ToStreamHeader(os);
 		os << datafile << '\n';
 		os << GetNcat() << '\n';
-        os << GetNmodeMax() << '\n';
+		if (atof(version.substr(0,3).c_str()) > 1.8)	{
+            os << GetNmodeMax() << '\n';
+        }
         int tmp = 0;
         if (fixncomp)   {
             tmp = GetNcomponent();
@@ -313,9 +315,13 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
         }
 		os << tmp << '\t' << empmix << '\t' << mixtype << '\n';
 		// os << fixncomp << '\t' << empmix << '\t' << mixtype << '\n';
-        os << dirweightprior << '\n';
+		if (atof(version.substr(0,3).c_str()) > 1.7)	{
+            os << dirweightprior << '\n';
+        }
 		os << fixtopo << '\n';
-		os << NSPR << '\t' << NNNI << '\n';
+		if (atof(version.substr(0,3).c_str()) > 1.4)	{
+            os << NSPR << '\t' << NNNI << '\n';
+        }
 		os << dc << '\n';
 		SetNamesFromLengths();
 		GetTree()->ToStream(os);

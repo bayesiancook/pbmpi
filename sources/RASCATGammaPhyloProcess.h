@@ -127,9 +127,6 @@ class RASCATGammaPhyloProcess : public virtual PoissonPhyloProcess, public virtu
 			is >> codetype;
 			is >> kappaprior;
 			is >> mintotweight;
-            if (atof(version.substr(0,3).c_str()) > 1.7)	{
-                is >> dirweightprior;
-            }
 		}
 		else	{
 			iscodon = 0;
@@ -137,6 +134,9 @@ class RASCATGammaPhyloProcess : public virtual PoissonPhyloProcess, public virtu
 			kappaprior = 0;
 			mintotweight = -1;
 		}
+        if (atof(version.substr(0,3).c_str()) > 1.7)	{
+            is >> dirweightprior;
+        }
 		is >> fixtopo;
 		if (atof(version.substr(0,3).c_str()) > 1.4)	{
 			is >> NSPR;
@@ -276,14 +276,19 @@ class RASCATGammaPhyloProcess : public virtual PoissonPhyloProcess, public virtu
 		PhyloProcess::ToStreamHeader(os);
 		os << datafile << '\n';
 		os << GetNcat() << '\n';
-        os << GetNmodeMax() << '\n';
-		os << iscodon << '\n';
-		os << codetype << '\n';
-		os << kappaprior << '\n';
-		os << mintotweight << '\n';
-        os << dirweightprior << '\n';
+		if (atof(version.substr(0,3).c_str()) > 1.3)	{
+            os << iscodon << '\n';
+            os << codetype << '\n';
+            os << kappaprior << '\n';
+            os << mintotweight << '\n';
+            if (atof(version.substr(0,3).c_str()) > 1.7)	{
+                os << dirweightprior << '\n';
+            }
+		}
 		os << fixtopo << '\n';
-		os << NSPR << '\t' << NNNI << '\n';
+		if (atof(version.substr(0,3).c_str()) > 1.4)	{
+            os << NSPR << '\t' << NNNI << '\n';
+        }
 		os << dc << '\n';
 		SetNamesFromLengths();
 		GetTree()->ToStream(os);

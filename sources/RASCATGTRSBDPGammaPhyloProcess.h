@@ -154,9 +154,6 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 			is >> codetype;
 			is >> kappaprior;
 			is >> mintotweight;
-            if (atof(version.substr(0,3).c_str()) > 1.7)	{
-                is >> dirweightprior;
-            }
 		}
 		else	{
 			iscodon = 0;
@@ -164,6 +161,9 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 			kappaprior = 0;
 			mintotweight = -1;
 		}
+        if (atof(version.substr(0,3).c_str()) > 1.7)	{
+            is >> dirweightprior;
+        }
 		string inrrtype;
 		is >> inrrtype;
 		is >> fixtopo;
@@ -326,15 +326,23 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 		os << datafile << '\n';
         // number of rate categories
 		os << GetNcat() << '\n';
-        os << GetNmodeMax() << '\n';
-		os << iscodon << '\n';
-		os << codetype << '\n';
-		os << kappaprior << '\n';
-		os << mintotweight << '\n';
-        os << dirweightprior << '\n';
+		if (atof(version.substr(0,3).c_str()) > 1.8)	{
+            os << GetNmodeMax() << '\n';
+        }
+		if (atof(version.substr(0,3).c_str()) > 1.3)	{
+            os << iscodon << '\n';
+            os << codetype << '\n';
+            os << kappaprior << '\n';
+            os << mintotweight << '\n';
+        }
+        if (atof(version.substr(0,3).c_str()) > 1.7)	{
+            os << dirweightprior << '\n';
+        }
 		os << rrtype << '\n';
 		os << fixtopo << '\n';
-		os << NSPR << '\t' << NNNI << '\n';
+        if (atof(version.substr(0,3).c_str()) > 1.4)	{
+            os << NSPR << '\t' << NNNI << '\n';
+        }
 		os << dc << '\n';
 		SetNamesFromLengths();
 		GetTree()->ToStream(os);

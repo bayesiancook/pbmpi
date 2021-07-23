@@ -93,6 +93,11 @@ class AACodonMutSelSBDPPhyloProcess : public virtual AACodonMutSelSBDPSubstituti
 		FromStreamHeader(is);
 		is >> datafile;
 		is >> codetype;
+		if (atof(version.substr(0,3).c_str()) > 1.8)	{
+            int nmax;
+            is >> nmax;
+            SetNmodeMax(nmax);
+        }
 		is >> fixtopo;
 		is >> fixbl;
 		if (atof(version.substr(0,3).c_str()) > 1.4)	{
@@ -260,12 +265,19 @@ class AACodonMutSelSBDPPhyloProcess : public virtual AACodonMutSelSBDPSubstituti
 		PhyloProcess::ToStreamHeader(os);
 		os << datafile << '\n';
 		os << codetype << '\n';
+		if (atof(version.substr(0,3).c_str()) > 1.8)	{
+            os << GetNmodeMax() << '\n';
+        }
 		os << fixtopo << '\n';
 		os << fixbl << '\n';
-		os << NSPR << '\t' << NNNI << '\n';
+		if (atof(version.substr(0,3).c_str()) > 1.4)	{
+            os << NSPR << '\t' << NNNI << '\n';
+        }
 		os << fixcodonprofile << '\n';
 		os << fixomega << '\n';
-		os << omegaprior << '\n';
+		if (atof(version.substr(0,3).c_str()) > 1.5)	{
+            os << omegaprior << '\n';
+        }
 		os << kappaprior << '\n';
 		os << dirweightprior << '\n';
 		os << mintotweight << '\n';

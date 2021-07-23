@@ -262,7 +262,9 @@ class CodonMutSelFinitePhyloProcess : public virtual CodonMutSelFiniteSubstituti
 		PhyloProcess::ToStreamHeader(os);
 		os << datafile << '\n';
 		os << codetype << '\n';
-        os << GetNmodeMax() << '\n';
+		if (atof(version.substr(0,3).c_str()) > 1.8)	{
+            os << GetNmodeMax() << '\n';
+        }
         int tmp = 0;
         if (fixncomp)   {
             tmp = GetNcomponent();
@@ -274,7 +276,9 @@ class CodonMutSelFinitePhyloProcess : public virtual CodonMutSelFiniteSubstituti
 		// os << fixncomp << '\t' << empmix << '\t' << mixtype << '\n';
 		os << fixtopo << '\n';
 		os << fixbl << '\n';
-		os << NSPR << '\t' << NNNI << '\n';
+		if (atof(version.substr(0,3).c_str()) > 1.4)	{
+            os << NSPR << '\t' << NNNI << '\n';
+        }
 		os << dirweightprior << '\n';
 		os << dc << '\n';
 		GetTree()->ToStream(os);

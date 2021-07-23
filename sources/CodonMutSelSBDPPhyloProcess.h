@@ -92,6 +92,11 @@ class CodonMutSelSBDPPhyloProcess : public virtual CodonMutSelSBDPSubstitutionPr
 		FromStreamHeader(is);
 		is >> datafile;
 		is >> codetype;
+		if (atof(version.substr(0,3).c_str()) > 1.8)	{
+            int nmax;
+            is >> nmax;
+            SetNmodeMax(nmax);
+        }
 		is >> fixtopo;
 		is >> fixbl;
 		if (atof(version.substr(0,3).c_str()) > 1.4)	{
@@ -232,9 +237,14 @@ class CodonMutSelSBDPPhyloProcess : public virtual CodonMutSelSBDPSubstitutionPr
 		PhyloProcess::ToStreamHeader(os);
 		os << datafile << '\n';
 		os << codetype << '\n';
+		if (atof(version.substr(0,3).c_str()) > 1.8)	{
+            os << GetNmodeMax() << '\n';
+        }
 		os << fixtopo << '\n';
 		os << fixbl << '\n';
-		os << NSPR << '\t' << NNNI << '\n';
+		if (atof(version.substr(0,3).c_str()) > 1.4)	{
+            os << NSPR << '\t' << NNNI << '\n';
+        }
 		os << kappaprior << '\n';
 		os << mintotweight << '\n';
 		os << dc << '\n';
