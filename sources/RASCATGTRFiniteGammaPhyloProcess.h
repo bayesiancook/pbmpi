@@ -61,7 +61,7 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 
 	void GlobalUpdateParameters();
 
-	RASCATGTRFiniteGammaPhyloProcess(string indatafile, string treefile, int nratecat, int ncat, int infixncomp, int inempmix, string inmixtype, string inrrtype, double indirweightprior, int infixtopo, int inNSPR, int inNNNI, int indc, int me, int np)	{
+	RASCATGTRFiniteGammaPhyloProcess(string indatafile, string treefile, int nratecat, int innmodemax, int ncat, int infixncomp, int inempmix, string inmixtype, string inrrtype, double indirweightprior, int infixtopo, int inNSPR, int inNNNI, int indc, int me, int np)	{
 
 		myid = me;
 		nprocs = np;
@@ -109,6 +109,8 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 			}
 		}
 
+        SetNmodeMax(innmodemax);
+
 		Create(tree,plaindata,nratecat,ncat,infixncomp,inempmix,inmixtype,inrrtype,insitemin,insitemax);
 		if (myid == 0)	{
 			Sample();
@@ -127,6 +129,11 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 		is >> datafile;
 		int nratecat;
 		is >> nratecat;
+		if (atof(version.substr(0,3).c_str()) > 1.8)	{
+            int nmax;
+            is >> nmax;
+            SetNmodeMax(nmax);
+        }
 		int infixncomp;
 		int intmp;
 		int inempmix;
@@ -294,6 +301,7 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 		PhyloProcess::ToStreamHeader(os);
 		os << datafile << '\n';
 		os << GetNcat() << '\n';
+        os << GetNmodeMax() << '\n';
         int tmp = 0;
         if (fixncomp)   {
             tmp = GetNcomponent();

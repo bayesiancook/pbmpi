@@ -65,7 +65,7 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 
 	RASCATFiniteGammaPhyloProcess() {}
 
-	RASCATFiniteGammaPhyloProcess(string indatafile, string treefile, int nratecat, int ncat, int infixncomp, int inempmix, string inmixtype, double indirweightprior, int infixtopo, int inNSPR, int inNNNI, int indc, int me, int np)	{
+	RASCATFiniteGammaPhyloProcess(string indatafile, string treefile, int nratecat, int innmodemax, int ncat, int infixncomp, int inempmix, string inmixtype, double indirweightprior, int infixtopo, int inNSPR, int inNNNI, int indc, int me, int np)	{
 		myid = me;
 		nprocs = np;
 
@@ -111,6 +111,8 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 			}
 		}
 
+        SetNmodeMax(innmodemax);
+
 		Create(tree,plaindata,nratecat,ncat,infixncomp,inempmix,inmixtype,insitemin,insitemax);
 
 		if (myid == 0)	{
@@ -129,6 +131,11 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 		is >> datafile;
 		int nratecat;
 		is >> nratecat;
+		if (atof(version.substr(0,3).c_str()) > 1.8)	{
+            int nmax;
+            is >> nmax;
+            SetNmodeMax(nmax);
+        }
         int infixncomp;
 		int intmp;
 		int inempmix;
@@ -296,6 +303,7 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 		PhyloProcess::ToStreamHeader(os);
 		os << datafile << '\n';
 		os << GetNcat() << '\n';
+        os << GetNmodeMax() << '\n';
         int tmp = 0;
         if (fixncomp)   {
             tmp = GetNcomponent();

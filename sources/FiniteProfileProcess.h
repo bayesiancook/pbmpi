@@ -25,7 +25,7 @@ class FiniteProfileProcess: public virtual MixtureProfileProcess	{
 
 	public:
 
-	FiniteProfileProcess(int K = 1) : weight(0), fixncomp(false), empmix(false), Ncat(0), statfix(0), empweight(0), dirweightprior(0)  {
+	FiniteProfileProcess(int K = 1) : weight(0), fixncomp(false), empmix(false), Ncat(0), nmodemax(refnmodemax), statfix(0), empweight(0), dirweightprior(0)  {
 		Ncomponent = K;
 		weightalpha = 1;
 	}
@@ -38,7 +38,8 @@ class FiniteProfileProcess: public virtual MixtureProfileProcess	{
 		fixncomp = in;
 	}
 
-	virtual int GetNmodeMax() {return fixncomp ? Ncomponent : 1000;} 
+	virtual int GetNmodeMax() {return fixncomp ? Ncomponent : nmodemax;} 
+	virtual void SetNmodeMax(int n) {nmodemax = n;}
 
 	protected:
 
@@ -85,6 +86,8 @@ class FiniteProfileProcess: public virtual MixtureProfileProcess	{
 	bool empmix;
 	
 	int Ncat;
+
+    int nmodemax;
 
 	string mixtype;
 	double** statfix;

@@ -33,6 +33,7 @@ using namespace std;
 // all other parameters should be homogeneous along the sequence
 
 const double stateps = 1e-100;
+const int refnmodemax = 1000;
 
 class ProfileProcess {
 
