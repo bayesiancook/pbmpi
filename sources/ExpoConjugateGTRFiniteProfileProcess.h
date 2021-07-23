@@ -77,8 +77,8 @@ class ExpoConjugateGTRFiniteProfileProcess : public virtual MatrixFiniteProfileP
 			// GlobalUpdateSiteProfileSuffStat();
 
 			if (! fixncomp)	{
-				MoveNcomponent(10);
-				MoveWeightAlpha(tuning,10);
+				MoveNcomponent(100);
+				// MoveWeightAlpha(tuning,10);
 			}
 			// MoveWeightAlpha(tuning,10);
 		}

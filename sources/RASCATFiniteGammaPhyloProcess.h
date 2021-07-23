@@ -209,7 +209,7 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 	}
 
 	void TraceHeader(ostream& os)	{
-		os << "#time\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
+		os << "#time\ttime\ttopo\tloglik\tlength\talpha\tNmode\tNocc\tstatent\tstatalpha";
 		os << '\n'; 
 	}
 
@@ -234,7 +234,8 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
             os << '\t' << GetLogLikelihood();
         }
         os << '\t' << GetRenormTotalLength() << '\t' << GetAlpha();
-		os << '\t' << GetNOccupiedComponent() << '\t' << GetStatEnt();
+		os << '\t' << GetNcomponent() << '\t' << GetNOccupiedComponent() << '\t' << GetStatEnt();
+		// os << '\t' << GetNOccupiedComponent() << '\t' << GetStatEnt();
 		os << '\t' << GetMeanDirWeight();
 		// os << '\t' << kappa << '\t' << GetAllocEntropy();
 
