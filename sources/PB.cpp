@@ -90,7 +90,7 @@ int main(int argc, char* argv[])	{
 			if ((s == "-v") || (s == "--version"))	{
 				if (! myid)	{
 					cerr << "\n";
-					cerr << "pb_mpi version 1.8\n";
+					cerr << "pb_mpi version 1.9\n";
 					cerr << "\n";
 				}
 				MPI_Finalize();
