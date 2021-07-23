@@ -209,7 +209,7 @@ double FiniteProfileProcess::MoveNcomponent(int nrep)	{
     for (int rep=0; rep<nrep; rep++)    {
         if (k0 == 0)    {
             double ratio = 0.5 * (K+1) / (k0+1) * K / (N+K);
-            if (K == Kmax-1)  {
+            if (K == Kmax)  {
                 ratio = 0;
             }
             if (rnd::GetRandom().Uniform() < ratio)  {
@@ -221,7 +221,7 @@ double FiniteProfileProcess::MoveNcomponent(int nrep)	{
         else    {
             if (rnd::GetRandom().Uniform() < 0.5)    {
                 double ratio = (K+1.0) / (k0+1.0) * K / (N+K);
-                if (K == Kmax-1)  {
+                if (K == Kmax)  {
                     ratio = 0;
                 }
                 if (rnd::GetRandom().Uniform() < ratio)  {
