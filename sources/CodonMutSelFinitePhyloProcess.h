@@ -29,7 +29,7 @@ class CodonMutSelFinitePhyloProcess : public virtual CodonMutSelFiniteSubstituti
 
 	public:
 
-	CodonMutSelFinitePhyloProcess(string indatafile, string treefile, GeneticCodeType incodetype, int ncat, int infixncomp, int inempmix, string inmixtype, int infixtopo, int infixbl, int inNSPR, int inNNNI, int indirweightprior, int indc, int me, int np)	{
+	CodonMutSelFinitePhyloProcess(string indatafile, string treefile, GeneticCodeType incodetype, int innmodemax, int ncat, int infixncomp, int inempmix, string inmixtype, int infixtopo, int infixbl, int inNSPR, int inNNNI, int indirweightprior, int indc, int me, int np)	{
 		myid = me;
 		nprocs = np;
 		dc = indc;
@@ -76,6 +76,8 @@ class CodonMutSelFinitePhyloProcess : public virtual CodonMutSelFiniteSubstituti
 			}
 		}
 
+        SetNmodeMax(innmodemax);
+
 		Create(tree,codondata,ncat,infixncomp,inempmix,inmixtype,insitemin,insitemax,statespace);
 		if (myid == 0)	{
 			if (fixbl)	{
@@ -97,6 +99,11 @@ class CodonMutSelFinitePhyloProcess : public virtual CodonMutSelFiniteSubstituti
 		FromStreamHeader(is);
 		is >> datafile;
 		is >> codetype;
+		if (atof(version.substr(0,3).c_str()) > 1.8)	{
+            int nmax;
+            is >> nmax;
+            SetNmodeMax(nmax);
+        }
 		int infixncomp;
 		int intmp;
 		int inempmix;
@@ -255,6 +262,7 @@ class CodonMutSelFinitePhyloProcess : public virtual CodonMutSelFiniteSubstituti
 		PhyloProcess::ToStreamHeader(os);
 		os << datafile << '\n';
 		os << codetype << '\n';
+        os << GetNmodeMax() << '\n';
         int tmp = 0;
         if (fixncomp)   {
             tmp = GetNcomponent();

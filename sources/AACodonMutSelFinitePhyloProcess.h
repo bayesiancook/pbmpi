@@ -29,7 +29,7 @@ class AACodonMutSelFinitePhyloProcess : public virtual AACodonMutSelFiniteSubsti
 
 	public:
 
-	AACodonMutSelFinitePhyloProcess(string indatafile, string treefile, GeneticCodeType incodetype, int ncat, int infixncomp, int inempmix, string inmixtype, int infixtopo, int infixbl, int inNSPR, int inNNNI, int infixcodonprofile, int infixomega, int inomegaprior, int indirweightprior, int indc, int me, int np)	{
+	AACodonMutSelFinitePhyloProcess(string indatafile, string treefile, GeneticCodeType incodetype, int innmodemax, int ncat, int infixncomp, int inempmix, string inmixtype, int infixtopo, int infixbl, int inNSPR, int inNNNI, int infixcodonprofile, int infixomega, int inomegaprior, int indirweightprior, int indc, int me, int np)	{
 		myid = me;
 		nprocs = np;
 		dc = indc;
@@ -79,6 +79,8 @@ class AACodonMutSelFinitePhyloProcess : public virtual AACodonMutSelFiniteSubsti
 			}
 		}
 
+        SetNmodeMax(innmodemax);
+
 		Create(tree,codondata,ncat,infixncomp,inempmix,inmixtype,insitemin,insitemax,statespace,fixcodonprofile,fixomega);
 		if (myid == 0)	{
 			if (fixbl)	{
@@ -100,6 +102,11 @@ class AACodonMutSelFinitePhyloProcess : public virtual AACodonMutSelFiniteSubsti
 		FromStreamHeader(is);
 		is >> datafile;
 		is >> codetype;
+		if (atof(version.substr(0,3).c_str()) > 1.8)	{
+            int nmax;
+            is >> nmax;
+            SetNmodeMax(nmax);
+        }
 		int infixncomp;
 		int intmp;
 		int inempmix;
@@ -269,6 +276,7 @@ class AACodonMutSelFinitePhyloProcess : public virtual AACodonMutSelFiniteSubsti
 		PhyloProcess::ToStreamHeader(os);
 		os << datafile << '\n';
 		os << codetype << '\n';
+        os << GetNmodeMax() << '\n';
         int tmp = 0;
         if (fixncomp)   {
             tmp = GetNcomponent();

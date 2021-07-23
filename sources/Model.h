@@ -129,7 +129,7 @@ class Model	{
 		else if (modeltype == 4)	{
 			if (mixturetype == 1)	{
 				type = "CODONMUTSELFINITE";
-				process = new CodonMutSelFinitePhyloProcess(datafile,treefile,codetype,ncat,fixncomp,empmix,mixtype,fixtopo,fixbl,NSPR,NNNI,dirweightprior,dc,myid,nprocs);
+				process = new CodonMutSelFinitePhyloProcess(datafile,treefile,codetype,nmodemax,ncat,fixncomp,empmix,mixtype,fixtopo,fixbl,NSPR,NNNI,dirweightprior,dc,myid,nprocs);
 			}
 			else if (mixturetype == 3)	{
 				type = "CODONMUTSELSBDP";
@@ -145,7 +145,7 @@ class Model	{
 		else	{
 			if (mixturetype == 1)	{
 				type = "AACODONMUTSELFINITE";
-				process = new AACodonMutSelFinitePhyloProcess(datafile,treefile,codetype,ncat,fixncomp,empmix,mixtype,fixtopo,fixbl,NSPR,NNNI,fixcodonprofile,fixomega,omegaprior,dirweightprior,dc,myid,nprocs);
+				process = new AACodonMutSelFinitePhyloProcess(datafile,treefile,codetype,nmodemax,ncat,fixncomp,empmix,mixtype,fixtopo,fixbl,NSPR,NNNI,fixcodonprofile,fixomega,omegaprior,dirweightprior,dc,myid,nprocs);
 			}
 			else if (mixturetype == 3)	{
 				type = "AACODONMUTSELSBDP";
