@@ -74,6 +74,11 @@ int main(int argc, char* argv[])	{
 	double mintotweight = 0;
 
 	int topoburnin = 0;
+
+	int steppingnstep = 0;
+    int steppingburnin = 10;
+    int steppingsize = 10;
+
     bool help = false;
     
     int nmodemax = 1000;
@@ -139,6 +144,14 @@ int main(int argc, char* argv[])	{
 				i++;
 				topoburnin = atoi(argv[i]);
 			}
+            else if (s == "-stepping")  {
+                i++;
+                steppingnstep = atoi(argv[i]);
+                i++;
+                steppingburnin = atoi(argv[i]);
+                i++;
+                steppingsize = atoi(argv[i]);
+            }
 			else if (s == "-fixcodonprofile")	{
 				fixcodonprofile = 1;
 			}
@@ -568,23 +581,33 @@ int main(int argc, char* argv[])	{
 				exit(1);
 			}
 		}
-		model = new Model(datafile,treefile,modeltype,dgam,mixturetype,ncat,nmodemax,type,suffstat,fixncomp,empmix,mixtype,rrtype,iscodon,fixtopo,NSPR,NNNI,fixcodonprofile,fixomega,fixbl,omegaprior,kappaprior,dirweightprior,mintotweight,dc,every,until,saveall,incinit,topoburnin,name,myid,nprocs);
+		model = new Model(datafile,treefile,modeltype,dgam,mixturetype,ncat,nmodemax,type,suffstat,fixncomp,empmix,mixtype,rrtype,iscodon,fixtopo,NSPR,NNNI,fixcodonprofile,fixomega,fixbl,omegaprior,kappaprior,dirweightprior,mintotweight,dc,every,until,saveall,incinit,topoburnin,steppingnstep,steppingburnin,steppingsize,name,myid,nprocs);
 		if (! myid)	{
 			// cerr << "create files\n";
 			cerr << '\n';
 			cerr << "chain name : " << name << '\n';
 			
-			model->IncSize(); // count the starting state
+            if (! steppingnstep)    {
+                model->IncSize(); // count the starting state
+            }
 			
 			// MPI master only
 			ofstream os((name + ".treelist").c_str());
-			model->TreeTrace(os);
-			os.close();
-			
+            if (! steppingnstep)    {
+                model->TreeTrace(os);
+            }
+            os.close();
+        
 			ofstream tos((name + ".trace").c_str());
 			model->TraceHeader(tos);
-			model->Trace(tos);
+            if (! steppingnstep)    {
+                model->Trace(tos);
+            }
 			tos.close();
+
+            if (steppingnstep)  {
+                ofstream os((name + ".stepping").c_str());
+            }
 						
 			ofstream pos((name + ".param").c_str());
 			model->ToStream(pos,true);

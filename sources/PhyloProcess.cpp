@@ -1602,6 +1602,12 @@ void PhyloProcess::SlaveExecute(MESSAGE signal)	{
 		MPI_Bcast(&n,1,MPI_INT,0,MPI_COMM_WORLD);
 		SlaveRestore(n);
 		break;
+    case PREPARESTEPPING:
+		SlavePrepareStepping();
+		break;
+    case SETSTEPPINGFRAC:
+        SlaveSetSteppingFraction();
+        break;
 	case RESET:
 		MPI_Bcast(arg,2,MPI_INT,0,MPI_COMM_WORLD);
 		tvalue = (arg[1] == 1) ? true : false;

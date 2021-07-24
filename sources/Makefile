@@ -20,7 +20,7 @@ SRCS=  TaxonSet.cpp Tree.cpp Random.cpp SequenceAlignment.cpp CodonSequenceAlign
 	AACodonMutSelProfileProcess.cpp SubstitutionProcess.cpp Propagate.cpp \
 	PoissonSubstitutionProcess.cpp MatrixSubstitutionProcess.cpp \
 	ExpoConjugateGTRSubstitutionProcess.cpp GeneralPathSuffStatMatrixSubstitutionProcess.cpp \
-	PhyloProcess.cpp PoissonPhyloProcess.cpp MatrixPhyloProcess.cpp \
+	PhyloProcess.cpp PoissonPhyloProcess.cpp MatrixPhyloProcess.cpp Stepping.cpp \
 	ExpoConjugateGTRPhyloProcess.cpp GeneralPathSuffStatMatrixPhyloProcess.cpp \
 	RASCATGammaPhyloProcess.cpp RASCATSBDPGammaPhyloProcess.cpp \
 	RASCATFiniteGammaPhyloProcess.cpp RASCATGTRFiniteGammaPhyloProcess.cpp \

@@ -47,14 +47,20 @@ class Model	{
 	int until;
 	int saveall;
 	int incinit;
+    int steppingnstep;
+    int steppingburnin;
+    int steppingsize;
 
-	Model(string datafile, string treefile, int modeltype, int nratecat, int mixturetype, int ncat, int nmodemax, GeneticCodeType codetype, int suffstat, int fixncomp, int empmix, string mixtype, string rrtype, int iscodon, int fixtopo, int NSPR, int NNNI, int fixcodonprofile, int fixomega, int fixbl, int omegaprior, int kappaprior, int dirweightprior, double mintotweight, int dc, int inevery, int inuntil, int insaveall, int inincinit, int topoburnin, string inname, int myid, int nprocs)	{
+	Model(string datafile, string treefile, int modeltype, int nratecat, int mixturetype, int ncat, int nmodemax, GeneticCodeType codetype, int suffstat, int fixncomp, int empmix, string mixtype, string rrtype, int iscodon, int fixtopo, int NSPR, int NNNI, int fixcodonprofile, int fixomega, int fixbl, int omegaprior, int kappaprior, int dirweightprior, double mintotweight, int dc, int inevery, int inuntil, int insaveall, int inincinit, int topoburnin, int insteppingnstep, int insteppingburnin, int insteppingsize, string inname, int myid, int nprocs)	{
 
 		every = inevery;
 		until = inuntil;
 		name = inname;
 		saveall = insaveall;
 		incinit = inincinit;
+        steppingnstep = insteppingnstep;
+        steppingburnin = insteppingburnin;
+        steppingsize = insteppingsize;
 
 		// 1 : CAT
 		// 2 : CATGTR
@@ -177,6 +183,12 @@ class Model	{
 		}
 
 		is >> type;
+        if (type == "STEPPING") {
+            is >> steppingnstep >> steppingburnin >> steppingsize;
+        }
+        else    {
+            is >> type;
+        }
 		int size;
 		is >> every >> until >> size;
 		is >> saveall;
@@ -216,6 +228,10 @@ class Model	{
 	void ToStream(ostream& os, bool header)	{
 		stringstream ss;
 		if (header)	{
+            if (steppingnstep)  {
+                ss << "STEPPING\n";
+                ss << steppingnstep << '\t' << steppingburnin << '\t' << steppingsize << '\n';
+            }
 			ss << type << '\n';
 			ss << every << '\t' << until << '\t' << GetSize() << '\n';
 			ss << saveall << '\n';
@@ -257,7 +273,16 @@ class Model	{
 		process->IncSize();
 	}
 
-	void Run(int burnin)	{
+    void Run(int burnin)    {
+        if (! steppingnstep)    {
+            MCMCRun(burnin);
+        }
+        else    {
+            SteppingRun(steppingnstep, steppingburnin, steppingsize);
+        }
+    }
+
+	void MCMCRun(int burnin)	{
 		if (burnin != 0)	{
 			if (GetSize() < burnin)	{
 				process->SetBurnin(true);
@@ -301,6 +326,68 @@ class Model	{
 				cos.close();
 			}
 
+		}	
+		cerr << name << ": stopping after " << GetSize() << " points.\n";
+		cerr << '\n';
+	}
+
+	void SteppingRun(int nstep, int burnin, int stepsize)	{
+
+		process->GlobalPrepareStepping();
+	
+		// total size : nstep * (burnin + stepsize)
+
+		int until = nstep * (burnin + stepsize);
+
+		ofstream ros((name + ".run").c_str()); stringstream buf;
+		buf << 1 << '\n';
+		ros << buf.str();
+		ros.close();
+	
+		while (RunningStatus() && (GetSize() < until))	{
+
+			double frac = double(int(GetSize() / (burnin + stepsize))) / nstep;
+			double frac2 = double(1 + int(GetSize() / (burnin + stepsize))) / nstep;
+			process->GlobalSetSteppingFraction(frac);
+
+			Move(1,every);
+			
+			process->IncSize();
+
+			ofstream os((name + ".treelist").c_str(), ios_base::app);
+			TreeTrace(os);
+			os.close();
+
+			ofstream tos((name + ".trace").c_str(), ios_base::app);
+			Trace(tos);
+			tos.close();
+
+			ofstream mos((name + ".monitor").c_str());
+			Monitor(mos);
+			mos.close();
+
+			ofstream pos((name + ".param").c_str());
+			pos.precision(numeric_limits<double>::digits10);
+			ToStream(pos,true);
+			pos.close();
+
+			if (saveall)	{
+				ofstream cos((name + ".chain").c_str(),ios_base::app);
+				cos.precision(numeric_limits<double>::digits10);
+				ToStream(cos,false);
+				cos.close();
+			}
+
+			ofstream los((name + ".stepping").c_str(), ios_base::app);
+			double lnL1 = process->GlobalGetFullLogLikelihood();
+			process->GlobalSetSteppingFraction(frac2);
+			double lnL2 = process->GlobalGetFullLogLikelihood();
+            int nsite1 = int(frac * process->GetNsite());
+            int nsite2 = int(frac2 * process->GetNsite());
+            double dlnL = lnL2 - lnL1;
+            int dnsite = nsite2 - nsite1;
+			los << frac << '\t' << dnsite << '\t' << dlnL << '\t' << dlnL / dnsite << '\n';
+			los.close();
 		}	
 		cerr << name << ": stopping after " << GetSize() << " points.\n";
 		cerr << '\n';
