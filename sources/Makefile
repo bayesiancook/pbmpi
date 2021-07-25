@@ -36,7 +36,7 @@ ALL_SRCS=$(wildcard *.cpp)
 ALL_OBJS=$(patsubst %.cpp,%.o,$(ALL_SRCS))
 
 PROGSDIR=../data
-ALL= pb_mpi readpb_mpi tracecomp bpcomp cvrep
+ALL= readstep pb_mpi readpb_mpi tracecomp bpcomp cvrep
 PROGS=$(addprefix $(PROGSDIR)/, $(ALL))
 
 .PHONY: all clean
@@ -63,6 +63,9 @@ endif
 
 $(PROGSDIR)/sitecv : SiteCV.o $(OBJS)
 	$(CC) SiteCV.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@
+
+$(PROGSDIR)/readstep: ReadStepping.o $(OBJS)
+	$(CC) ReadStepping.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@
 
 $(PROGSDIR)/cvrep : CVrep.o $(OBJS)
 	$(CC) CVrep.o $(OBJS) $(LDFLAGS) $(LIBS) -o $@
