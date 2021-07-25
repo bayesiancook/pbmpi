@@ -50,22 +50,21 @@ void PhyloProcess::SlavePrepareStepping()	{
 	MPI_Bcast(steppingrank,GetNsite(),MPI_INT,0,MPI_COMM_WORLD);
 }
 
-void PhyloProcess::GlobalSetSteppingFraction(double frac)   {
+void PhyloProcess::GlobalSetSteppingFraction(int cutoff)    {
 	MESSAGE signal = SETSTEPPINGFRAC;
 	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
-	MPI_Bcast(&frac,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
-    SetSteppingFraction(frac);
+	MPI_Bcast(&cutoff,1,MPI_INT,0,MPI_COMM_WORLD);
+    SetSteppingFraction(cutoff);
 }
 
 void PhyloProcess::SlaveSetSteppingFraction()    {
-    double frac;
-	MPI_Bcast(&frac,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
-    SetSteppingFraction(frac);
+    int cutoff;
+	MPI_Bcast(&cutoff,1,MPI_INT,0,MPI_COMM_WORLD);
+    SetSteppingFraction(cutoff);
 }
 
-void PhyloProcess::SetSteppingFraction(double frac) {
+void PhyloProcess::SetSteppingFraction(int cutoff)  {
 
-    int cutoff = (int) (GetNsite() * frac);
     for (int i=0; i<GetNsite(); i++)    {
         if (steppingrank[i] < cutoff)  {
             for (int j=0; j<GetNtaxa(); j++)    {

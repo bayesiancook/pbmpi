@@ -174,8 +174,8 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	void GlobalUpdateConditionalLikelihoods();
 	double GlobalComputeNodeLikelihood(const Link* from, int auxindex = -1);
 
-    void SetSteppingFraction(double frac);
-    void GlobalSetSteppingFraction(double frac);
+    void SetSteppingFraction(int cutoff);
+    void GlobalSetSteppingFraction(int cutoff);
     void SlaveSetSteppingFraction();
 
     void GlobalPrepareStepping();
