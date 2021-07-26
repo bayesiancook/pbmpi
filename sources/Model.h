@@ -185,8 +185,6 @@ class Model	{
 		is >> type;
         if (type == "STEPPING") {
             is >> steppingstep >> steppingburnin >> steppingsize;
-        }
-        else    {
             is >> type;
         }
 		int size;
