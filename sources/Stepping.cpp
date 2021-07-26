@@ -37,6 +37,9 @@ void PhyloProcess::GlobalPrepareStepping()   {
 
     steppingrank = new int[GetNsite()];
     rnd::GetRandom().DrawFromUrn(steppingrank, GetNsite(), GetNsite());
+    for (int i=0; i<GetNsite(); i++)    {
+        steppingrank[i] = i;
+    }
 	MPI_Bcast(steppingrank,GetNsite(),MPI_INT,0,MPI_COMM_WORLD);
 }
 
