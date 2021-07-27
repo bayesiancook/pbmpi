@@ -75,6 +75,8 @@ class FiniteProfileProcess: public virtual MixtureProfileProcess	{
 	virtual void SampleHyper(); // added virtual
 	virtual void SampleWeights(); // added virtual
 
+    virtual void PriorSampleHyper();
+
 	virtual double LogHyperPrior();
 
 	double LogWeightPrior();

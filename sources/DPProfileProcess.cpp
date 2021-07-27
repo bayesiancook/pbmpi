@@ -35,6 +35,20 @@ void DPProfileProcess::SampleHyper()	{
 	}
 }
 	
+void DPProfileProcess::PriorSampleHyper()	{
+	kappa = 1;
+	if (kappaprior == 0)	{
+        kappa = 10.0 * rnd::GetRandom().sExpo();
+	}
+	else 	{
+        double u = 8 * (rnd::GetRandom().Uniform() - 4.0);
+        kappa = exp(log(10.0) * u);
+	}
+	for (int i=0; i<GetDim(); i++)	{
+		dirweight[i] = rnd::GetRandom().sExpo();
+	}
+}
+	
 // 1 component
 /*
 void DPProfileProcess::SampleAlloc()	{

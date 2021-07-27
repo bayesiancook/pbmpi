@@ -115,6 +115,8 @@ class BranchProcess : public NewickTree {
 		RecursiveSampleLength(GetRoot());
 	}
 
+    virtual void PriorSampleLength() = 0;
+
 	double LogLengthPrior()	{
 		return RecursiveLogLengthPrior(GetRoot());
 	}

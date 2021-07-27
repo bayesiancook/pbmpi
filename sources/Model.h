@@ -48,10 +48,11 @@ class Model	{
 	int saveall;
 	int incinit;
     int steppingstep;
+    int steppingtaxstep;
     int steppingburnin;
     int steppingsize;
 
-	Model(string datafile, string treefile, int modeltype, int nratecat, int mixturetype, int ncat, int nmodemax, GeneticCodeType codetype, int suffstat, int fixncomp, int empmix, string mixtype, string rrtype, int iscodon, int fixtopo, int NSPR, int NNNI, int fixcodonprofile, int fixomega, int fixbl, int omegaprior, int kappaprior, int dirweightprior, double mintotweight, int dc, int inevery, int inuntil, int insaveall, int inincinit, int topoburnin, int insteppingstep, int insteppingburnin, int insteppingsize, string inname, int myid, int nprocs)	{
+	Model(string datafile, string treefile, int modeltype, int nratecat, int mixturetype, int ncat, int nmodemax, GeneticCodeType codetype, int suffstat, int fixncomp, int empmix, string mixtype, string rrtype, int iscodon, int fixtopo, int NSPR, int NNNI, int fixcodonprofile, int fixomega, int fixbl, int omegaprior, int kappaprior, int dirweightprior, double mintotweight, int dc, int inevery, int inuntil, int insaveall, int inincinit, int topoburnin, int insteppingstep, int insteppingtaxstep, int insteppingburnin, int insteppingsize, string inname, int myid, int nprocs)	{
 
 		every = inevery;
 		until = inuntil;
@@ -59,6 +60,7 @@ class Model	{
 		saveall = insaveall;
 		incinit = inincinit;
         steppingstep = insteppingstep;
+        steppingtaxstep = insteppingtaxstep;
         steppingburnin = insteppingburnin;
         steppingsize = insteppingsize;
 
@@ -184,7 +186,7 @@ class Model	{
 
 		is >> type;
         if (type == "STEPPING") {
-            is >> steppingstep >> steppingburnin >> steppingsize;
+            is >> steppingstep >> steppingtaxstep >> steppingburnin >> steppingsize;
             is >> type;
         }
 		int size;
@@ -228,7 +230,7 @@ class Model	{
 		if (header)	{
             if (steppingstep)  {
                 ss << "STEPPING\n";
-                ss << steppingstep << '\t' << steppingburnin << '\t' << steppingsize << '\n';
+                ss << steppingstep << '\t' << steppingtaxstep << '\t' << steppingburnin << '\t' << steppingsize << '\n';
             }
 			ss << type << '\n';
 			ss << every << '\t' << until << '\t' << GetSize() << '\n';
@@ -276,7 +278,7 @@ class Model	{
             MCMCRun(burnin);
         }
         else    {
-            SteppingRun(steppingstep, steppingburnin, steppingsize);
+            SteppingRun(steppingstep, steppingtaxstep, steppingburnin, steppingsize);
         }
     }
 
@@ -329,36 +331,77 @@ class Model	{
 		cerr << '\n';
 	}
 
-	void SteppingRun(int step, int burnin, int stepsize)	{
+	void SteppingRun(int step, int taxstep, int burnin, int stepsize)	{
 
 		process->GlobalPrepareStepping();
 	
 		// total size : nstep * (burnin + stepsize)
+        // number of steps:
+        //
 
-		int until = process->GetNsite() / step;
+        int sitencycle = process->GetNsite() / step;
         if (process->GetNsite() % step) {
-            until ++;
+            sitencycle++;
         }
-        until *= burnin + stepsize;
+        int taxncycle = process->GetNtaxa() / taxstep;
+        if (process->GetNtaxa() % taxstep)  {
+            taxncycle++;
+        }
+
+        int until = sitencycle * taxncycle * (burnin + stepsize);
 
 		ofstream ros((name + ".run").c_str()); stringstream buf;
 		buf << 1 << '\n';
 		ros << buf.str();
 		ros.close();
 	
+        if (! GetSize())    {
+            process->PriorSample();
+            process->GlobalUpdateParameters();
+        }
+
 		while (RunningStatus() && (GetSize() < until))	{
 
-            int cutoff = int(GetSize() / (burnin + stepsize));
+            int cycle = int(GetSize() / (burnin + stepsize));
+            int sitecycle = cycle / taxncycle;
+            int taxcycle = cycle % taxncycle;
+            int nsite = sitecycle * step;
+            if (nsite > process->GetNsite()) {
+                nsite = process->GetNsite();
+            }
+            int ntaxa = taxcycle * taxstep;
+            if (ntaxa >= process->GetNtaxa()) {
+                cerr << "error: ntaxa > Ntaxa\n";
+                exit(1);
+            }
+            int cutoff = process->GetNtaxa()*nsite + ntaxa;
+
+            int taxcycle2 = taxcycle;
+            int sitecycle2 = sitecycle;
+            taxcycle2++;
+            if (taxcycle2 == taxncycle)   {
+                taxcycle2 = 0;
+                sitecycle2++;
+            }
+            int nsite2 = sitecycle2 * step;
+            if (nsite2 > process->GetNsite()) {
+                nsite2 = process->GetNsite();
+            }
+            int ntaxa2 = taxcycle2 * taxstep;
+            if (ntaxa2 >= process->GetNtaxa()) {
+                cerr << "error: ntaxa2 > Ntaxa\n";
+                exit(1);
+            }
+            int cutoff2 = process->GetNtaxa()*nsite2 + ntaxa2;
+
             /*
-            if (GetSize() % (burnin+stepsize))  {
-                cutoff++;
-            }
+            cerr << sitecycle << '\t' << nsite << '\t' << taxcycle << '\t' << ntaxa << '\t' << cutoff << '\t';
+            cerr << '\n';
+            cerr << sitecycle2 << '\t' << nsite2 << '\t' << taxcycle2 << '\t' << ntaxa2 << '\t' << cutoff2 << '\n';
+            cerr << '\n';
+            cerr << '\n';
             */
-            cutoff *= step;
-            int cutoff2 = cutoff + step;
-            if (cutoff2 > process->GetNsite())  {
-                cutoff2 = process->GetNsite();
-            }
+
 			process->GlobalSetSteppingFraction(cutoff);
 
 			Move(1,every);
@@ -394,8 +437,10 @@ class Model	{
 			process->GlobalSetSteppingFraction(cutoff2);
 			double lnL2 = process->GlobalGetFullLogLikelihood();
             double dlnL = lnL2 - lnL1;
-            int dnsite = cutoff2 - cutoff;
-			los << cutoff << '\t' << dnsite << '\t' << dlnL << '\t' << dlnL / dnsite << '\n';
+            int dnsite = nsite2 - nsite;
+            int dntaxa = ntaxa2 - ntaxa;
+			los << cutoff << '\t' << dnsite << '\t' << dlnL << '\t' << dntaxa << '\n';
+			// los << cutoff << '\t' << dnsite << '\t' << dlnL << '\t' << dlnL / dnsite << '\n';
 			los.close();
 		}	
 		cerr << name << ": stopping after " << GetSize() << " points.\n";

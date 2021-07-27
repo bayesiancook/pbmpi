@@ -102,6 +102,7 @@ class DGamRateProcess : public virtual RateProcess {
 	void Delete();
 
 	void SampleRate();
+    void PriorSampleRate();
 	double LogRatePrior();
 
 

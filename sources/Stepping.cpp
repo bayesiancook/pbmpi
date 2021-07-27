@@ -41,6 +41,16 @@ void PhyloProcess::GlobalPrepareStepping()   {
         steppingrank[i] = i;
     }
 	MPI_Bcast(steppingrank,GetNsite(),MPI_INT,0,MPI_COMM_WORLD);
+
+    cellsteppingrankalloc = new int[GetNsite()*GetNtaxa()];
+    cellsteppingrank = new int*[GetNsite()];
+    for (int i=0; i<GetNsite(); i++)    {
+        cellsteppingrank[i] = cellsteppingrankalloc + GetNtaxa()*i;
+        for (int j=0; j<GetNtaxa(); j++)    {
+            cellsteppingrank[i][j] = i*GetNtaxa() + j;
+        }
+    }
+	MPI_Bcast(cellsteppingrankalloc,GetNsite()*GetNtaxa(),MPI_INT,0,MPI_COMM_WORLD);
 }
 
 void PhyloProcess::SlavePrepareStepping()	{
@@ -51,6 +61,16 @@ void PhyloProcess::SlavePrepareStepping()	{
     bkdata = new SequenceAlignment(GetData());
     steppingrank = new int[GetNsite()];
 	MPI_Bcast(steppingrank,GetNsite(),MPI_INT,0,MPI_COMM_WORLD);
+
+    cellsteppingrankalloc = new int[GetNsite()*GetNtaxa()];
+    cellsteppingrank = new int*[GetNsite()];
+    for (int i=0; i<GetNsite(); i++)    {
+        cellsteppingrank[i] = cellsteppingrankalloc + GetNtaxa()*i;
+        for (int j=0; j<GetNtaxa(); j++)    {
+            cellsteppingrank[i][j] = i*GetNtaxa() + j;
+        }
+    }
+	MPI_Bcast(cellsteppingrankalloc,GetNsite()*GetNtaxa(),MPI_INT,0,MPI_COMM_WORLD);
 }
 
 void PhyloProcess::GlobalSetSteppingFraction(int cutoff)    {
@@ -69,13 +89,11 @@ void PhyloProcess::SlaveSetSteppingFraction()    {
 void PhyloProcess::SetSteppingFraction(int cutoff)  {
 
     for (int i=0; i<GetNsite(); i++)    {
-        if (steppingrank[i] < cutoff)  {
-            for (int j=0; j<GetNtaxa(); j++)    {
+        for (int j=0; j<GetNtaxa(); j++)    {
+            if (cellsteppingrank[i][j] < cutoff)  {
                 GetData()->SetState(j, i, bkdata->GetState(j,i));
             }
-        }
-        else    {
-            for (int j=0; j<GetNtaxa(); j++)    {
+            else    {
                 GetData()->SetState(j, i, -1);
             }
         }

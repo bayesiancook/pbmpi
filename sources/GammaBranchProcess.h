@@ -36,6 +36,7 @@ class GammaBranchProcess : public virtual BranchProcess	{
 
 	void SampleLength();
 	void SampleLength(const Branch* branch);
+    void PriorSampleLength();
 
 	void ToStreamWithLengths(ostream& os, const Link* from);
 

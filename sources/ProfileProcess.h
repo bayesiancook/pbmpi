@@ -64,6 +64,7 @@ class ProfileProcess {
 
 	// sample all parameters 
 	virtual void SampleProfile() = 0;
+	virtual void PriorSampleProfile() = 0;
 
 	virtual double GetMeanStationaryEntropy() = 0;
 	virtual double GetSiteStationaryEntropy(int site) = 0;

@@ -49,6 +49,7 @@ class DPProfileProcess: public virtual MixtureProfileProcess	{
 	virtual double LogProxy(int site, int cat);
 	virtual void SampleAlloc();
 	void SampleHyper();
+    void PriorSampleHyper();
 
 	// kappa has an exponential prior of mean 10
 	double LogHyperPrior();

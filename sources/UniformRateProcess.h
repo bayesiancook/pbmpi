@@ -42,6 +42,7 @@ class UniformRateProcess : public virtual RateProcess {
 
 	virtual double LogRatePrior() {return 0;}
 	virtual void SampleRate() {}
+    virtual void PriorSampleRate() {}
 
 	void ToStream(ostream& os) {}
 	void FromStream(istream& is) {}

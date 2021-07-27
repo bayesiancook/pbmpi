@@ -46,6 +46,9 @@ int main(int argc, char* argv[])	{
             if ((!i) || (max < dlnl))   {
                 max = dlnl;
             }
+            dn[step] = dnsite;
+            totnsite[step] = n;
+            /*
             if (!i) {
                 dn[step] = dnsite;
                 totnsite[step] = n;
@@ -60,6 +63,7 @@ int main(int argc, char* argv[])	{
                     exit(1);
                 }
             }
+            */
         }
         meanlog[step] = 0;
         varlog[step] = 0;

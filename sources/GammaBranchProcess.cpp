@@ -84,7 +84,20 @@ void GammaBranchProcess::SampleLength()	{
 	branchalpha = rnd::GetRandom().sExpo();
 	branchbeta = rnd::GetRandom().sExpo();
 	blarray[0] = 0;
-	// SampleLength();
+    RecursiveSampleLength(GetRoot());
+}
+
+void GammaBranchProcess::PriorSampleLength()    {
+	branchalpha = rnd::GetRandom().sExpo();
+	if (betaprior == 1)	{
+        double u = 8 * (rnd::GetRandom().Uniform() - 4.0);
+        branchbeta = exp( u * log(10.0) );
+    }
+    else    {
+        branchbeta = 10 * rnd::GetRandom().sExpo();
+    }
+	blarray[0] = 0;
+    RecursiveSampleLength(GetRoot());
 }
 
 double GammaBranchProcess::LogHyperPrior()	{
@@ -100,8 +113,6 @@ double GammaBranchProcess::LogHyperPrior()	{
 		total -= 0.1 * branchbeta;
 	}
 	return total;
-	// return -branchalpha - 0.1 * branchbeta ; // + 2 * log(branchbeta);
-	// return -branchalpha - 10.0*branchbeta ; // + 2 * log(branchbeta);
 }
 
 double GammaBranchProcess::Move(double tuning, int nrep)	{

@@ -46,6 +46,7 @@ class RateProcess {
 
 	virtual double LogRatePrior() = 0;
 	virtual void SampleRate() = 0;
+    virtual void PriorSampleRate() = 0;
 
 	virtual void ToStream(ostream& os) = 0;
 	virtual void FromStream(istream& is) = 0;

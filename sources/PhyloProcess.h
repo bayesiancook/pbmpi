@@ -80,6 +80,12 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 		SampleProfile();
 	}
 
+    virtual void PriorSample()  {
+        PriorSampleRate();
+        PriorSampleLength();
+        PriorSampleProfile();
+    }
+
 	// print out the first line (header) of the trace file
 	virtual void TraceHeader(ostream& os) = 0;
 
@@ -181,16 +187,16 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
     void GlobalPrepareStepping();
     void SlavePrepareStepping();
 
+	// returns total number of taxa in the analysis
+	int GetNtaxa()	{
+		return GetData()->GetNtaxa();
+	}
+
 	protected:
 
 	SequenceAlignment* GetData() {return data;}
 	StateSpace* GetStateSpace() {return data->GetStateSpace();}
 	virtual int GetGlobalNstate() {return GetStateSpace()->GetNstate();}
-
-	// returns total number of taxa in the analysis
-	int GetNtaxa()	{
-		return GetData()->GetNtaxa();
-	}
 
 	double* GetEmpiricalFreq()	{
 		return empfreq;
@@ -543,6 +549,8 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	string datafile;
     SequenceAlignment* bkdata;
     int* steppingrank;
+    int* cellsteppingrankalloc;
+    int** cellsteppingrank;
 
 	double* empfreq;
 

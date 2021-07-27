@@ -93,6 +93,12 @@ void FiniteProfileProcess::SampleHyper()	{
 	}
 }
 	
+void FiniteProfileProcess::PriorSampleHyper()   {
+	for (int i=0; i<GetDim(); i++)	{
+		dirweight[i] = rnd::GetRandom().sExpo();
+	}
+}
+
 void FiniteProfileProcess::SampleAlloc()	{
 	if (!GetNcomponent())	{
 		cerr << "error in sample alloc: " << GetNcomponent() << '\n';

@@ -76,6 +76,7 @@ int main(int argc, char* argv[])	{
 	int topoburnin = 0;
 
 	int steppingstep = 0;
+	int steppingtaxstep = 0;
     int steppingburnin = 10;
     int steppingsize = 10;
 
@@ -147,6 +148,8 @@ int main(int argc, char* argv[])	{
             else if (s == "-stepping")  {
                 i++;
                 steppingstep = atoi(argv[i]);
+                i++;
+                steppingtaxstep = atoi(argv[i]);
                 i++;
                 steppingburnin = atoi(argv[i]);
                 i++;
@@ -581,7 +584,7 @@ int main(int argc, char* argv[])	{
 				exit(1);
 			}
 		}
-		model = new Model(datafile,treefile,modeltype,dgam,mixturetype,ncat,nmodemax,type,suffstat,fixncomp,empmix,mixtype,rrtype,iscodon,fixtopo,NSPR,NNNI,fixcodonprofile,fixomega,fixbl,omegaprior,kappaprior,dirweightprior,mintotweight,dc,every,until,saveall,incinit,topoburnin,steppingstep,steppingburnin,steppingsize,name,myid,nprocs);
+		model = new Model(datafile,treefile,modeltype,dgam,mixturetype,ncat,nmodemax,type,suffstat,fixncomp,empmix,mixtype,rrtype,iscodon,fixtopo,NSPR,NNNI,fixcodonprofile,fixomega,fixbl,omegaprior,kappaprior,dirweightprior,mintotweight,dc,every,until,saveall,incinit,topoburnin,steppingstep,steppingtaxstep,steppingburnin,steppingsize,name,myid,nprocs);
 		if (! myid)	{
 			// cerr << "create files\n";
 			cerr << '\n';

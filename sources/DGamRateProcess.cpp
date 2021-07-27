@@ -90,6 +90,11 @@ void DGamRateProcess::SampleRate()	{
 	UpdateDiscreteCategories();
 }
 
+void DGamRateProcess::PriorSampleRate()	{
+	alpha = rnd::GetRandom().sExpo();
+	UpdateDiscreteCategories();
+}
+
 double DGamRateProcess::LogRatePrior()	{
 	return -alpha;
 }
