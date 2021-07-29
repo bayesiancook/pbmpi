@@ -480,6 +480,7 @@ class Model	{
 		ros.close();
 	
         if (! GetSize())    {
+            process->GlobalSetEmpiricalFrac(0);
             process->PriorSample();
             process->GlobalUpdateParameters();
         }
@@ -499,6 +500,7 @@ class Model	{
                 exit(1);
             }
             int cutoff = process->GetNtaxa()*nsite + ntaxa;
+            double frac1 = ((double) cycle) / (sitencycle * taxncycle);
 
             int taxcycle2 = taxcycle;
             int sitecycle2 = sitecycle;
@@ -517,16 +519,10 @@ class Model	{
                 exit(1);
             }
             int cutoff2 = process->GetNtaxa()*nsite2 + ntaxa2;
-
-            /*
-            cerr << sitecycle << '\t' << nsite << '\t' << taxcycle << '\t' << ntaxa << '\t' << cutoff << '\t';
-            cerr << '\n';
-            cerr << sitecycle2 << '\t' << nsite2 << '\t' << taxcycle2 << '\t' << ntaxa2 << '\t' << cutoff2 << '\n';
-            cerr << '\n';
-            cerr << '\n';
-            */
+            double frac2 = ((double) cycle + 1.0) / (sitencycle * taxncycle);
 
 			process->GlobalSetSteppingFraction(cutoff);
+            process->GlobalSetEmpiricalFrac(frac1);
 
 			Move(1,every);
 			
@@ -558,9 +554,13 @@ class Model	{
 
 			ofstream los((name + ".stepping").c_str(), ios_base::app);
 			double lnL1 = process->GlobalGetFullLogLikelihood();
+            double lnP1 = process->GetLogPrior();
 			process->GlobalSetSteppingFraction(cutoff2);
+            process->GlobalSetEmpiricalFrac(frac2);
 			double lnL2 = process->GlobalGetFullLogLikelihood();
+            double lnP2 = process->GetLogPrior();
             double dlnL = lnL2 - lnL1;
+            double dlnP = lnP2 - lnP1;
             if (std::isnan(dlnL))   {
                 cerr << "nan lnl\n";
                 cerr << lnL1 << '\t' << lnL2 << '\n';
@@ -568,7 +568,7 @@ class Model	{
             }
             int dnsite = nsite2 - nsite;
             int dntaxa = ntaxa2 - ntaxa;
-			los << cutoff << '\t' << dnsite << '\t' << dlnL << '\t' << dntaxa << '\n';
+			los << cutoff << '\t' << dnsite << '\t' << dlnL+dlnP << '\t' << dntaxa << '\n';
 			// los << cutoff << '\t' << dnsite << '\t' << dlnL << '\t' << dlnL / dnsite << '\n';
 			los.close();
 		}	

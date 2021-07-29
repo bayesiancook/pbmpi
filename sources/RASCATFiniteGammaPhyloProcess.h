@@ -298,6 +298,7 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 	}
 
 	virtual void ReadPB(int argc, char* argv[]);
+	void ReadPostHyper(string name, int burnin, int every, int until);
 	void SlaveComputeCVScore();
 	// void SlaveComputeSiteLogCVScore();
 	void SlaveComputeSiteLogL();

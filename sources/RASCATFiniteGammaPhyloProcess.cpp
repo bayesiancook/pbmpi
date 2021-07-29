@@ -172,16 +172,20 @@ void RASCATFiniteGammaPhyloProcess::SlaveUpdateParameters()	{
 void RASCATFiniteGammaPhyloProcess::GlobalSetEmpiricalPrior(istream& is)    {
     // read from stream
     is >> empalpha >> empbeta;
-    for (int k=0; k<GetDim(); k++)  {
-        is >> empdirweightalpha[k] >> empdirweightbeta[k];
+	if ((Ncomponent > 1) || ((! fixncomp) && (! dirweightprior)))	{
+        for (int k=0; k<GetDim(); k++)  {
+            is >> empdirweightalpha[k] >> empdirweightbeta[k];
+        }
     }
     for (int j=1; j<GetNbranch(); j++)  {
         is >> branchempalpha[j] >> branchempbeta[j];
     }
 	MPI_Bcast(&empalpha,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
 	MPI_Bcast(&empalpha,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
-	MPI_Bcast(empdirweightalpha,GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
-	MPI_Bcast(empdirweightbeta,GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+	if ((Ncomponent > 1) || ((! fixncomp) && (! dirweightprior)))	{
+        MPI_Bcast(empdirweightalpha,GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+        MPI_Bcast(empdirweightbeta,GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+    }
 	MPI_Bcast(branchempalpha,GetNbranch(),MPI_DOUBLE,0,MPI_COMM_WORLD);
 	MPI_Bcast(branchempbeta,GetNbranch(),MPI_DOUBLE,0,MPI_COMM_WORLD);
 }
@@ -190,8 +194,10 @@ void RASCATFiniteGammaPhyloProcess::SlaveSetEmpiricalPrior()    {
 
 	MPI_Bcast(&empalpha,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
 	MPI_Bcast(&empalpha,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
-	MPI_Bcast(empdirweightalpha,GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
-	MPI_Bcast(empdirweightbeta,GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+	if ((Ncomponent > 1) || ((! fixncomp) && (! dirweightprior)))	{
+        MPI_Bcast(empdirweightalpha,GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+        MPI_Bcast(empdirweightbeta,GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+    }
 	MPI_Bcast(branchempalpha,GetNbranch(),MPI_DOUBLE,0,MPI_COMM_WORLD);
 	MPI_Bcast(branchempbeta,GetNbranch(),MPI_DOUBLE,0,MPI_COMM_WORLD);
 }
@@ -218,6 +224,7 @@ void RASCATFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	int savetrees = 0;
 
 	int ancstatepostprobs = 0;
+    int posthyper = 0;
 
 	try	{
 
@@ -293,6 +300,9 @@ void RASCATFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 				savetrees = 1;
 			}
 
+            else if (s == "-posthyper") {
+                posthyper = 1;
+            }
 			else if (s == "-anc")	{
 				ancstatepostprobs = 1;
 			}
@@ -393,11 +403,90 @@ void RASCATFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	else if (map)	{
 		ReadMap(name,burnin,every,until);
 	}
+    else if (posthyper) {
+		ReadPostHyper(name,burnin,every,until);
+    }
 	else	{
 		Read(name,burnin,every,until);
 	}
 }
 
+void RASCATFiniteGammaPhyloProcess::ReadPostHyper(string name, int burnin, int every, int until)	{
+
+    double meanratealpha = 0;
+    double varratealpha = 0;
+    vector<double> meandirweight(GetDim(), 0);
+    vector<double> vardirweight(GetDim(), 0);
+    vector<double> meanbl(GetNbranch(), 0);
+    vector<double> varbl(GetNbranch(), 0);
+
+	ifstream is((name + ".chain").c_str());
+	if (!is)	{
+		cerr << "error: no .chain file found\n";
+		exit(1);
+	}
+
+	cerr << "burnin : " << burnin << "\n";
+	cerr << "until : " << until << '\n';
+	int i=0;
+	while ((i < until) && (i < burnin))	{
+		FromStream(is);
+		i++;
+	}
+	int samplesize = 0;
+
+	while (i < until)	{
+		cerr << ".";
+		cerr.flush();
+		samplesize++;
+		FromStream(is);
+		i++;
+
+        meanratealpha += alpha;
+        varratealpha += alpha*alpha;
+        for (int k=0; k<GetDim(); k++)  {
+            meandirweight[k] += dirweight[k];
+            vardirweight[k] += dirweight[k]*dirweight[k];
+        }
+        for (int j=1; j<GetNbranch(); j++)  {
+            meanbl[j] += blarray[j];
+            varbl[j] += blarray[j]*blarray[j];
+        }
+
+		int nrep = 1;
+		while ((i<until) && (nrep < every))	{
+			FromStream(is);
+			i++;
+			nrep++;
+		}
+	}
+	cerr << '\n';
+	
+	ofstream os((name + ".posthyper").c_str());
+    meanratealpha /= samplesize;
+    varratealpha /= samplesize;
+    varratealpha -= meanratealpha*meanratealpha;
+    os << meanratealpha*meanratealpha / varratealpha << '\t';
+    os << meanratealpha / varratealpha << '\n';
+	if ((Ncomponent > 1) || ((! fixncomp) && (! dirweightprior)))	{
+        for (int k=0; k<GetDim(); k++)  {
+            meandirweight[k] /= samplesize;
+            vardirweight[k] /= samplesize;
+            vardirweight[k] -= meandirweight[k]*meandirweight[k];
+            os << meandirweight[k]*meandirweight[k]/vardirweight[k] << '\t';
+            os << meandirweight[k]/vardirweight[k] << '\n';
+        }
+    }
+    for (int j=1; j<GetNbranch(); j++)  {
+        meanbl[j] /= samplesize;
+        varbl[j] /= samplesize;
+        varbl[j] -= meanbl[j]*meanbl[j];
+        os << meanbl[j]*meanbl[j]/varbl[j] << '\t';
+        os << meanbl[j]/varbl[j] << '\n';
+    }
+	cerr << "posterior mean shape and scale params in " << name << ".posthyper\n";
+	cerr << '\n';
+}
 
 void RASCATFiniteGammaPhyloProcess::SlaveComputeCVScore()	{
 

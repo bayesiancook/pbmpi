@@ -94,11 +94,18 @@ void FiniteProfileProcess::SampleHyper()	{
 }
 	
 void FiniteProfileProcess::PriorSampleHyper()   {
-    for (int k=0; k<GetDim(); k++)	{
-        double a = profilefrac + (1-profilefrac) * empdirweightalpha[k];
-        double b = profilefrac + (1-profilefrac) * empdirweightbeta[k];
-        dirweight[k] = rnd::GetRandom().Gamma(a,b);
-        // dirweight[k] = rnd::GetRandom().sExpo();
+	if ((Ncomponent > 1) || ((! fixncomp) && (! dirweightprior)))	{
+        for (int k=0; k<GetDim(); k++)	{
+            double a = profilefrac + (1-profilefrac) * empdirweightalpha[k];
+            double b = profilefrac + (1-profilefrac) * empdirweightbeta[k];
+            dirweight[k] = rnd::GetRandom().Gamma(a,b);
+            // dirweight[k] = rnd::GetRandom().sExpo();
+        }
+    }
+    else    {
+        for (int k=0; k<GetDim(); k++)  {
+            dirweight[k] = 1.0;
+        }
     }
 }
 
@@ -160,21 +167,23 @@ double FiniteProfileProcess::LogWeightPrior()	{
 
 double FiniteProfileProcess::LogHyperPrior()	{
 	double total = 0;
-	double sum = 0;
-	for (int k=0; k<GetDim(); k++)	{
-        if (profilefrac == 1.0) {
-            total -= dirweight[k];
+	if ((Ncomponent > 1) || ((! fixncomp) && (! dirweightprior)))	{
+        double sum = 0;
+        for (int k=0; k<GetDim(); k++)	{
+            if (profilefrac == 1.0) {
+                total -= dirweight[k];
+            }
+            else    {
+                double a = profilefrac + (1-profilefrac) * empdirweightalpha[k];
+                double b = profilefrac + (1-profilefrac) * empdirweightbeta[k];
+                total += a*log(b) - rnd::GetRandom().logGamma(a) + (a-1)*dirweight[k] - b*dirweight[k];
+            }
+            sum += dirweight[k];
         }
-        else    {
-            double a = profilefrac + (1-profilefrac) * empdirweightalpha[k];
-            double b = profilefrac + (1-profilefrac) * empdirweightbeta[k];
-            total += a*log(b) - rnd::GetRandom().logGamma(a) + (a-1)*dirweight[k] - b*dirweight[k];
+        if (sum < GetMinTotWeight())	{
+            total = -std::numeric_limits<double>::infinity();
         }
-		sum += dirweight[k];
-	}
-	if (sum < GetMinTotWeight())	{
-		total = -std::numeric_limits<double>::infinity();
-	}
+    }
 	total -= weightalpha;
 	return total;
 }
