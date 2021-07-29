@@ -17,6 +17,30 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 #include "GammaBranchProcess.h"
 #include "Random.h"
 
+void GammaBranchProcess::Create(Tree* intree, double inalpha, double inbeta)  {
+    BranchProcess::Create(intree);
+    branchalpha = inalpha;
+    branchbeta = inbeta;
+    // RecursiveSampleLength(GetRoot());
+
+    if (! branchempalpha)   {
+        branchempalpha = new double[GetNbranch()];
+        branchempbeta = new double[GetNbranch()];
+        for (int j=0; j<GetNbranch(); j++)  {
+            branchempalpha[j] = 1.0;
+            branchempbeta[j] = 1.0;
+        }
+    }
+}
+
+void GammaBranchProcess::Delete()   {
+    if (branchempalpha) {
+        delete[] branchempalpha;
+        delete[] branchempbeta;
+        branchempalpha = 0;
+    }
+}
+
 void GammaBranchProcess::ToStream(ostream& os)	{
 
 	SetNamesFromLengths();
@@ -70,12 +94,18 @@ void GammaBranchProcess::FromStream(istream& is)	{
 	
 double GammaBranchProcess::LogBranchLengthPrior(const Branch* branch)	{
 	int index = branch->GetIndex();
-	return branchalpha * log(branchbeta) - rnd::GetRandom().logGamma(branchalpha) + (branchalpha-1) * log(blarray[index]) - branchbeta * blarray[index];
+    double a = lengthfrac*branchalpha + (1-lengthfrac)*branchempalpha[index];
+    double b = lengthfrac*branchbeta + (1-lengthfrac)*branchempbeta[index];
+	return a*log(b) - rnd::GetRandom().logGamma(a) + (a-1)*log(blarray[index]) - b*blarray[index];
+	// return branchalpha * log(branchbeta) - rnd::GetRandom().logGamma(branchalpha) + (branchalpha-1) * log(blarray[index]) - branchbeta * blarray[index];
 }
 
 void GammaBranchProcess::SampleLength(const Branch* branch)	{
 	int index = branch->GetIndex();
-	blarray[index] = rnd::GetRandom().Gamma(branchalpha,branchbeta);
+    double a = lengthfrac*branchalpha + (1-lengthfrac)*branchempalpha[index];
+    double b = lengthfrac*branchbeta + (1-lengthfrac)*branchempbeta[index];
+	blarray[index] = rnd::GetRandom().Gamma(a,b);
+	// blarray[index] = rnd::GetRandom().Gamma(branchalpha,branchbeta);
 }
 	
 void GammaBranchProcess::SampleLength()	{
@@ -146,7 +176,10 @@ double GammaBranchProcess::MoveLength()	{
 
 	GlobalUpdateBranchLengthSuffStat();
 	for (int i=1; i<GetNbranch(); i++)	{
-		blarray[i] = rnd::GetRandom().Gamma(branchalpha + GetBranchLengthSuffStatCount(i), branchbeta + GetBranchLengthSuffStatBeta(i));
+        double a = lengthfrac*branchalpha + (1-lengthfrac)*branchempalpha[i];
+        double b = lengthfrac*branchbeta + (1-lengthfrac)*branchempbeta[i];
+		blarray[i] = rnd::GetRandom().Gamma(a + GetBranchLengthSuffStatCount(i), b + GetBranchLengthSuffStatBeta(i));
+		// blarray[i] = rnd::GetRandom().Gamma(branchalpha + GetBranchLengthSuffStatCount(i), branchbeta + GetBranchLengthSuffStatBeta(i));
 	}
 	return 1.0;
 }
@@ -155,7 +188,10 @@ double GammaBranchProcess::NonMPIMoveLength()	{
 
 	UpdateBranchLengthSuffStat();
 	for (int i=1; i<GetNbranch(); i++)	{
-		blarray[i] = rnd::GetRandom().Gamma(branchalpha + GetBranchLengthSuffStatCount(i), branchbeta + GetBranchLengthSuffStatBeta(i));
+        double a = lengthfrac*branchalpha + (1-lengthfrac)*branchempalpha[i];
+        double b = lengthfrac*branchbeta + (1-lengthfrac)*branchempbeta[i];
+		blarray[i] = rnd::GetRandom().Gamma(a + GetBranchLengthSuffStatCount(i), b + GetBranchLengthSuffStatBeta(i));
+		// blarray[i] = rnd::GetRandom().Gamma(branchalpha + GetBranchLengthSuffStatCount(i), branchbeta + GetBranchLengthSuffStatBeta(i));
 	}
 	return 1.0;
 }

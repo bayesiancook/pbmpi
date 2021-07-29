@@ -24,7 +24,7 @@ class GammaBranchProcess : public virtual BranchProcess	{
 
 	public:
 
-	GammaBranchProcess() : betaprior(0) {}
+	GammaBranchProcess() : branchempalpha(0), branchempbeta(0), betaprior(0) {}
 	virtual ~GammaBranchProcess() {}
 
 	double LogBranchLengthPrior(const Branch* branch);
@@ -53,17 +53,15 @@ class GammaBranchProcess : public virtual BranchProcess	{
 
 	protected:
 
-	virtual void Create(Tree* intree, double inalpha = 1, double inbeta = 10)	{
-		BranchProcess::Create(intree);
-		branchalpha = inalpha;
-		branchbeta = inbeta;
-		// RecursiveSampleLength(GetRoot());
-	}
+	virtual void Create(Tree* intree, double inalpha = 1, double inbeta = 10);
 
-	virtual void Delete() {}
+	virtual void Delete();
 
 	double branchalpha;
 	double branchbeta;
+
+    double* branchempalpha;
+    double* branchempbeta;
 
 	int betaprior;
 };

@@ -169,6 +169,33 @@ void RASCATFiniteGammaPhyloProcess::SlaveUpdateParameters()	{
 	UpdateZip();
 }
 
+void RASCATFiniteGammaPhyloProcess::GlobalSetEmpiricalPrior(istream& is)    {
+    // read from stream
+    is >> empalpha >> empbeta;
+    for (int k=0; k<GetDim(); k++)  {
+        is >> empdirweightalpha[k] >> empdirweightbeta[k];
+    }
+    for (int j=1; j<GetNbranch(); j++)  {
+        is >> branchempalpha[j] >> branchempbeta[j];
+    }
+	MPI_Bcast(&empalpha,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+	MPI_Bcast(&empalpha,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+	MPI_Bcast(empdirweightalpha,GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+	MPI_Bcast(empdirweightbeta,GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+	MPI_Bcast(branchempalpha,GetNbranch(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+	MPI_Bcast(branchempbeta,GetNbranch(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+}
+
+void RASCATFiniteGammaPhyloProcess::SlaveSetEmpiricalPrior()    {
+
+	MPI_Bcast(&empalpha,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+	MPI_Bcast(&empalpha,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+	MPI_Bcast(empdirweightalpha,GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+	MPI_Bcast(empdirweightbeta,GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+	MPI_Bcast(branchempalpha,GetNbranch(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+	MPI_Bcast(branchempbeta,GetNbranch(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+}
+
 void RASCATFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 
 	string name = "";

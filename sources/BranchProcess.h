@@ -24,7 +24,7 @@ class BranchProcess : public NewickTree {
 
 	public:
 
-	BranchProcess() : tree(0), blarray(0) {}
+	BranchProcess() : tree(0), blarray(0), lengthfrac(1.0) {}
 	virtual ~BranchProcess() {}
 
 	virtual string GetVersion() = 0;
@@ -174,9 +174,15 @@ class BranchProcess : public NewickTree {
 	double RecursiveLogLengthPrior(const Link* from);
 	void RecursiveSampleLength(const Link* from);
 
+    void SetLengthFrac(double infrac)   {
+        lengthfrac = infrac;
+    }
+
 	Tree* tree;
 	double* blarray;
 	double* bkarray;
+
+    double lengthfrac;
 
 	Chrono chronolength;
 

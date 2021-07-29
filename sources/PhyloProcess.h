@@ -69,6 +69,25 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	// returns average success rate
 	virtual double Move(double tuning = 1.0) = 0;
 
+    virtual void GlobalSetEmpiricalPrior(istream& is)   {
+        cerr << "in PhyloProcess::GlobalSetEmpiricalPrior\n";
+        exit(1);
+    }
+
+    virtual void SlaveSetEmpiricalPrior()   {
+        cerr << "in PhyloProcess::SlaveSetEmpiricalPrior\n";
+        exit(1);
+    }
+
+    void SetEmpiricalFrac(double infrac)    {
+        SetRateFrac(infrac);
+        SetProfileFrac(infrac);
+        SetLengthFrac(infrac);
+    }
+
+    void GlobalSetEmpiricalFrac(double infrac);
+    void SlaveSetEmpiricalFrac();
+
 	void SetFixBL(int in)	{
 		fixbl = in;
 	}

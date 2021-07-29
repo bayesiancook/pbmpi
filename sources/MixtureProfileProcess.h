@@ -172,6 +172,8 @@ class MixtureProfileProcess: public virtual ProfileProcess	{
 
 	virtual void SwapComponents(int cat1, int cat2);
 
+    virtual void SetEmpiricalDirWeightPrior(double* inalpha, double* inbeta);
+
 	double** profile;
 	double* allocprofile;
 	double* dirweight;
@@ -180,6 +182,8 @@ class MixtureProfileProcess: public virtual ProfileProcess	{
 	int Ncomponent;
 	double* logstatprior;
 	double* profilesuffstatlogprob;
+    double* empdirweightalpha;
+    double* empdirweightbeta;
 };
 
 #endif

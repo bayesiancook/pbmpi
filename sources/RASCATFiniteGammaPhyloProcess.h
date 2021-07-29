@@ -202,6 +202,9 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 		Delete();
 	}
 
+    void GlobalSetEmpiricalPrior(istream& is);
+    void SlaveSetEmpiricalPrior();
+
 	double GetLogProb()	{
 		return GetLogPrior() + GetLogLikelihood();
 	}

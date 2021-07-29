@@ -37,10 +37,11 @@ void DGamRateProcess::Create(int innsite, int inncat)	{
 		alloc = new int[GetNsite()];
 		ratesuffstatcount = new int[GetNcat()];
 		ratesuffstatbeta = new double[GetNcat()];
+        empalpha = 1.0;
+        empbeta = 1.0;
 		// SampleRate();
 	}
 }
-
 
 void DGamRateProcess::Delete() 	{
 	delete[] rate;
@@ -84,6 +85,11 @@ void DGamRateProcess::UpdateDiscreteCategories()	{
 	delete[] y;
 }
 
+void DGamRateProcess::SetRateEmpiricalPrior(double inalpha, double inbeta)  {
+    empalpha = inalpha;
+    empbeta = inbeta;
+}
+
 void DGamRateProcess::SampleRate()	{
 	// alpha = rnd::GetRandom().sExpo();
 	alpha = 1;
@@ -91,12 +97,18 @@ void DGamRateProcess::SampleRate()	{
 }
 
 void DGamRateProcess::PriorSampleRate()	{
-	alpha = rnd::GetRandom().sExpo();
+	alpha = rnd::GetRandom().Gamma(ratefrac + (1-ratefrac)*empalpha, ratefrac + (1-ratefrac)*empbeta);
+	// alpha = rnd::GetRandom().sExpo();
 	UpdateDiscreteCategories();
 }
 
 double DGamRateProcess::LogRatePrior()	{
-	return -alpha;
+    if (ratefrac == 1)  {
+        return -alpha;
+    }
+    double a = ratefrac + (1-ratefrac)*empalpha;
+    double b = ratefrac + (1-ratefrac)*empbeta;
+    return a*log(b) - rnd::GetRandom().logGamma(a) + (a-1)*log(alpha) - b*alpha;
 }
 
 double DGamRateProcess::RateSuffStatLogProb()	{

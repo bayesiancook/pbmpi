@@ -26,7 +26,7 @@ class RateProcess {
 
 	public:
 
-	RateProcess() : nsite(0) {}
+	RateProcess() : nsite(0), ratefrac(1.0) {}
 	virtual ~RateProcess() {}
 
 	virtual string GetVersion() = 0;
@@ -53,6 +53,10 @@ class RateProcess {
 
 	protected:
 
+    void SetRateFrac(double infrac) {
+        ratefrac = infrac;
+    }
+
 	// abstract classes will be implemented in phyloprocess
 	virtual void GlobalUpdateSiteRateSuffStat() = 0;
 	virtual void SlaveUpdateSiteRateSuffStat() = 0;
@@ -73,6 +77,8 @@ class RateProcess {
 
 	bool sumflag;
 	int nsite;
+
+    double ratefrac;
 
 	Chrono chronorate;
 };

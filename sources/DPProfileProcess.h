@@ -25,7 +25,7 @@ class DPProfileProcess: public virtual MixtureProfileProcess	{
 
 	public:
 
-	DPProfileProcess() : kappa(1), movekappa(true), kappaprior(0), dirweightprior(0) {}
+	DPProfileProcess() : kappa(1), movekappa(true), kappaprior(0), dirweightprior(0), empkappaalpha(1.0), empkappabeta(1.0) {}
 	virtual ~DPProfileProcess(){}
 
 	protected:
@@ -60,6 +60,11 @@ class DPProfileProcess: public virtual MixtureProfileProcess	{
 		exit(1);
 	}
 
+    void SetEmpiricalKappaPrior(double inalpha, double inbeta)  {
+        empkappaalpha = inalpha;
+        empkappabeta = inbeta;
+    }
+
 	double kappa;
 	bool movekappa;
 	int kappaprior;
@@ -68,6 +73,9 @@ class DPProfileProcess: public virtual MixtureProfileProcess	{
 	int dirweightprior;
 	// 0 : flexible
 	// 1 : rigid
+
+    double empkappaalpha;
+    double empkappabeta;
 };
 
 #endif

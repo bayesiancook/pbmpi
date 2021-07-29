@@ -38,14 +38,20 @@ void DPProfileProcess::SampleHyper()	{
 void DPProfileProcess::PriorSampleHyper()	{
 	kappa = 1;
 	if (kappaprior == 0)	{
-        kappa = 10.0 * rnd::GetRandom().sExpo();
+        double a = profilefrac + (1-profilefrac)*empkappaalpha;
+        double b = profilefrac*0.1 + (1-profilefrac)*empkappabeta;
+        kappa = rnd::GetRandom().Gamma(a,b);
+        // kappa = 10.0 * rnd::GetRandom().sExpo();
 	}
 	else 	{
         double u = 8 * (rnd::GetRandom().Uniform() - 4.0);
         kappa = exp(log(10.0) * u);
 	}
-	for (int i=0; i<GetDim(); i++)	{
-		dirweight[i] = rnd::GetRandom().sExpo();
+	for (int k=0; k<GetDim(); k++)	{
+        double a = profilefrac + (1-profilefrac)*empdirweightalpha[k];
+        double b = profilefrac + (1-profilefrac)*empdirweightbeta[k];
+        dirweight[k] = rnd::GetRandom().Gamma(a,b);
+		// dirweight[k] = rnd::GetRandom().sExpo();
 	}
 }
 	
@@ -122,7 +128,14 @@ void DPProfileProcess::SampleAlloc()	{
 double DPProfileProcess::LogHyperPrior()	{
 	double total = 0;
 	if (kappaprior == 0)	{
-		total = -kappa / 10.0;
+        if (profilefrac == 1.0) {
+            total = -kappa / 10.0;
+        }
+        else    {
+            double a = profilefrac + (1-profilefrac)*empkappaalpha;
+            double b = profilefrac*0.1 + (1-profilefrac)*empkappabeta;
+            total += a*log(b) - rnd::GetRandom().logGamma(a) + (a-1)*log(kappa) - b*kappa;
+        }
 	}
 	else 	{
 		total = -log(kappa);
@@ -132,7 +145,14 @@ double DPProfileProcess::LogHyperPrior()	{
 	}
 	double sum = 0;
 	for (int k=0; k<GetDim(); k++)	{
-		total -= dirweight[k];
+        if (profilefrac == 1.0) {
+            total -= dirweight[k];
+        }
+        else    {
+            double a = profilefrac + (1-profilefrac)*empdirweightalpha[k];
+            double b = profilefrac + (1-profilefrac)*empdirweightbeta[k];
+            total += a*log(b) - rnd::GetRandom().logGamma(a) + (a-1)*log(dirweight[k]) - b*dirweight[k];
+        }
 		sum += dirweight[k];
 	}
 	if (sum < GetMinTotWeight())	{

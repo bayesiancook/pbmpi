@@ -452,6 +452,130 @@ class Model	{
 		cerr << '\n';
 	}
 
+	void EmpiricalSteppingRun(string empname, int step, int taxstep, int burnin, int stepsize)	{
+
+        ifstream is(empname.c_str());
+        process->GlobalSetEmpiricalPrior(is);
+
+		process->GlobalPrepareStepping();
+	
+		// total size : nstep * (burnin + stepsize)
+        // number of steps:
+        //
+
+        int sitencycle = process->GetNsite() / step;
+        if (process->GetNsite() % step) {
+            sitencycle++;
+        }
+        int taxncycle = process->GetNtaxa() / taxstep;
+        if (process->GetNtaxa() % taxstep)  {
+            taxncycle++;
+        }
+
+        int until = sitencycle * taxncycle * (burnin + stepsize);
+
+		ofstream ros((name + ".run").c_str()); stringstream buf;
+		buf << 1 << '\n';
+		ros << buf.str();
+		ros.close();
+	
+        if (! GetSize())    {
+            process->PriorSample();
+            process->GlobalUpdateParameters();
+        }
+
+		while (RunningStatus() && (GetSize() < until))	{
+
+            int cycle = int(GetSize() / (burnin + stepsize));
+            int sitecycle = cycle / taxncycle;
+            int taxcycle = cycle % taxncycle;
+            int nsite = sitecycle * step;
+            if (nsite > process->GetNsite()) {
+                nsite = process->GetNsite();
+            }
+            int ntaxa = taxcycle * taxstep;
+            if (ntaxa >= process->GetNtaxa()) {
+                cerr << "error: ntaxa > Ntaxa\n";
+                exit(1);
+            }
+            int cutoff = process->GetNtaxa()*nsite + ntaxa;
+
+            int taxcycle2 = taxcycle;
+            int sitecycle2 = sitecycle;
+            taxcycle2++;
+            if (taxcycle2 == taxncycle)   {
+                taxcycle2 = 0;
+                sitecycle2++;
+            }
+            int nsite2 = sitecycle2 * step;
+            if (nsite2 > process->GetNsite()) {
+                nsite2 = process->GetNsite();
+            }
+            int ntaxa2 = taxcycle2 * taxstep;
+            if (ntaxa2 >= process->GetNtaxa()) {
+                cerr << "error: ntaxa2 > Ntaxa\n";
+                exit(1);
+            }
+            int cutoff2 = process->GetNtaxa()*nsite2 + ntaxa2;
+
+            /*
+            cerr << sitecycle << '\t' << nsite << '\t' << taxcycle << '\t' << ntaxa << '\t' << cutoff << '\t';
+            cerr << '\n';
+            cerr << sitecycle2 << '\t' << nsite2 << '\t' << taxcycle2 << '\t' << ntaxa2 << '\t' << cutoff2 << '\n';
+            cerr << '\n';
+            cerr << '\n';
+            */
+
+			process->GlobalSetSteppingFraction(cutoff);
+
+			Move(1,every);
+			
+			process->IncSize();
+
+			ofstream os((name + ".treelist").c_str(), ios_base::app);
+			TreeTrace(os);
+			os.close();
+
+			ofstream tos((name + ".trace").c_str(), ios_base::app);
+			Trace(tos);
+			tos.close();
+
+			ofstream mos((name + ".monitor").c_str());
+			Monitor(mos);
+			mos.close();
+
+			ofstream pos((name + ".param").c_str());
+			pos.precision(numeric_limits<double>::digits10);
+			ToStream(pos,true);
+			pos.close();
+
+			if (saveall)	{
+				ofstream cos((name + ".chain").c_str(),ios_base::app);
+				cos.precision(numeric_limits<double>::digits10);
+				ToStream(cos,false);
+				cos.close();
+			}
+
+			ofstream los((name + ".stepping").c_str(), ios_base::app);
+			double lnL1 = process->GlobalGetFullLogLikelihood();
+			process->GlobalSetSteppingFraction(cutoff2);
+			double lnL2 = process->GlobalGetFullLogLikelihood();
+            double dlnL = lnL2 - lnL1;
+            if (std::isnan(dlnL))   {
+                cerr << "nan lnl\n";
+                cerr << lnL1 << '\t' << lnL2 << '\n';
+                exit(1);
+            }
+            int dnsite = nsite2 - nsite;
+            int dntaxa = ntaxa2 - ntaxa;
+			los << cutoff << '\t' << dnsite << '\t' << dlnL << '\t' << dntaxa << '\n';
+			// los << cutoff << '\t' << dnsite << '\t' << dlnL << '\t' << dlnL / dnsite << '\n';
+			los.close();
+		}	
+		cerr << name << ": stopping after " << GetSize() << " points.\n";
+		cerr << '\n';
+	}
+
 	NewickTree* GetTree() {return process->GetLengthTree();}
 
 	void TraceHeader(ostream& os)	{

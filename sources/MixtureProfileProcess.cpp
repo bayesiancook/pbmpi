@@ -37,11 +37,19 @@ void MixtureProfileProcess::Create(int innsite, int indim)	{
 		dirweight = new double[GetDim()];
 		logstatprior = new double[GetNmodeMax()];
 		profilesuffstatlogprob = new double[GetNmodeMax()];
+        empdirweightalpha = new double[GetDim()];
+        empdirweightbeta = new double[GetDim()];
+        for (int i=0; i<GetDim(); i++)  {
+            empdirweightalpha[i] = 1.0;
+            empdirweightbeta[i] = 1.0;
+        }
 	}
 }
 
 void MixtureProfileProcess::Delete()	{
 	if (profile)	{
+        delete[] empdirweightalpha;
+        delete[] empdirweightbeta;
 		delete[] profilesuffstatlogprob;
 		delete[] logstatprior;
 		delete[] allocprofile;
@@ -49,6 +57,13 @@ void MixtureProfileProcess::Delete()	{
 		profile = 0;
 		ProfileProcess::Delete();
 	}
+}
+
+void MixtureProfileProcess::SetEmpiricalDirWeightPrior(double* inalpha, double* inbeta) {
+    for (int k=0; k<GetDim(); k++)  {
+        empdirweightalpha[k] = inalpha[k];
+        empdirweightbeta[k] = inbeta[k];
+    }
 }
 
 double MixtureProfileProcess::GetMeanDirWeight()	{

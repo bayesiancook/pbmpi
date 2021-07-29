@@ -112,6 +112,8 @@ class DGamRateProcess : public virtual RateProcess {
 	double RateSuffStatLogProb();
 
 	void UpdateDiscreteCategories();
+
+    void SetRateEmpiricalPrior(double inalpha, double inbeta);
 	
 	int Ncat;
 	double* rate;
@@ -119,6 +121,8 @@ class DGamRateProcess : public virtual RateProcess {
 	int* alloc;
 	int* ratesuffstatcount;
 	double* ratesuffstatbeta;
+    double empalpha;
+    double empbeta;
 };
 
 #endif

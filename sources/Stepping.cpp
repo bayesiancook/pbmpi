@@ -102,3 +102,15 @@ void PhyloProcess::SetSteppingFraction(int cutoff)  {
     FillMissingMap();
 }
 
+void PhyloProcess::GlobalSetEmpiricalFrac(double infrac)    {
+	MESSAGE signal = EMPIRICALFRAC;
+	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(&infrac,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+    SetEmpiricalFrac(infrac);
+}
+
+void PhyloProcess::SlaveSetEmpiricalFrac()  {
+    double frac;
+	MPI_Bcast(&frac,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+    SetEmpiricalFrac(frac);
+}

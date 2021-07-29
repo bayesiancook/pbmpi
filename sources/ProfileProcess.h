@@ -39,10 +39,14 @@ class ProfileProcess {
 
 	public:
 
-	ProfileProcess() : nsite(0), dim(0), activesuffstat(false), burnin(false), statinfcount(0), totstatcount(0), mintotweight(0) {}
+	ProfileProcess() : nsite(0), dim(0), activesuffstat(false), burnin(false), statinfcount(0), totstatcount(0), mintotweight(0), profilefrac(1.0) {}
 	virtual ~ProfileProcess() {}
 
 	virtual string GetVersion() = 0;
+
+    void SetProfileFrac(double infrac)  {
+        profilefrac = infrac;
+    }
 
 	double GetStatInfCount() {
 		double tmp = ((double) statinfcount) / totstatcount;
@@ -180,6 +184,7 @@ class ProfileProcess {
 
 	double mintotweight;
 
+    double profilefrac;
 };
 
 

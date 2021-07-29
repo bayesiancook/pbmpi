@@ -1725,6 +1725,12 @@ void PhyloProcess::SlaveExecute(MESSAGE signal)	{
 	case SIMULATE:
 		SimulateForward();
 		break;
+    case EMPIRICALFRAC:
+        SlaveSetEmpiricalFrac();
+        break;
+    case EMPIRICALPRIOR:
+        SlaveSetEmpiricalPrior();
+        break;
 	
 	default:
 		// or : SubstitutionProcess::SlaveExecute?
