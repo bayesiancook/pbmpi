@@ -180,8 +180,10 @@ void RASCATFiniteGammaPhyloProcess::GlobalSetEmpiricalPrior(istream& is)    {
     for (int j=1; j<GetNbranch(); j++)  {
         is >> branchempalpha[j] >> branchempbeta[j];
     }
+	MESSAGE signal = EMPIRICALPRIOR;
+	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 	MPI_Bcast(&empalpha,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
-	MPI_Bcast(&empalpha,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+	MPI_Bcast(&empbeta,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
 	if ((Ncomponent > 1) || ((! fixncomp) && (! dirweightprior)))	{
         MPI_Bcast(empdirweightalpha,GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
         MPI_Bcast(empdirweightbeta,GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
@@ -193,7 +195,7 @@ void RASCATFiniteGammaPhyloProcess::GlobalSetEmpiricalPrior(istream& is)    {
 void RASCATFiniteGammaPhyloProcess::SlaveSetEmpiricalPrior()    {
 
 	MPI_Bcast(&empalpha,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
-	MPI_Bcast(&empalpha,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+	MPI_Bcast(&empbeta,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
 	if ((Ncomponent > 1) || ((! fixncomp) && (! dirweightprior)))	{
         MPI_Bcast(empdirweightalpha,GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
         MPI_Bcast(empdirweightbeta,GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);

@@ -51,8 +51,9 @@ class Model	{
     int steppingtaxstep;
     int steppingburnin;
     int steppingsize;
+    string empstepping;
 
-	Model(string datafile, string treefile, int modeltype, int nratecat, int mixturetype, int ncat, int nmodemax, GeneticCodeType codetype, int suffstat, int fixncomp, int empmix, string mixtype, string rrtype, int iscodon, int fixtopo, int NSPR, int NNNI, int fixcodonprofile, int fixomega, int fixbl, int omegaprior, int kappaprior, int dirweightprior, double mintotweight, int dc, int inevery, int inuntil, int insaveall, int inincinit, int topoburnin, int insteppingstep, int insteppingtaxstep, int insteppingburnin, int insteppingsize, string inname, int myid, int nprocs)	{
+	Model(string datafile, string treefile, int modeltype, int nratecat, int mixturetype, int ncat, int nmodemax, GeneticCodeType codetype, int suffstat, int fixncomp, int empmix, string mixtype, string rrtype, int iscodon, int fixtopo, int NSPR, int NNNI, int fixcodonprofile, int fixomega, int fixbl, int omegaprior, int kappaprior, int dirweightprior, double mintotweight, int dc, int inevery, int inuntil, int insaveall, int inincinit, int topoburnin, int insteppingstep, int insteppingtaxstep, int insteppingburnin, int insteppingsize, string inempstepping, string inname, int myid, int nprocs)	{
 
 		every = inevery;
 		until = inuntil;
@@ -63,6 +64,7 @@ class Model	{
         steppingtaxstep = insteppingtaxstep;
         steppingburnin = insteppingburnin;
         steppingsize = insteppingsize;
+        empstepping = inempstepping;
 
 		// 1 : CAT
 		// 2 : CATGTR
@@ -187,6 +189,7 @@ class Model	{
 		is >> type;
         if (type == "STEPPING") {
             is >> steppingstep >> steppingtaxstep >> steppingburnin >> steppingsize;
+            is >> empstepping;
             is >> type;
         }
 		int size;
@@ -231,6 +234,7 @@ class Model	{
             if (steppingstep)  {
                 ss << "STEPPING\n";
                 ss << steppingstep << '\t' << steppingtaxstep << '\t' << steppingburnin << '\t' << steppingsize << '\n';
+                ss << empstepping << '\n';
             }
 			ss << type << '\n';
 			ss << every << '\t' << until << '\t' << GetSize() << '\n';
@@ -278,7 +282,12 @@ class Model	{
             MCMCRun(burnin);
         }
         else    {
-            SteppingRun(steppingstep, steppingtaxstep, steppingburnin, steppingsize);
+            if (empstepping != "None")  {
+                EmpiricalSteppingRun(empstepping, steppingstep, steppingtaxstep, steppingburnin, steppingsize);
+            }
+            else    {
+                SteppingRun(steppingstep, steppingtaxstep, steppingburnin, steppingsize);
+            }
         }
     }
 

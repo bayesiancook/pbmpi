@@ -79,6 +79,7 @@ int main(int argc, char* argv[])	{
 	int steppingtaxstep = 0;
     int steppingburnin = 10;
     int steppingsize = 10;
+    string empstepping = "None";
 
     bool help = false;
     
@@ -154,6 +155,10 @@ int main(int argc, char* argv[])	{
                 steppingburnin = atoi(argv[i]);
                 i++;
                 steppingsize = atoi(argv[i]);
+            }
+            else if (s == "-empstepping")   {
+                i++;
+                empstepping = argv[i];
             }
 			else if (s == "-fixcodonprofile")	{
 				fixcodonprofile = 1;
@@ -584,7 +589,7 @@ int main(int argc, char* argv[])	{
 				exit(1);
 			}
 		}
-		model = new Model(datafile,treefile,modeltype,dgam,mixturetype,ncat,nmodemax,type,suffstat,fixncomp,empmix,mixtype,rrtype,iscodon,fixtopo,NSPR,NNNI,fixcodonprofile,fixomega,fixbl,omegaprior,kappaprior,dirweightprior,mintotweight,dc,every,until,saveall,incinit,topoburnin,steppingstep,steppingtaxstep,steppingburnin,steppingsize,name,myid,nprocs);
+		model = new Model(datafile,treefile,modeltype,dgam,mixturetype,ncat,nmodemax,type,suffstat,fixncomp,empmix,mixtype,rrtype,iscodon,fixtopo,NSPR,NNNI,fixcodonprofile,fixomega,fixbl,omegaprior,kappaprior,dirweightprior,mintotweight,dc,every,until,saveall,incinit,topoburnin,steppingstep,steppingtaxstep,steppingburnin,steppingsize,empstepping,name,myid,nprocs);
 		if (! myid)	{
 			// cerr << "create files\n";
 			cerr << '\n';
