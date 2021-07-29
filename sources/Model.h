@@ -437,6 +437,11 @@ class Model	{
 			process->GlobalSetSteppingFraction(cutoff2);
 			double lnL2 = process->GlobalGetFullLogLikelihood();
             double dlnL = lnL2 - lnL1;
+            if (std::isnan(dlnL))   {
+                cerr << "nan lnl\n";
+                cerr << lnL1 << '\t' << lnL2 << '\n';
+                exit(1);
+            }
             int dnsite = nsite2 - nsite;
             int dntaxa = ntaxa2 - ntaxa;
 			los << cutoff << '\t' << dnsite << '\t' << dlnL << '\t' << dntaxa << '\n';
