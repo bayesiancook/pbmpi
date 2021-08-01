@@ -209,10 +209,12 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 		return GetLogPrior() + GetLogLikelihood();
 	}
 
+    /*
 	double GetLogPrior()	{
 		// yet to be implemented
 		return 0;
 	}
+    */
 
 	double GetLogLikelihood()	{
 		return logL;
