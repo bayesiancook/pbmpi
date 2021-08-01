@@ -196,10 +196,6 @@ class AACodonMutSelFinitePhyloProcess : public virtual AACodonMutSelFiniteSubsti
 		return GetLogPrior() + GetLogLikelihood();
 	}
 
-	double GetLogPrior()	{
-		return 0;
-	}
-
 	double GetLogLikelihood()	{
 		return logL;
 	}

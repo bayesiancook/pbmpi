@@ -206,10 +206,6 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 		return GetLogPrior() + GetLogLikelihood();
 	}
 
-	double GetLogPrior()	{
-		return 0;
-	}
-
 	double GetLogLikelihood()	{
 		return logL;
 	}

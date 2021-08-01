@@ -169,10 +169,6 @@ class CodonMutSelSBDPPhyloProcess : public virtual CodonMutSelSBDPSubstitutionPr
 		return GetLogPrior() + GetLogLikelihood();
 	}
 
-	double GetLogPrior()	{
-		return 0;
-	}
-
 	double GetLogLikelihood()	{
 		return logL;
 	}

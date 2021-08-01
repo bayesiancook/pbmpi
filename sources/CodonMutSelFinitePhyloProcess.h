@@ -185,10 +185,6 @@ class CodonMutSelFinitePhyloProcess : public virtual CodonMutSelFiniteSubstituti
 		return GetLogPrior() + GetLogLikelihood();
 	}
 
-	double GetLogPrior()	{
-		return 0;
-	}
-
 	double GetLogLikelihood()	{
 		return logL;
 	}
