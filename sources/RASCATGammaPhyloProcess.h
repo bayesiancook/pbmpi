@@ -271,6 +271,10 @@ class RASCATGammaPhyloProcess : public virtual PoissonPhyloProcess, public virtu
 	virtual void ReadPB(int argc, char* argv[]);
 	void ReadSiteProfiles(string name, int burnin, int every, int until);
 	void ReadClusters(string name, int burnin, int every, int until);
+	void ReadPostHyper(string name, int burnin, int every, int until);
+
+    void GlobalSetEmpiricalPrior(istream& is);
+    void SlaveSetEmpiricalPrior();
 
 	void ToStreamHeader(ostream& os)	{
 		PhyloProcess::ToStreamHeader(os);
