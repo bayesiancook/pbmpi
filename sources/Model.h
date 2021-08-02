@@ -52,8 +52,11 @@ class Model	{
     int steppingburnin;
     int steppingsize;
     string empstepping;
+    int steppingcycle;
+    double steppingmineffsize;
+    int steppingmaxsize;
 
-	Model(string datafile, string treefile, int modeltype, int nratecat, int mixturetype, int ncat, int nmodemax, GeneticCodeType codetype, int suffstat, int fixncomp, int empmix, string mixtype, string rrtype, int iscodon, int fixtopo, int NSPR, int NNNI, int fixcodonprofile, int fixomega, int fixbl, int omegaprior, int kappaprior, int dirweightprior, double mintotweight, int dc, int inevery, int inuntil, int insaveall, int inincinit, int topoburnin, int insteppingstep, int insteppingtaxstep, int insteppingburnin, int insteppingsize, string inempstepping, string inname, int myid, int nprocs)	{
+	Model(string datafile, string treefile, int modeltype, int nratecat, int mixturetype, int ncat, int nmodemax, GeneticCodeType codetype, int suffstat, int fixncomp, int empmix, string mixtype, string rrtype, int iscodon, int fixtopo, int NSPR, int NNNI, int fixcodonprofile, int fixomega, int fixbl, int omegaprior, int kappaprior, int dirweightprior, double mintotweight, int dc, int inevery, int inuntil, int insaveall, int inincinit, int topoburnin, int insteppingstep, int insteppingtaxstep, int insteppingburnin, int insteppingsize, double insteppingmineffsize, int insteppingmaxsize, string inempstepping, string inname, int myid, int nprocs)	{
 
 		every = inevery;
 		until = inuntil;
@@ -64,7 +67,10 @@ class Model	{
         steppingtaxstep = insteppingtaxstep;
         steppingburnin = insteppingburnin;
         steppingsize = insteppingsize;
+        steppingmineffsize = insteppingmineffsize;
+        steppingmaxsize = insteppingmaxsize;
         empstepping = inempstepping;
+        steppingcycle = 0;
 
 		// 1 : CAT
 		// 2 : CATGTR
@@ -188,8 +194,9 @@ class Model	{
 
 		is >> type;
         if (type == "STEPPING") {
-            is >> steppingstep >> steppingtaxstep >> steppingburnin >> steppingsize;
+            is >> steppingstep >> steppingtaxstep >> steppingburnin >> steppingsize >> steppingmineffsize >> steppingmaxsize;
             is >> empstepping;
+            is >> steppingcycle;
             is >> type;
         }
 		int size;
@@ -233,8 +240,9 @@ class Model	{
 		if (header)	{
             if (steppingstep)  {
                 ss << "STEPPING\n";
-                ss << steppingstep << '\t' << steppingtaxstep << '\t' << steppingburnin << '\t' << steppingsize << '\n';
+                ss << steppingstep << '\t' << steppingtaxstep << '\t' << steppingburnin << '\t' << steppingsize << '\t' << steppingmineffsize << '\t' << steppingmaxsize << '\n';
                 ss << empstepping << '\n';
+                ss << steppingcycle << '\n';
             }
 			ss << type << '\n';
 			ss << every << '\t' << until << '\t' << GetSize() << '\n';
@@ -283,7 +291,12 @@ class Model	{
         }
         else    {
             if (empstepping != "None")  {
-                EmpiricalSteppingRun(empstepping, steppingstep, steppingtaxstep, steppingburnin, steppingsize);
+                if (steppingmineffsize != -1.0) {
+                    SelfTunedEmpiricalSteppingRun(empstepping, steppingstep, steppingburnin, steppingsize, steppingmineffsize, steppingmaxsize);
+                }
+                else    {
+                    EmpiricalSteppingRun(empstepping, steppingstep, steppingtaxstep, steppingburnin, steppingsize);
+                }
             }
             else    {
                 SteppingRun(steppingstep, steppingtaxstep, steppingburnin, steppingsize);
@@ -460,6 +473,163 @@ class Model	{
 			los << cutoff << '\t' << dnsite << '\t' << dlnL << '\t' << dntaxa << '\n';
 			// los << cutoff << '\t' << dnsite << '\t' << dlnL << '\t' << dlnL / dnsite << '\n';
 			los.close();
+		}	
+		cerr << name << ": stopping after " << GetSize() << " points.\n";
+		cerr << '\n';
+	}
+
+	void SelfTunedEmpiricalSteppingRun(string empname, int step, int burnin, int minstepsize, double mineffsize, double maxsize)    {
+
+        ifstream is(empname.c_str());
+        process->GlobalSetEmpiricalPrior(is);
+
+		process->GlobalPrepareStepping();
+	
+		ofstream ros((name + ".run").c_str()); stringstream buf;
+		buf << 1 << '\n';
+		ros << buf.str();
+		ros.close();
+	
+        if (! GetSize())    {
+            process->GlobalSetEmpiricalFrac(0);
+            process->PriorSample();
+            process->GlobalUpdateParameters();
+        }
+
+        int ncycle = process->GetNsite() / step;
+        if (process->GetNsite() % step) {
+            ncycle++;
+        }
+
+		while (RunningStatus() && (steppingcycle < ncycle)) {
+
+            double frac1 = ((double) steppingcycle) / ncycle;
+            int nsite = steppingcycle * step;
+            if (nsite > process->GetNsite()) {
+                nsite = process->GetNsite();
+            }
+            int cutoff = process->GetNtaxa()*nsite;
+
+            double frac2 = ((double) steppingcycle + 1.0) / ncycle;
+            int nsite2 = (steppingcycle + 1) * step;
+            if (nsite2 > process->GetNsite()) {
+                nsite2 = process->GetNsite();
+            }
+            int cutoff2 = process->GetNtaxa()*nsite2;
+
+			process->GlobalSetSteppingFraction(cutoff);
+            process->GlobalSetEmpiricalFrac(frac1);
+
+            for (int i=0; i<burnin; i++)    {
+                Move(1,every);
+                process->IncSize();
+
+                if (! process->fixtopo) {
+                    ofstream os((name + ".treelist").c_str(), ios_base::app);
+                    TreeTrace(os);
+                    os.close();
+                }
+
+                ofstream tos((name + ".trace").c_str(), ios_base::app);
+                Trace(tos);
+                tos.close();
+
+                ofstream mos((name + ".monitor").c_str());
+                Monitor(mos);
+                mos.close();
+
+                ofstream pos((name + ".param").c_str());
+                pos.precision(numeric_limits<double>::digits10);
+                ToStream(pos,true);
+                pos.close();
+
+                if (saveall)	{
+                    ofstream cos((name + ".chain").c_str(),ios_base::app);
+                    cos.precision(numeric_limits<double>::digits10);
+                    ToStream(cos,false);
+                    cos.close();
+                }
+            }
+
+            int npoint = 0;
+            double effsize = 0;
+            double maxlogp = 0;
+            double totp1 = 0;
+            double totp2 = 0;
+
+            while ((npoint < maxsize) && ((npoint < minstepsize) || (effsize < mineffsize)))    {
+
+                Move(1,every);
+                process->IncSize();
+                npoint++;
+
+                if (! process->fixtopo) {
+                    ofstream os((name + ".treelist").c_str(), ios_base::app);
+                    TreeTrace(os);
+                    os.close();
+                }
+
+                ofstream tos((name + ".trace").c_str(), ios_base::app);
+                Trace(tos);
+                tos.close();
+
+                ofstream mos((name + ".monitor").c_str());
+                Monitor(mos);
+                mos.close();
+
+                ofstream pos((name + ".param").c_str());
+                pos.precision(numeric_limits<double>::digits10);
+                ToStream(pos,true);
+                pos.close();
+
+                if (saveall)	{
+                    ofstream cos((name + ".chain").c_str(),ios_base::app);
+                    cos.precision(numeric_limits<double>::digits10);
+                    ToStream(cos,false);
+                    cos.close();
+                }
+
+                double lnL1 = process->GlobalGetFullLogLikelihood();
+                double lnP1 = process->GetLogPrior();
+                process->GlobalSetSteppingFraction(cutoff2);
+                process->GlobalSetEmpiricalFrac(frac2);
+                double lnL2 = process->GlobalGetFullLogLikelihood();
+                double lnP2 = process->GetLogPrior();
+                process->GlobalSetSteppingFraction(cutoff);
+                process->GlobalSetEmpiricalFrac(frac1);
+                double dlnL = lnL2 - lnL1;
+                double dlnP = lnP2 - lnP1;
+                double delta = dlnL + dlnP;
+                if (std::isnan(delta))   {
+                    cerr << "nan delta\n";
+                    cerr << lnL1 << '\t' << lnL2 << '\n';
+                    cerr << lnP1 << '\t' << lnP2 << '\n';
+                    exit(1);
+                }
+                int dnsite = nsite2 - nsite;
+
+                if ((!maxlogp) || (maxlogp < delta))    {
+                    totp1 *= exp(maxlogp-delta);
+                    totp1 += 1.0;
+                    totp2 *= exp(2*(maxlogp-delta));
+                    totp2 += 1.0;
+                    maxlogp = delta;
+                }
+                else    {
+                    totp1 += exp(delta - maxlogp);
+                    totp2 += exp(2*(delta - maxlogp));
+                }
+
+                double logZ = log(totp1 / npoint) + maxlogp;
+                effsize = totp1 * totp1 / totp2;
+
+                if (effsize >= mineffsize)  {
+                    ofstream los((name + ".stepping").c_str(), ios_base::app);
+                    los << frac1 << '\t' << dnsite << '\t' << logZ << '\t' << npoint << '\n';
+                    los.close();
+                    steppingcycle++;
+                }
+            }
 		}	
 		cerr << name << ": stopping after " << GetSize() << " points.\n";
 		cerr << '\n';

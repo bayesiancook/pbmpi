@@ -75,11 +75,13 @@ int main(int argc, char* argv[])	{
 
 	int topoburnin = 0;
 
-	int steppingstep = 0;
+	int steppingstep = 1;
 	int steppingtaxstep = 0;
     int steppingburnin = 10;
     int steppingsize = 10;
     string empstepping = "None";
+    double steppingmineffsize = -1;
+    int steppingmaxsize = 0;
 
     bool help = false;
     
@@ -155,6 +157,18 @@ int main(int argc, char* argv[])	{
                 steppingburnin = atoi(argv[i]);
                 i++;
                 steppingsize = atoi(argv[i]);
+            }
+            else if (s == "-selftunedstepping")  {
+                i++;
+                steppingstep = atoi(argv[i]);
+                i++;
+                steppingburnin = atoi(argv[i]);
+                i++;
+                steppingsize = atoi(argv[i]);
+                i++;
+                steppingmineffsize = atof(argv[i]);
+                i++;
+                steppingmaxsize = atoi(argv[i]);
             }
             else if (s == "-empstepping")   {
                 i++;
@@ -589,7 +603,7 @@ int main(int argc, char* argv[])	{
 				exit(1);
 			}
 		}
-		model = new Model(datafile,treefile,modeltype,dgam,mixturetype,ncat,nmodemax,type,suffstat,fixncomp,empmix,mixtype,rrtype,iscodon,fixtopo,NSPR,NNNI,fixcodonprofile,fixomega,fixbl,omegaprior,kappaprior,dirweightprior,mintotweight,dc,every,until,saveall,incinit,topoburnin,steppingstep,steppingtaxstep,steppingburnin,steppingsize,empstepping,name,myid,nprocs);
+		model = new Model(datafile,treefile,modeltype,dgam,mixturetype,ncat,nmodemax,type,suffstat,fixncomp,empmix,mixtype,rrtype,iscodon,fixtopo,NSPR,NNNI,fixcodonprofile,fixomega,fixbl,omegaprior,kappaprior,dirweightprior,mintotweight,dc,every,until,saveall,incinit,topoburnin,steppingstep,steppingtaxstep,steppingburnin,steppingsize,steppingmineffsize,steppingmaxsize,empstepping,name,myid,nprocs);
 		if (! myid)	{
 			// cerr << "create files\n";
 			cerr << '\n';
