@@ -357,6 +357,10 @@ class Model	{
 
 	void SteppingRun(int step, int taxstep, int burnin, int stepsize)	{
 
+        if (taxstep == -1)  {
+            taxstep = process->GetNtaxa();
+        }
+
 		process->GlobalPrepareStepping();
 	
 		// total size : nstep * (burnin + stepsize)
@@ -470,7 +474,7 @@ class Model	{
             }
             int dnsite = nsite2 - nsite;
             int dntaxa = ntaxa2 - ntaxa;
-			los << cutoff << '\t' << dnsite << '\t' << dlnL << '\t' << dntaxa << '\n';
+			los << nsite << '\t' << dnsite << '\t' << dlnL << '\t' << dntaxa << '\n';
 			// los << cutoff << '\t' << dnsite << '\t' << dlnL << '\t' << dlnL / dnsite << '\n';
 			los.close();
 		}	
@@ -637,6 +641,10 @@ class Model	{
 
 	void EmpiricalSteppingRun(string empname, int step, int taxstep, int burnin, int stepsize)	{
 
+        if (taxstep == -1)  {
+            taxstep = process->GetNtaxa();
+        }
+
         ifstream is(empname.c_str());
         process->GlobalSetEmpiricalPrior(is);
 
@@ -752,8 +760,8 @@ class Model	{
                 exit(1);
             }
             int dnsite = nsite2 - nsite;
-            int dntaxa = ntaxa2 - ntaxa;
-			los << cutoff << '\t' << dnsite << '\t' << dlnL+dlnP << '\t' << dntaxa << '\n';
+            // int dntaxa = ntaxa2 - ntaxa;
+			los << nsite << '\t' << dnsite << '\t' << dlnL+dlnP << '\t' << dlnL << '\n';
 			// los << cutoff << '\t' << dnsite << '\t' << dlnL << '\t' << dlnL / dnsite << '\n';
 			los.close();
 		}	
