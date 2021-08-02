@@ -365,12 +365,8 @@ class AACodonMutSelSBDPPhyloProcess : public virtual AACodonMutSelSBDPSubstituti
 
 	GeneticCodeType codetype;
 	CodonStateSpace* statespace;
-	int fixtopo;
-	int NSPR;
-	int NNNI;
 	int fixcodonprofile;
 	int fixomega;
-	int dc;
     double siteloglcutoff;
 
 	Chrono chronopruning;

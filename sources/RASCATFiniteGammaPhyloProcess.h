@@ -353,10 +353,6 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
 		PoissonPhyloProcess::Delete();
 	}
 
-	int fixtopo;
-	int NSPR;
-	int NNNI;
-	int dc;
     int withfulllogl;
 };
 

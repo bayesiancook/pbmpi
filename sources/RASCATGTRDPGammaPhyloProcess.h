@@ -276,9 +276,6 @@ class RASCATGTRDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProcess
 		RASCATGTRDPSubstitutionProcess::Delete();
 		ExpoConjugateGTRPhyloProcess::Delete();
 	}
-
-	int fixtopo;
-	int dc;
 };
 
 #endif

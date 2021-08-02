@@ -600,11 +600,13 @@ int main(int argc, char* argv[])	{
             }
 			
 			// MPI master only
-			ofstream os((name + ".treelist").c_str());
-            if (! steppingstep)    {
-                model->TreeTrace(os);
+            if (! fixtopo)  {
+                ofstream os((name + ".treelist").c_str());
+                if (! steppingstep)    {
+                    model->TreeTrace(os);
+                }
+                os.close();
             }
-            os.close();
         
 			ofstream tos((name + ".trace").c_str());
 			model->TraceHeader(tos);

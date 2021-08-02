@@ -349,10 +349,6 @@ class CodonMutSelFinitePhyloProcess : public virtual CodonMutSelFiniteSubstituti
 		GammaBranchProcess::Delete();
 	}
 
-	int dc;
-	int fixtopo;
-	int NSPR;
-	int NNNI;
 	GeneticCodeType codetype;
 	CodonStateSpace* statespace;
 

@@ -381,12 +381,8 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 		ExpoConjugateGTRPhyloProcess::Delete();
 	}
 
-	int fixtopo;
-	int NSPR;
-	int NNNI;
 	int iscodon;
 	GeneticCodeType codetype;
-	int dc;
     double siteloglcutoff;
 };
 

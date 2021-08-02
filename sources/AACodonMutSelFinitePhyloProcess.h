@@ -372,10 +372,6 @@ class AACodonMutSelFinitePhyloProcess : public virtual AACodonMutSelFiniteSubsti
 		GammaBranchProcess::Delete();
 	}
 
-	int dc;
-	int fixtopo;
-	int NSPR;
-	int NNNI;
 	int fixcodonprofile;
 	int fixomega;
 	GeneticCodeType codetype;

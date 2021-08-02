@@ -311,9 +311,11 @@ class Model	{
 			
 			process->IncSize();
 
-			ofstream os((name + ".treelist").c_str(), ios_base::app);
-			TreeTrace(os);
-			os.close();
+            if (! process->fixtopo) {
+                ofstream os((name + ".treelist").c_str(), ios_base::app);
+                TreeTrace(os);
+                os.close();
+            }
 
 			ofstream tos((name + ".trace").c_str(), ios_base::app);
 			Trace(tos);
@@ -417,9 +419,11 @@ class Model	{
 			
 			process->IncSize();
 
-			ofstream os((name + ".treelist").c_str(), ios_base::app);
-			TreeTrace(os);
-			os.close();
+            if (! process->fixtopo) {
+                ofstream os((name + ".treelist").c_str(), ios_base::app);
+                TreeTrace(os);
+                os.close();
+            }
 
 			ofstream tos((name + ".trace").c_str(), ios_base::app);
 			Trace(tos);
@@ -537,9 +541,11 @@ class Model	{
 			
 			process->IncSize();
 
-			ofstream os((name + ".treelist").c_str(), ios_base::app);
-			TreeTrace(os);
-			os.close();
+            if (! process->fixtopo) {
+                ofstream os((name + ".treelist").c_str(), ios_base::app);
+                TreeTrace(os);
+                os.close();
+            }
 
 			ofstream tos((name + ".trace").c_str(), ios_base::app);
 			Trace(tos);
