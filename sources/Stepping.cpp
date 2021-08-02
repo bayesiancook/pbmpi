@@ -41,16 +41,6 @@ void PhyloProcess::GlobalPrepareStepping()   {
         steppingrank[i] = i;
     }
 	MPI_Bcast(steppingrank,GetNsite(),MPI_INT,0,MPI_COMM_WORLD);
-
-    cellsteppingrankalloc = new int[GetNsite()*GetNtaxa()];
-    cellsteppingrank = new int*[GetNsite()];
-    for (int i=0; i<GetNsite(); i++)    {
-        cellsteppingrank[i] = cellsteppingrankalloc + GetNtaxa()*i;
-        for (int j=0; j<GetNtaxa(); j++)    {
-            cellsteppingrank[i][j] = i*GetNtaxa() + j;
-        }
-    }
-	MPI_Bcast(cellsteppingrankalloc,GetNsite()*GetNtaxa(),MPI_INT,0,MPI_COMM_WORLD);
 }
 
 void PhyloProcess::SlavePrepareStepping()	{
@@ -61,39 +51,34 @@ void PhyloProcess::SlavePrepareStepping()	{
     bkdata = new SequenceAlignment(GetData());
     steppingrank = new int[GetNsite()];
 	MPI_Bcast(steppingrank,GetNsite(),MPI_INT,0,MPI_COMM_WORLD);
-
-    cellsteppingrankalloc = new int[GetNsite()*GetNtaxa()];
-    cellsteppingrank = new int*[GetNsite()];
-    for (int i=0; i<GetNsite(); i++)    {
-        cellsteppingrank[i] = cellsteppingrankalloc + GetNtaxa()*i;
-        for (int j=0; j<GetNtaxa(); j++)    {
-            cellsteppingrank[i][j] = i*GetNtaxa() + j;
-        }
-    }
-	MPI_Bcast(cellsteppingrankalloc,GetNsite()*GetNtaxa(),MPI_INT,0,MPI_COMM_WORLD);
 }
 
-void PhyloProcess::GlobalSetSteppingFraction(int cutoff)    {
+void PhyloProcess::GlobalSetSteppingFraction(int cutoff1, int cutoff2)    {
 	MESSAGE signal = SETSTEPPINGFRAC;
+    int cutoff[2];
+    cutoff[0] = cutoff1;
+    cutoff[1] = cutoff2;
 	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
-	MPI_Bcast(&cutoff,1,MPI_INT,0,MPI_COMM_WORLD);
-    SetSteppingFraction(cutoff);
+	MPI_Bcast(cutoff,2,MPI_INT,0,MPI_COMM_WORLD);
+    SetSteppingFraction(cutoff1, cutoff2);
 }
 
 void PhyloProcess::SlaveSetSteppingFraction()    {
-    int cutoff;
-	MPI_Bcast(&cutoff,1,MPI_INT,0,MPI_COMM_WORLD);
-    SetSteppingFraction(cutoff);
+    int cutoff[2];
+	MPI_Bcast(cutoff,2,MPI_INT,0,MPI_COMM_WORLD);
+    SetSteppingFraction(cutoff[0], cutoff[1]);
 }
 
-void PhyloProcess::SetSteppingFraction(int cutoff)  {
+void PhyloProcess::SetSteppingFraction(int cutoff1, int cutoff2)  {
 
     for (int i=0; i<GetNsite(); i++)    {
-        for (int j=0; j<GetNtaxa(); j++)    {
-            if (cellsteppingrank[i][j] < cutoff)  {
+        if ((steppingrank[i] >= cutoff1) && (steppingrank[i] < cutoff2))  {
+            for (int j=0; j<GetNtaxa(); j++)    {
                 GetData()->SetState(j, i, bkdata->GetState(j,i));
             }
-            else    {
+        }
+        else    {
+            for (int j=0; j<GetNtaxa(); j++)    {
                 GetData()->SetState(j, i, -1);
             }
         }

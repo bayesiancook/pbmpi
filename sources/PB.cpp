@@ -75,13 +75,12 @@ int main(int argc, char* argv[])	{
 
 	int topoburnin = 0;
 
-	int steppingstep = 0;
-	int steppingtaxstep = -1;
-    int steppingburnin = 10;
-    int steppingsize = 10;
+	int steppingdnsite = 0;
+    int steppingburnin = 0;
+    int steppingminnpoint = 0;
+    double steppingmineffsize = 0;
+    int steppingmaxnpoint = 0;
     string empstepping = "None";
-    double steppingmineffsize = -1;
-    int steppingmaxsize = 0;
 
     bool help = false;
     
@@ -150,25 +149,23 @@ int main(int argc, char* argv[])	{
 			}
             else if (s == "-stepping")  {
                 i++;
-                steppingstep = atoi(argv[i]);
+                steppingdnsite = atoi(argv[i]);
                 i++;
-                // steppingtaxstep = atoi(argv[i]);
-                // i++;
                 steppingburnin = atoi(argv[i]);
                 i++;
-                steppingsize = atoi(argv[i]);
+                steppingminnpoint = atoi(argv[i]);
             }
             else if (s == "-selftunedstepping")  {
                 i++;
-                steppingstep = atoi(argv[i]);
+                steppingdnsite = atoi(argv[i]);
                 i++;
                 steppingburnin = atoi(argv[i]);
                 i++;
-                steppingsize = atoi(argv[i]);
+                steppingminnpoint = atoi(argv[i]);
                 i++;
                 steppingmineffsize = atof(argv[i]);
                 i++;
-                steppingmaxsize = atoi(argv[i]);
+                steppingmaxnpoint = atoi(argv[i]);
             }
             else if (s == "-empstepping")   {
                 i++;
@@ -610,46 +607,39 @@ int main(int argc, char* argv[])	{
 				exit(1);
 			}
 		}
-		model = new Model(datafile,treefile,modeltype,dgam,mixturetype,ncat,nmodemax,type,suffstat,fixncomp,empmix,mixtype,rrtype,iscodon,fixtopo,NSPR,NNNI,fixcodonprofile,fixomega,fixbl,omegaprior,kappaprior,dirweightprior,mintotweight,dc,every,until,saveall,incinit,topoburnin,steppingstep,steppingtaxstep,steppingburnin,steppingsize,steppingmineffsize,steppingmaxsize,empstepping,name,myid,nprocs);
+		model = new Model(datafile,treefile,modeltype,dgam,mixturetype,ncat,nmodemax,type,suffstat,fixncomp,empmix,mixtype,rrtype,iscodon,fixtopo,NSPR,NNNI,fixcodonprofile,fixomega,fixbl,omegaprior,kappaprior,dirweightprior,mintotweight,dc,every,until,saveall,incinit,topoburnin,steppingdnsite,steppingburnin,steppingminnpoint,steppingmineffsize,steppingmaxnpoint,empstepping,name,myid,nprocs);
 		if (! myid)	{
-			// cerr << "create files\n";
-			cerr << '\n';
-			cerr << "chain name : " << name << '\n';
-			
-            if (! steppingstep)    {
-                model->IncSize(); // count the starting state
-            }
-			
-			// MPI master only
-            if (! fixtopo)  {
-                ofstream os((name + ".treelist").c_str());
-                if (! steppingstep)    {
-                    model->TreeTrace(os);
-                }
-                os.close();
-            }
-        
-			ofstream tos((name + ".trace").c_str());
-			model->TraceHeader(tos);
-            if (! steppingstep)    {
-                model->Trace(tos);
-            }
-			tos.close();
+            cerr << '\n';
+            cerr << "chain name : " << name << '\n';
 
-            if (steppingstep)  {
+            if (! steppingdnsite) {
+                
+                model->IncSize(); // count the starting state
+                
+                if (! fixtopo)  {
+                    ofstream os((name + ".treelist").c_str());
+                    model->TreeTrace(os);
+                    os.close();
+                }
+            
+                ofstream tos((name + ".trace").c_str());
+                model->TraceHeader(tos);
+                model->Trace(tos);
+                tos.close();
+
+                ofstream pos((name + ".param").c_str());
+                model->ToStream(pos,true);
+                pos.close();
+                
+                if (saveall)	{
+                    ofstream cos((name + ".chain").c_str());
+                    model->ToStream(cos,false);
+                    cos.close();
+                }
+            }
+            else    {
                 ofstream os((name + ".stepping").c_str());
             }
-						
-			ofstream pos((name + ".param").c_str());
-			model->ToStream(pos,true);
-			pos.close();
-			
-			if (saveall)	{
-				ofstream cos((name + ".chain").c_str());
-				model->ToStream(cos,false);
-				cos.close();
-			}
-			// cerr << "create files ok\n";
 		}
 	}
 	else	{

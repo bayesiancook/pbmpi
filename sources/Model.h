@@ -47,24 +47,22 @@ class Model	{
 	int until;
 	int saveall;
 	int incinit;
-    int steppingstep;
-    int steppingtaxstep;
+    int steppingdnsite;
     int steppingburnin;
     int steppingsize;
-    string empstepping;
-    int steppingcycle;
     double steppingmineffsize;
     int steppingmaxsize;
+    string empstepping;
+    int steppingcycle;
 
-	Model(string datafile, string treefile, int modeltype, int nratecat, int mixturetype, int ncat, int nmodemax, GeneticCodeType codetype, int suffstat, int fixncomp, int empmix, string mixtype, string rrtype, int iscodon, int fixtopo, int NSPR, int NNNI, int fixcodonprofile, int fixomega, int fixbl, int omegaprior, int kappaprior, int dirweightprior, double mintotweight, int dc, int inevery, int inuntil, int insaveall, int inincinit, int topoburnin, int insteppingstep, int insteppingtaxstep, int insteppingburnin, int insteppingsize, double insteppingmineffsize, int insteppingmaxsize, string inempstepping, string inname, int myid, int nprocs)	{
+	Model(string datafile, string treefile, int modeltype, int nratecat, int mixturetype, int ncat, int nmodemax, GeneticCodeType codetype, int suffstat, int fixncomp, int empmix, string mixtype, string rrtype, int iscodon, int fixtopo, int NSPR, int NNNI, int fixcodonprofile, int fixomega, int fixbl, int omegaprior, int kappaprior, int dirweightprior, double mintotweight, int dc, int inevery, int inuntil, int insaveall, int inincinit, int topoburnin, int insteppingdnsite, int insteppingburnin, int insteppingsize, double insteppingmineffsize, int insteppingmaxsize, string inempstepping, string inname, int myid, int nprocs)	{
 
 		every = inevery;
 		until = inuntil;
 		name = inname;
 		saveall = insaveall;
 		incinit = inincinit;
-        steppingstep = insteppingstep;
-        steppingtaxstep = insteppingtaxstep;
+        steppingdnsite = insteppingdnsite;
         steppingburnin = insteppingburnin;
         steppingsize = insteppingsize;
         steppingmineffsize = insteppingmineffsize;
@@ -194,7 +192,7 @@ class Model	{
 
 		is >> type;
         if (type == "STEPPING") {
-            is >> steppingstep >> steppingtaxstep >> steppingburnin >> steppingsize >> steppingmineffsize >> steppingmaxsize;
+            is >> steppingdnsite >> steppingburnin >> steppingsize >> steppingmineffsize >> steppingmaxsize;
             is >> empstepping;
             is >> steppingcycle;
             is >> type;
@@ -238,9 +236,9 @@ class Model	{
 	void ToStream(ostream& os, bool header)	{
 		stringstream ss;
 		if (header)	{
-            if (steppingstep)  {
+            if (steppingdnsite)  {
                 ss << "STEPPING\n";
-                ss << steppingstep << '\t' << steppingtaxstep << '\t' << steppingburnin << '\t' << steppingsize << '\t' << steppingmineffsize << '\t' << steppingmaxsize << '\n';
+                ss << steppingdnsite << '\t' << steppingburnin << '\t' << steppingsize << '\t' << steppingmineffsize << '\t' << steppingmaxsize << '\n';
                 ss << empstepping << '\n';
                 ss << steppingcycle << '\n';
             }
@@ -286,21 +284,12 @@ class Model	{
 	}
 
     void Run(int burnin)    {
-        if (! steppingstep)    {
+        if (! steppingdnsite)    {
             MCMCRun(burnin);
         }
         else    {
-            if (empstepping != "None")  {
-                if (steppingmineffsize != -1.0) {
-                    SelfTunedEmpiricalSteppingRun(empstepping, steppingstep, steppingburnin, steppingsize, steppingmineffsize, steppingmaxsize);
-                }
-                else    {
-                    EmpiricalSteppingRun(empstepping, steppingstep, steppingtaxstep, steppingburnin, steppingsize);
-                }
-            }
-            else    {
-                SteppingRun(steppingstep, steppingtaxstep, steppingburnin, steppingsize);
-            }
+            SteppingRun(steppingdnsite, steppingburnin, steppingsize,
+                        steppingmineffsize, steppingmaxsize, empstepping);
         }
     }
 
@@ -355,138 +344,15 @@ class Model	{
 		cerr << '\n';
 	}
 
-	void SteppingRun(int step, int taxstep, int burnin, int stepsize)	{
+	void SteppingRun(int step, int burnin, int minnpoint, double mineffsize, double maxnpoint, string empname)    {
 
-        if (taxstep == -1)  {
-            taxstep = process->GetNtaxa();
+
+        int empiricalprior = 0;
+        if (empname != "None")  {
+            empiricalprior = 1;
+            ifstream is(empname.c_str());
+            process->GlobalSetEmpiricalPrior(is);
         }
-
-		process->GlobalPrepareStepping();
-	
-		// total size : nstep * (burnin + stepsize)
-        // number of steps:
-        //
-
-        int sitencycle = process->GetNsite() / step;
-        if (process->GetNsite() % step) {
-            sitencycle++;
-        }
-        int taxncycle = process->GetNtaxa() / taxstep;
-        if (process->GetNtaxa() % taxstep)  {
-            taxncycle++;
-        }
-
-        int until = sitencycle * taxncycle * (burnin + stepsize);
-
-		ofstream ros((name + ".run").c_str()); stringstream buf;
-		buf << 1 << '\n';
-		ros << buf.str();
-		ros.close();
-	
-        if (! GetSize())    {
-            process->PriorSample();
-            process->GlobalUpdateParameters();
-        }
-
-		while (RunningStatus() && (GetSize() < until))	{
-
-            int cycle = int(GetSize() / (burnin + stepsize));
-            int sitecycle = cycle / taxncycle;
-            int taxcycle = cycle % taxncycle;
-            int nsite = sitecycle * step;
-            if (nsite > process->GetNsite()) {
-                nsite = process->GetNsite();
-            }
-            int ntaxa = taxcycle * taxstep;
-            if (ntaxa >= process->GetNtaxa()) {
-                cerr << "error: ntaxa > Ntaxa\n";
-                exit(1);
-            }
-            int cutoff = process->GetNtaxa()*nsite + ntaxa;
-
-            int taxcycle2 = taxcycle;
-            int sitecycle2 = sitecycle;
-            taxcycle2++;
-            if (taxcycle2 == taxncycle)   {
-                taxcycle2 = 0;
-                sitecycle2++;
-            }
-            int nsite2 = sitecycle2 * step;
-            if (nsite2 > process->GetNsite()) {
-                nsite2 = process->GetNsite();
-            }
-            int ntaxa2 = taxcycle2 * taxstep;
-            if (ntaxa2 >= process->GetNtaxa()) {
-                cerr << "error: ntaxa2 > Ntaxa\n";
-                exit(1);
-            }
-            int cutoff2 = process->GetNtaxa()*nsite2 + ntaxa2;
-
-            /*
-            cerr << sitecycle << '\t' << nsite << '\t' << taxcycle << '\t' << ntaxa << '\t' << cutoff << '\t';
-            cerr << '\n';
-            cerr << sitecycle2 << '\t' << nsite2 << '\t' << taxcycle2 << '\t' << ntaxa2 << '\t' << cutoff2 << '\n';
-            cerr << '\n';
-            cerr << '\n';
-            */
-
-			process->GlobalSetSteppingFraction(cutoff);
-
-			Move(1,every);
-			
-			process->IncSize();
-
-            if (! process->fixtopo) {
-                ofstream os((name + ".treelist").c_str(), ios_base::app);
-                TreeTrace(os);
-                os.close();
-            }
-
-			ofstream tos((name + ".trace").c_str(), ios_base::app);
-			Trace(tos);
-			tos.close();
-
-			ofstream mos((name + ".monitor").c_str());
-			Monitor(mos);
-			mos.close();
-
-			ofstream pos((name + ".param").c_str());
-			pos.precision(numeric_limits<double>::digits10);
-			ToStream(pos,true);
-			pos.close();
-
-			if (saveall)	{
-				ofstream cos((name + ".chain").c_str(),ios_base::app);
-				cos.precision(numeric_limits<double>::digits10);
-				ToStream(cos,false);
-				cos.close();
-			}
-
-			ofstream los((name + ".stepping").c_str(), ios_base::app);
-			double lnL1 = process->GlobalGetFullLogLikelihood();
-			process->GlobalSetSteppingFraction(cutoff2);
-			double lnL2 = process->GlobalGetFullLogLikelihood();
-            double dlnL = lnL2 - lnL1;
-            if (std::isnan(dlnL))   {
-                cerr << "nan lnl\n";
-                cerr << lnL1 << '\t' << lnL2 << '\n';
-                exit(1);
-            }
-            int dnsite = nsite2 - nsite;
-            int dntaxa = ntaxa2 - ntaxa;
-			los << nsite << '\t' << dnsite << '\t' << dlnL << '\t' << dntaxa << '\n';
-			// los << cutoff << '\t' << dnsite << '\t' << dlnL << '\t' << dlnL / dnsite << '\n';
-			los.close();
-		}	
-		cerr << name << ": stopping after " << GetSize() << " points.\n";
-		cerr << '\n';
-	}
-
-	void SelfTunedEmpiricalSteppingRun(string empname, int step, int burnin, int minstepsize, double mineffsize, double maxsize)    {
-
-        ifstream is(empname.c_str());
-        process->GlobalSetEmpiricalPrior(is);
-
 		process->GlobalPrepareStepping();
 	
 		ofstream ros((name + ".run").c_str()); stringstream buf;
@@ -495,7 +361,9 @@ class Model	{
 		ros.close();
 	
         if (! GetSize())    {
-            process->GlobalSetEmpiricalFrac(0);
+            if (empiricalprior)  {
+                process->GlobalSetEmpiricalFrac(0);
+            }
             process->PriorSample();
             process->GlobalUpdateParameters();
         }
@@ -508,51 +376,25 @@ class Model	{
 		while (RunningStatus() && (steppingcycle < ncycle)) {
 
             double frac1 = ((double) steppingcycle) / ncycle;
-            int nsite = steppingcycle * step;
-            if (nsite > process->GetNsite()) {
-                nsite = process->GetNsite();
+            int nsite1 = steppingcycle * step;
+            if (nsite1 > process->GetNsite()) {
+                nsite1 = process->GetNsite();
             }
-            int cutoff = process->GetNtaxa()*nsite;
 
             double frac2 = ((double) steppingcycle + 1.0) / ncycle;
             int nsite2 = (steppingcycle + 1) * step;
             if (nsite2 > process->GetNsite()) {
                 nsite2 = process->GetNsite();
             }
-            int cutoff2 = process->GetNtaxa()*nsite2;
 
-			process->GlobalSetSteppingFraction(cutoff);
-            process->GlobalSetEmpiricalFrac(frac1);
+            process->GlobalSetSteppingFraction(0, nsite1);
+            if (empiricalprior)  {
+                process->GlobalSetEmpiricalFrac(frac1);
+            }
 
             for (int i=0; i<burnin; i++)    {
                 Move(1,every);
                 process->IncSize();
-
-                if (! process->fixtopo) {
-                    ofstream os((name + ".treelist").c_str(), ios_base::app);
-                    TreeTrace(os);
-                    os.close();
-                }
-
-                ofstream tos((name + ".trace").c_str(), ios_base::app);
-                Trace(tos);
-                tos.close();
-
-                ofstream mos((name + ".monitor").c_str());
-                Monitor(mos);
-                mos.close();
-
-                ofstream pos((name + ".param").c_str());
-                pos.precision(numeric_limits<double>::digits10);
-                ToStream(pos,true);
-                pos.close();
-
-                if (saveall)	{
-                    ofstream cos((name + ".chain").c_str(),ios_base::app);
-                    cos.precision(numeric_limits<double>::digits10);
-                    ToStream(cos,false);
-                    cos.close();
-                }
             }
 
             int npoint = 0;
@@ -560,58 +402,35 @@ class Model	{
             double maxlogp = 0;
             double totp1 = 0;
             double totp2 = 0;
+            double totlogp1 = 0;
+            double totlogp2 = 0;
 
-            while ((npoint < maxsize) && ((npoint < minstepsize) || (effsize < mineffsize)))    {
+            int cont = 1;
+            while(cont) {
 
                 Move(1,every);
                 process->IncSize();
                 npoint++;
 
-                if (! process->fixtopo) {
-                    ofstream os((name + ".treelist").c_str(), ios_base::app);
-                    TreeTrace(os);
-                    os.close();
+                process->GlobalSetSteppingFraction(nsite1, nsite2);
+                double delta = process->GlobalGetFullLogLikelihood();
+
+                if (empiricalprior)  {
+                    double lnP1 = process->GetLogPrior();
+                    process->GlobalSetEmpiricalFrac(frac2);
+                    double lnP2 = process->GetLogPrior();
+                    delta += lnP2 - lnP1;
                 }
-
-                ofstream tos((name + ".trace").c_str(), ios_base::app);
-                Trace(tos);
-                tos.close();
-
-                ofstream mos((name + ".monitor").c_str());
-                Monitor(mos);
-                mos.close();
-
-                ofstream pos((name + ".param").c_str());
-                pos.precision(numeric_limits<double>::digits10);
-                ToStream(pos,true);
-                pos.close();
-
-                if (saveall)	{
-                    ofstream cos((name + ".chain").c_str(),ios_base::app);
-                    cos.precision(numeric_limits<double>::digits10);
-                    ToStream(cos,false);
-                    cos.close();
-                }
-
-                double lnL1 = process->GlobalGetFullLogLikelihood();
-                double lnP1 = process->GetLogPrior();
-                process->GlobalSetSteppingFraction(cutoff2);
-                process->GlobalSetEmpiricalFrac(frac2);
-                double lnL2 = process->GlobalGetFullLogLikelihood();
-                double lnP2 = process->GetLogPrior();
-                process->GlobalSetSteppingFraction(cutoff);
-                process->GlobalSetEmpiricalFrac(frac1);
-                double dlnL = lnL2 - lnL1;
-                double dlnP = lnP2 - lnP1;
-                double delta = dlnL + dlnP;
                 if (std::isnan(delta))   {
                     cerr << "nan delta\n";
-                    cerr << lnL1 << '\t' << lnL2 << '\n';
-                    cerr << lnP1 << '\t' << lnP2 << '\n';
                     exit(1);
                 }
-                int dnsite = nsite2 - nsite;
 
+                process->GlobalSetSteppingFraction(0, nsite1);
+                process->GlobalSetEmpiricalFrac(frac1);
+
+                totlogp1 += delta;
+                totlogp2 += delta*delta;
                 if ((!maxlogp) || (maxlogp < delta))    {
                     totp1 *= exp(maxlogp-delta);
                     totp1 += 1.0;
@@ -627,143 +446,30 @@ class Model	{
                 double logZ = log(totp1 / npoint) + maxlogp;
                 effsize = totp1 * totp1 / totp2;
 
-                if (effsize >= mineffsize)  {
+                // while ((npoint < maxsize) && ((npoint < minstepsize) || (effsize < mineffsize)))    {
+                if (npoint >= minnpoint)  {
+                    if ((!mineffsize) || (effsize > mineffsize))    {
+                        cont = 0;
+                    }
+                }
+                if (maxnpoint && (npoint == maxnpoint)) {
+                    cont = 0;
+                }
+
+                if (! cont) {
+                    ofstream pos((name + ".param").c_str());
+                    pos.precision(numeric_limits<double>::digits10);
+                    ToStream(pos,true);
+                    pos.close();
+
+                    double meanlogp = totlogp1 / npoint;
+                    double varlogp = totlogp2 / npoint - meanlogp*meanlogp;
                     ofstream los((name + ".stepping").c_str(), ios_base::app);
-                    los << frac1 << '\t' << dnsite << '\t' << logZ << '\t' << npoint << '\n';
+                    los << frac1 << '\t' << nsite1 << '\t' << logZ << '\t' << meanlogp << '\t' << varlogp << '\t' << npoint << '\t' << effsize << '\n';
                     los.close();
                     steppingcycle++;
                 }
             }
-		}	
-		cerr << name << ": stopping after " << GetSize() << " points.\n";
-		cerr << '\n';
-	}
-
-	void EmpiricalSteppingRun(string empname, int step, int taxstep, int burnin, int stepsize)	{
-
-        if (taxstep == -1)  {
-            taxstep = process->GetNtaxa();
-        }
-
-        ifstream is(empname.c_str());
-        process->GlobalSetEmpiricalPrior(is);
-
-		process->GlobalPrepareStepping();
-	
-		// total size : nstep * (burnin + stepsize)
-        // number of steps:
-        //
-
-        int sitencycle = process->GetNsite() / step;
-        if (process->GetNsite() % step) {
-            sitencycle++;
-        }
-        int taxncycle = process->GetNtaxa() / taxstep;
-        if (process->GetNtaxa() % taxstep)  {
-            taxncycle++;
-        }
-
-        int until = sitencycle * taxncycle * (burnin + stepsize);
-
-		ofstream ros((name + ".run").c_str()); stringstream buf;
-		buf << 1 << '\n';
-		ros << buf.str();
-		ros.close();
-	
-        if (! GetSize())    {
-            process->GlobalSetEmpiricalFrac(0);
-            process->PriorSample();
-            process->GlobalUpdateParameters();
-        }
-
-		while (RunningStatus() && (GetSize() < until))	{
-
-            int cycle = int(GetSize() / (burnin + stepsize));
-            int sitecycle = cycle / taxncycle;
-            int taxcycle = cycle % taxncycle;
-            int nsite = sitecycle * step;
-            if (nsite > process->GetNsite()) {
-                nsite = process->GetNsite();
-            }
-            int ntaxa = taxcycle * taxstep;
-            if (ntaxa >= process->GetNtaxa()) {
-                cerr << "error: ntaxa > Ntaxa\n";
-                exit(1);
-            }
-            int cutoff = process->GetNtaxa()*nsite + ntaxa;
-            double frac1 = ((double) cycle) / (sitencycle * taxncycle);
-
-            int taxcycle2 = taxcycle;
-            int sitecycle2 = sitecycle;
-            taxcycle2++;
-            if (taxcycle2 == taxncycle)   {
-                taxcycle2 = 0;
-                sitecycle2++;
-            }
-            int nsite2 = sitecycle2 * step;
-            if (nsite2 > process->GetNsite()) {
-                nsite2 = process->GetNsite();
-            }
-            int ntaxa2 = taxcycle2 * taxstep;
-            if (ntaxa2 >= process->GetNtaxa()) {
-                cerr << "error: ntaxa2 > Ntaxa\n";
-                exit(1);
-            }
-            int cutoff2 = process->GetNtaxa()*nsite2 + ntaxa2;
-            double frac2 = ((double) cycle + 1.0) / (sitencycle * taxncycle);
-
-			process->GlobalSetSteppingFraction(cutoff);
-            process->GlobalSetEmpiricalFrac(frac1);
-
-			Move(1,every);
-			
-			process->IncSize();
-
-            if (! process->fixtopo) {
-                ofstream os((name + ".treelist").c_str(), ios_base::app);
-                TreeTrace(os);
-                os.close();
-            }
-
-			ofstream tos((name + ".trace").c_str(), ios_base::app);
-			Trace(tos);
-			tos.close();
-
-			ofstream mos((name + ".monitor").c_str());
-			Monitor(mos);
-			mos.close();
-
-			ofstream pos((name + ".param").c_str());
-			pos.precision(numeric_limits<double>::digits10);
-			ToStream(pos,true);
-			pos.close();
-
-			if (saveall)	{
-				ofstream cos((name + ".chain").c_str(),ios_base::app);
-				cos.precision(numeric_limits<double>::digits10);
-				ToStream(cos,false);
-				cos.close();
-			}
-
-			ofstream los((name + ".stepping").c_str(), ios_base::app);
-			double lnL1 = process->GlobalGetFullLogLikelihood();
-            double lnP1 = process->GetLogPrior();
-			process->GlobalSetSteppingFraction(cutoff2);
-            process->GlobalSetEmpiricalFrac(frac2);
-			double lnL2 = process->GlobalGetFullLogLikelihood();
-            double lnP2 = process->GetLogPrior();
-            double dlnL = lnL2 - lnL1;
-            double dlnP = lnP2 - lnP1;
-            if (std::isnan(dlnL))   {
-                cerr << "nan lnl\n";
-                cerr << lnL1 << '\t' << lnL2 << '\n';
-                exit(1);
-            }
-            int dnsite = nsite2 - nsite;
-            // int dntaxa = ntaxa2 - ntaxa;
-			los << nsite << '\t' << dnsite << '\t' << dlnL+dlnP << '\t' << dlnL << '\n';
-			// los << cutoff << '\t' << dnsite << '\t' << dlnL << '\t' << dlnL / dnsite << '\n';
-			los.close();
 		}	
 		cerr << name << ": stopping after " << GetSize() << " points.\n";
 		cerr << '\n';
