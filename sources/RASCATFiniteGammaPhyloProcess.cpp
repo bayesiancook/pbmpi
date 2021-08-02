@@ -172,7 +172,7 @@ void RASCATFiniteGammaPhyloProcess::SlaveUpdateParameters()	{
 void RASCATFiniteGammaPhyloProcess::GlobalSetEmpiricalPrior(istream& is)    {
     // read from stream
     is >> empalpha >> empbeta;
-	if ((Ncomponent > 1) || ((! fixncomp) && (! dirweightprior)))	{
+    if (! dirweightprior)   {
         for (int k=0; k<GetDim(); k++)  {
             is >> empdirweightalpha[k] >> empdirweightbeta[k];
         }
@@ -184,7 +184,7 @@ void RASCATFiniteGammaPhyloProcess::GlobalSetEmpiricalPrior(istream& is)    {
 	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 	MPI_Bcast(&empalpha,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
 	MPI_Bcast(&empbeta,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
-	if ((Ncomponent > 1) || ((! fixncomp) && (! dirweightprior)))	{
+    if (! dirweightprior)   {
         MPI_Bcast(empdirweightalpha,GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
         MPI_Bcast(empdirweightbeta,GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
     }
@@ -196,7 +196,7 @@ void RASCATFiniteGammaPhyloProcess::SlaveSetEmpiricalPrior()    {
 
 	MPI_Bcast(&empalpha,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
 	MPI_Bcast(&empbeta,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
-	if ((Ncomponent > 1) || ((! fixncomp) && (! dirweightprior)))	{
+    if (! dirweightprior)   {
         MPI_Bcast(empdirweightalpha,GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
         MPI_Bcast(empdirweightbeta,GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
     }
@@ -470,7 +470,7 @@ void RASCATFiniteGammaPhyloProcess::ReadPostHyper(string name, int burnin, int e
     varratealpha -= meanratealpha*meanratealpha;
     os << meanratealpha*meanratealpha / varratealpha << '\t';
     os << meanratealpha / varratealpha << '\n';
-	if ((Ncomponent > 1) || ((! fixncomp) && (! dirweightprior)))	{
+	if (! dirweightprior)   {
         for (int k=0; k<GetDim(); k++)  {
             meandirweight[k] /= samplesize;
             vardirweight[k] /= samplesize;

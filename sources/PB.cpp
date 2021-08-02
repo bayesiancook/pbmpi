@@ -75,7 +75,7 @@ int main(int argc, char* argv[])	{
 
 	int topoburnin = 0;
 
-	int steppingstep = 1;
+	int steppingstep = 0;
 	int steppingtaxstep = 0;
     int steppingburnin = 10;
     int steppingsize = 10;
@@ -540,6 +540,12 @@ int main(int argc, char* argv[])	{
 			exit(1);
 		}
 	}
+    if (mixturetype == 1)   {
+        if ((ncat == 1) || (empmix))  {
+            dirweightprior = 1;
+        }
+    }
+
 	if (randfix != -1)	{
 		rnd::init(1,randfix);
 	}

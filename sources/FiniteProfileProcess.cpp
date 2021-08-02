@@ -94,7 +94,7 @@ void FiniteProfileProcess::SampleHyper()	{
 }
 	
 void FiniteProfileProcess::PriorSampleHyper()   {
-	if ((Ncomponent > 1) || ((! fixncomp) && (! dirweightprior)))	{
+    if (! dirweightprior)   {
         for (int k=0; k<GetDim(); k++)	{
             double a = profilefrac + (1-profilefrac) * empdirweightalpha[k];
             double b = profilefrac + (1-profilefrac) * empdirweightbeta[k];
@@ -167,7 +167,7 @@ double FiniteProfileProcess::LogWeightPrior()	{
 
 double FiniteProfileProcess::LogHyperPrior()	{
 	double total = 0;
-	if ((Ncomponent > 1) || ((! fixncomp) && (! dirweightprior)))	{
+    if (! dirweightprior)   {
         double sum = 0;
         for (int k=0; k<GetDim(); k++)	{
             if (profilefrac == 1.0) {
@@ -190,7 +190,7 @@ double FiniteProfileProcess::LogHyperPrior()	{
 
 double FiniteProfileProcess::MoveHyper(double tuning, int nrep)	{
 	double total = 0;
-	if ((Ncomponent > 1) || ((! fixncomp) && (! dirweightprior)))	{
+    if (! dirweightprior)   {
 		total += MoveDirWeights(tuning,nrep);
 	}
 	return total;
