@@ -176,7 +176,7 @@ double FiniteProfileProcess::LogHyperPrior()	{
             else    {
                 double a = profilefrac + (1-profilefrac) * empdirweightalpha[k];
                 double b = profilefrac + (1-profilefrac) * empdirweightbeta[k];
-                total += a*log(b) - rnd::GetRandom().logGamma(a) + (a-1)*dirweight[k] - b*dirweight[k];
+                total += a*log(b) - rnd::GetRandom().logGamma(a) + (a-1)*log(dirweight[k]) - b*dirweight[k];
             }
             sum += dirweight[k];
         }

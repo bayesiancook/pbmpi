@@ -408,6 +408,7 @@ class Model	{
             double totp2 = 0;
             double totlogp1 = 0;
             double totlogp2 = 0;
+            double totlogprior = 0;
 
             int cont = 1;
             while(cont) {
@@ -418,17 +419,21 @@ class Model	{
 
                 process->GlobalSetSteppingFraction(nsite1, nsite2);
                 double delta = process->GlobalGetFullLogLikelihood();
+                double dlogp = 0;
 
                 if (empiricalprior)  {
                     double lnP1 = process->GetLogPrior();
                     process->GlobalSetEmpiricalFrac(frac2);
                     double lnP2 = process->GetLogPrior();
                     delta += lnP2 - lnP1;
+                    dlogp = lnP2 - lnP1;
                 }
                 if (std::isnan(delta))   {
                     cerr << "nan delta\n";
                     exit(1);
                 }
+
+                totlogprior += dlogp;
 
                 totlogp1 += delta;
                 totlogp2 += delta*delta;
@@ -469,8 +474,11 @@ class Model	{
 
                     double meanlogp = totlogp1 / npoint;
                     double varlogp = totlogp2 / npoint - meanlogp*meanlogp;
+
+                    double meanlogprior = totlogprior / npoint;
+
                     ofstream los((name + ".stepping").c_str(), ios_base::app);
-                    los << frac1 << '\t' << nsite1 << '\t' << logZ << '\t' << meanlogp << '\t' << varlogp << '\t' << npoint << '\t' << effsize << '\n';
+                    los << frac1 << '\t' << nsite1 << '\t' << logZ << '\t' << meanlogp << '\t' << meanlogprior << '\t' << varlogp << '\t' << npoint << '\t' << effsize << '\n';
                     los.close();
                     steppingcycle++;
                 }

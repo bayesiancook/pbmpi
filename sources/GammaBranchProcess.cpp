@@ -118,7 +118,8 @@ void GammaBranchProcess::SampleLength()	{
 }
 
 void GammaBranchProcess::PriorSampleLength()    {
-	branchalpha = rnd::GetRandom().sExpo();
+    // fixed to 1.0 in all models
+	// branchalpha = rnd::GetRandom().sExpo();
 	if (betaprior == 1)	{
         double u = 8 * (rnd::GetRandom().Uniform() - 4.0);
         branchbeta = exp( u * log(10.0) );
