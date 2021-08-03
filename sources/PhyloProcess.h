@@ -53,7 +53,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	// virtual void SlaveUpdate();
 
 	// default constructor: pointers set to nil
-	PhyloProcess() :  siteratesuffstatcount(0), siteratesuffstatbeta(0), branchlengthsuffstatcount(0), branchlengthsuffstatbeta(0), condflag(false), data(0), bkdata(0), steppingrank(0), myid(-1), nprocs(0), size(0), version("1.9"), totaltime(0), dataclamped(1), rateprior(0), profileprior(0), rootprior(1), topoburnin(0) {
+	PhyloProcess() :  siteratesuffstatcount(0), siteratesuffstatbeta(0), branchlengthsuffstatcount(0), branchlengthsuffstatbeta(0), condflag(false), data(0), bkdata(0), steppingrank(0), minsitecutoff(-1), maxsitecutoff(-1), myid(-1), nprocs(0), size(0), version("1.9"), totaltime(0), dataclamped(1), rateprior(0), profileprior(0), rootprior(1), topoburnin(0) {
 		fixbl = 0;
 		sitesuffstat = 1;
 	}
@@ -205,6 +205,8 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 
     void GlobalPrepareStepping();
     void SlavePrepareStepping();
+
+    bool ActiveSite(int i);
 
 	// returns total number of taxa in the analysis
 	int GetNtaxa()	{
@@ -370,6 +372,8 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	virtual void GlobalUnfold();
 	virtual void GlobalCollapse();
 
+    void GlobalResetAllConditionalLikelihoods();
+    void SlaveResetAllConditionalLikelihoods();
 
 	void GlobalReset(const Link* from, bool condalloc = false);
 	void GlobalMultiply(const Link* from, const Link* to, bool condalloc = false);
@@ -568,6 +572,8 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	string datafile;
     SequenceAlignment* bkdata;
     int* steppingrank;
+    double minsitecutoff;
+    double maxsitecutoff;
 
 	double* empfreq;
 

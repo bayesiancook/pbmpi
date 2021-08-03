@@ -123,20 +123,21 @@ void SubstitutionProcess::DeleteConditionalLikelihoodVector(double*** condl)	{
 // set the vector uniformly to 1 
 void SubstitutionProcess::Reset(double*** t, bool condalloc)	{
 	for (int i=sitemin; i<sitemax; i++)	{
-	// for (int i=0; i<GetNsite(); i++)	{
-		for (int j=0; j<GetNrate(i); j++)	{
-			if ((! condalloc) || (ratealloc[i] == j))	{
-				double* tmp = t[i][j];
-				int nstate = GetNstate(i);
-				for (int k=0; k<nstate; k++)	{
-					(*tmp++) = 1.0;
-					// tmp[k] = 1.0;
-				}
-				*tmp = 0;
-				tmp -= nstate;
-				// tmp[GetNstate(i)] = 0;
-			}
-		}
+        if (ActiveSite(i))  {
+            for (int j=0; j<GetNrate(i); j++)	{
+                if ((! condalloc) || (ratealloc[i] == j))	{
+                    double* tmp = t[i][j];
+                    int nstate = GetNstate(i);
+                    for (int k=0; k<nstate; k++)	{
+                        (*tmp++) = 1.0;
+                        // tmp[k] = 1.0;
+                    }
+                    *tmp = 0;
+                    tmp -= nstate;
+                    // tmp[GetNstate(i)] = 0;
+                }
+            }
+        }
 	}
 }
 	
@@ -144,72 +145,75 @@ void SubstitutionProcess::Reset(double*** t, bool condalloc)	{
 // steta[i] == -1 means 'missing data'. in that case, conditional likelihoods are all 1
 void SubstitutionProcess::Initialize(double*** t, const int* state, bool condalloc)	{
 	for (int i=sitemin; i<sitemax; i++)	{
-	// for (int i=0; i<GetNsite(); i++)	{
-		for (int j=0; j<GetNrate(i); j++)	{
-			if ((! condalloc) || (ratealloc[i] == j))	{
-				double* tmp = t[i][j];
-				int nstate = GetNstate(i);
-				tmp[nstate] = 0;
-				if (state[i] == -1)	{
-					for (int k=0; k<nstate; k++)	{
-						(*tmp++) = 1.0;
-						// tmp[k] = 1.0;
-					}
-					tmp -= nstate;
-				}
-				else	{
-					for (int k=0; k<nstate; k++)	{
-						(*tmp++) = 0;
-						// tmp[k] = 0;
-					}
-					tmp -= nstate;
-					tmp[state[i]] = 1.0;
-				}
-			}
-		}
-	}
+        if (ActiveSite(i))  {
+            for (int j=0; j<GetNrate(i); j++)	{
+                if ((! condalloc) || (ratealloc[i] == j))	{
+                    double* tmp = t[i][j];
+                    int nstate = GetNstate(i);
+                    tmp[nstate] = 0;
+                    if (state[i] == -1)	{
+                        for (int k=0; k<nstate; k++)	{
+                            (*tmp++) = 1.0;
+                            // tmp[k] = 1.0;
+                        }
+                        tmp -= nstate;
+                    }
+                    else	{
+                        for (int k=0; k<nstate; k++)	{
+                            (*tmp++) = 0;
+                            // tmp[k] = 0;
+                        }
+                        tmp -= nstate;
+                        tmp[state[i]] = 1.0;
+                    }
+                }
+            }
+        }
+    }
 }
 
 // multiply two conditional likelihood vectors, term by term
 void SubstitutionProcess::Multiply(double*** from, double*** to, bool condalloc)	{
 	for (int i=sitemin; i<sitemax; i++)	{
-	// for (int i=0; i<GetNsite(); i++)	{
-		for (int j=0; j<GetNrate(i); j++)	{
-			if ((! condalloc) || (ratealloc[i] == j))	{
-				double* tmpfrom = from[i][j];
-				double* tmpto = to[i][j];
-				int nstate = GetNstate(i);
-				for (int k=0; k<nstate; k++)	{
-					(*tmpto++) *= (*tmpfrom++);
-					// tmpto[k] *= tmpfrom[k];
-				}
-				*tmpto += *tmpfrom;
-				tmpto -= nstate;
-				tmpfrom -= nstate;
-				// tmpto[GetNstate(i)] += tmpfrom[GetNstate(i)];
-			}
-		}
-	}
+        if (ActiveSite(i))  {
+            for (int j=0; j<GetNrate(i); j++)	{
+                if ((! condalloc) || (ratealloc[i] == j))	{
+                    double* tmpfrom = from[i][j];
+                    double* tmpto = to[i][j];
+                    int nstate = GetNstate(i);
+                    for (int k=0; k<nstate; k++)	{
+                        (*tmpto++) *= (*tmpfrom++);
+                        // tmpto[k] *= tmpfrom[k];
+                    }
+                    *tmpto += *tmpfrom;
+                    tmpto -= nstate;
+                    tmpfrom -= nstate;
+                    // tmpto[GetNstate(i)] += tmpfrom[GetNstate(i)];
+                }
+            }
+        }
+    }
 }
 
 // multiply a conditional likelihood vector by the (possibly site-specific) stationary probabilities of the process
 void SubstitutionProcess::MultiplyByStationaries(double*** to, bool condalloc)	{
 	for (int i=sitemin; i<sitemax; i++)	{
-	// for (int i=0; i<GetNsite(); i++)	{
-		const double* stat = GetStationary(i);
-		for (int j=0; j<GetNrate(i); j++)	{
-			if ((! condalloc) || (ratealloc[i] == j))	{
-				double* tmpto = to[i][j];
-				int nstate = GetNstate(i);
-				for (int k=0; k<nstate; k++)	{	
-					(*tmpto++) *= (*stat++);
-					// tmpto[k] *= stat[k];
-				}
-				tmpto -= nstate;
-				stat -= nstate;
-			}
-		}
-	}
+        if (ActiveSite(i))  {
+            const double* stat = GetStationary(i);
+            for (int j=0; j<GetNrate(i); j++)	{
+                if ((! condalloc) || (ratealloc[i] == j))	{
+                    double* tmpto = to[i][j];
+                    int nstate = GetNstate(i);
+                    for (int k=0; k<nstate; k++)	{	
+                        (*tmpto++) *= (*stat++);
+                        // tmpto[k] *= stat[k];
+                    }
+                    tmpto -= nstate;
+                    stat -= nstate;
+                }
+            }
+        }
+    }
 }
 
 // to avoid numerical errors: all entries for a given site and a given rate
@@ -217,39 +221,40 @@ void SubstitutionProcess::MultiplyByStationaries(double*** to, bool condalloc)	{
 // and the residual is stored in the last entry of the vector
 void SubstitutionProcess::Offset(double*** t, bool condalloc)	{
 	for (int i=sitemin; i<sitemax; i++)	{
-	// for (int i=0; i<GetNsite(); i++)	{
-		for (int j=0; j<GetNrate(i); j++)	{
-			if ((! condalloc) || (ratealloc[i] == j))	{
-				double* tmp = t[i][j];
-				double max = 0;
-				for (int k=0; k<GetNstate(i); k++)	{
-					if (tmp[k] <0)	{
-						cerr << "error in pruning: negative prob : " << tmp[k] << "\n";
-						exit(1);
-						// tmp[k] = 0;
-					}
-					if (max < tmp[k])	{
-						max = tmp[k];
-					}
-				}
-				/*
-				if (max == 0)	{
-					max = 1e-12;
-				}
-				*/
-				if (max < 0)	{
-					cerr << "error in pruning (offset function): null likelihood\n";
-					exit(1);
-				}
-				if (max > 0)	{
-					for (int k=0; k<GetNstate(i); k++)	{
-						tmp[k] /= max;
-					}
-				}
-				tmp[GetNstate(i)] += log(max);
-			}
-		}
-	}
+        if (ActiveSite(i))  {
+            for (int j=0; j<GetNrate(i); j++)	{
+                if ((! condalloc) || (ratealloc[i] == j))	{
+                    double* tmp = t[i][j];
+                    double max = 0;
+                    for (int k=0; k<GetNstate(i); k++)	{
+                        if (tmp[k] <0)	{
+                            cerr << "error in pruning: negative prob : " << tmp[k] << "\n";
+                            exit(1);
+                            // tmp[k] = 0;
+                        }
+                        if (max < tmp[k])	{
+                            max = tmp[k];
+                        }
+                    }
+                    /*
+                    if (max == 0)	{
+                        max = 1e-12;
+                    }
+                    */
+                    if (max < 0)	{
+                        cerr << "error in pruning (offset function): null likelihood\n";
+                        exit(1);
+                    }
+                    if (max > 0)	{
+                        for (int k=0; k<GetNstate(i); k++)	{
+                            tmp[k] /= max;
+                        }
+                    }
+                    tmp[GetNstate(i)] += log(max);
+                }
+            }
+        }
+    }
 }
 
 //-------------------------------------------------------------------------
@@ -260,132 +265,134 @@ void SubstitutionProcess::Offset(double*** t, bool condalloc)	{
 double SubstitutionProcess::ComputeLikelihood(double*** aux, bool condalloc)	{
 
 	for (int i=sitemin; i<sitemax; i++)	{
-		if (condalloc)	{
-			int j = ratealloc[i];
-			double* t = aux[i][j];
-			double tot = 0;
-			int nstate = GetNstate(i);
-			for (int k=0; k<nstate; k++)	{
-				tot += (*t++);
-			}
-			if (tot == 0)	{
-				// dirty !
-				tot = 1e-12;
-			}
-			sitelogL[i] = log(tot) + (*t);
-			t -= nstate;
-		}
-		else	{
-			double max = 0;
-			double* logl = condsitelogL[i];
-			for (int j=0; j<GetNrate(i); j++)	{
-				double* t = aux[i][j];
-				double tot = 0;
-				int nstate = GetNstate(i);
-				for (int k=0; k<nstate; k++)	{
-					tot += (*t++);
-				}
-				if (tot < 0)	{
-					cerr << "error in SubstitutionProcess::ComputeLikelihood: negative prob\n";
-					cerr << tot << '\n';
-					exit(1);
-				}
-				if (std::isnan(tot))	{
-					cerr << "error in SubstitutionProcess::ComputeLikelihood: tot is nan\n";
-					for (int k=0; k<nstate; k++)	{
-						cerr << GetStationary(i)[k] << '\t';
-					}
-					cerr << '\n';
-					exit(1);
-				}
-				if (tot == 0)	{
-					// dirty !
-					tot = 1e-12;
-				}
-				logl[j] = log(tot) + (*t);
-				t -= nstate;
-				if ((!j) || (max < logl[j]))	{
-					max = logl[j];
-				}
-			}
-			double total = 0;
-			double meanrate = 0;
-			if (std::isinf(max))	{
-				meanrate = 1.0;
-				sitelogL[i] = max;
-			}
-			else	{
-				for (int j=0; j<GetNrate(i); j++)	{
-					double tmp = GetRateWeight(i,j) * exp(logl[j] - max);
-					total += tmp;
-					meanrate += tmp * GetRate(i,j);
-				}
-				sitelogL[i] = log(total) + max;
-			}
-			if (std::isnan(sitelogL[i]))	{
-				cerr << "error in SubstitutionProcess::ComputeNodeLikelihood: nan\n";
-				cerr << total << '\t' << max << '\n';
-				for (int j=0; j<GetNrate(i); j++)	{
-					cerr << logl[j] << '\t';
-				}
-				cerr << '\n';
-				exit(1);
-			}
-			meanrate /= total;
-			meansiterate[i] = meanrate;
-		}
-	}
+        if (ActiveSite(i))  {
+            if (condalloc)	{
+                int j = ratealloc[i];
+                double* t = aux[i][j];
+                double tot = 0;
+                int nstate = GetNstate(i);
+                for (int k=0; k<nstate; k++)	{
+                    tot += (*t++);
+                }
+                if (tot == 0)	{
+                    // dirty !
+                    tot = 1e-12;
+                }
+                sitelogL[i] = log(tot) + (*t);
+                t -= nstate;
+            }
+            else	{
+                double max = 0;
+                double* logl = condsitelogL[i];
+                for (int j=0; j<GetNrate(i); j++)	{
+                    double* t = aux[i][j];
+                    double tot = 0;
+                    int nstate = GetNstate(i);
+                    for (int k=0; k<nstate; k++)	{
+                        tot += (*t++);
+                    }
+                    if (tot < 0)	{
+                        cerr << "error in SubstitutionProcess::ComputeLikelihood: negative prob\n";
+                        cerr << tot << '\n';
+                        exit(1);
+                    }
+                    if (std::isnan(tot))	{
+                        cerr << "error in SubstitutionProcess::ComputeLikelihood: tot is nan\n";
+                        for (int k=0; k<nstate; k++)	{
+                            cerr << GetStationary(i)[k] << '\t';
+                        }
+                        cerr << '\n';
+                        exit(1);
+                    }
+                    if (tot == 0)	{
+                        // dirty !
+                        tot = 1e-12;
+                    }
+                    logl[j] = log(tot) + (*t);
+                    t -= nstate;
+                    if ((!j) || (max < logl[j]))	{
+                        max = logl[j];
+                    }
+                }
+                double total = 0;
+                double meanrate = 0;
+                if (std::isinf(max))	{
+                    meanrate = 1.0;
+                    sitelogL[i] = max;
+                }
+                else	{
+                    for (int j=0; j<GetNrate(i); j++)	{
+                        double tmp = GetRateWeight(i,j) * exp(logl[j] - max);
+                        total += tmp;
+                        meanrate += tmp * GetRate(i,j);
+                    }
+                    sitelogL[i] = log(total) + max;
+                }
+                if (std::isnan(sitelogL[i]))	{
+                    cerr << "error in SubstitutionProcess::ComputeNodeLikelihood: nan\n";
+                    cerr << total << '\t' << max << '\n';
+                    for (int j=0; j<GetNrate(i); j++)	{
+                        cerr << logl[j] << '\t';
+                    }
+                    cerr << '\n';
+                    exit(1);
+                }
+                meanrate /= total;
+                meansiterate[i] = meanrate;
+            }
+        }
 
-	logL = 0;
-	for (int i=sitemin; i<sitemax; i++)	{
-		logL += sitelogL[i];
-	}
-	return logL;
+    }
+    logL = 0;
+    for (int i=sitemin; i<sitemax; i++)	{
+        logL += sitelogL[i];
+    }
+    return logL;
 }
 	
 
 void SubstitutionProcess::ConditionalLikelihoodsToStatePostProbs(double*** aux,double*** statepostprob, int nodelabel, bool condalloc)	{
 
 	for (int i=sitemin; i<sitemax; i++)	{
-		if (condalloc)	{
-			int j = ratealloc[i];
-			double* t = aux[i][j];
-			double* s = statepostprob[i][nodelabel];
-			/*
-			if (GetNstate(i) != GetNstate())	{
-				cerr << "error in SubstitutionProcess::ConditionalLikelihoodsToStatePostProbs: non matching number of states\n";
-				exit(1);
-			}
-			*/
-			double total = 0;
-			for (int k=0; k<GetNstate(i); k++)	{
-				s[k] = t[k];
-				total += s[k];
-			}
-			for (int k=0; k<GetNstate(i); k++)	{
-				s[k] /= total;
-			}
-		}
-		else	{
-			double* s = statepostprob[i][nodelabel];
-			for (int k=0; k<GetNstate(i); k++)	{
-				s[k] =0;
-			}
-			for (int j=0; j<GetNrate(i); j++)	{
-				double* t = aux[i][j];
-				for (int k=0; k<GetNstate(i); k++)	{
-					s[k] += t[k];
-				}
-			}
-			double total = 0;
-			for (int k=0; k<GetNstate(i); k++)	{
-				total += s[k];
-			}
-			for (int k=0; k<GetNstate(i); k++)	{
-				s[k] /= total;
-			}
-		}
-	}
+        if (condalloc)	{
+            int j = ratealloc[i];
+            double* t = aux[i][j];
+            double* s = statepostprob[i][nodelabel];
+            /*
+            if (GetNstate(i) != GetNstate())	{
+                cerr << "error in SubstitutionProcess::ConditionalLikelihoodsToStatePostProbs: non matching number of states\n";
+                exit(1);
+            }
+            */
+            double total = 0;
+            for (int k=0; k<GetNstate(i); k++)	{
+                s[k] = t[k];
+                total += s[k];
+            }
+            for (int k=0; k<GetNstate(i); k++)	{
+                s[k] /= total;
+            }
+        }
+        else	{
+            double* s = statepostprob[i][nodelabel];
+            for (int k=0; k<GetNstate(i); k++)	{
+                s[k] =0;
+            }
+            for (int j=0; j<GetNrate(i); j++)	{
+                double* t = aux[i][j];
+                for (int k=0; k<GetNstate(i); k++)	{
+                    s[k] += t[k];
+                }
+            }
+            double total = 0;
+            for (int k=0; k<GetNstate(i); k++)	{
+                total += s[k];
+            }
+            for (int k=0; k<GetNstate(i); k++)	{
+                s[k] /= total;
+            }
+        }
+    }
 }
 
 //-------------------------------------------------------------------------
@@ -403,41 +410,40 @@ void SubstitutionProcess::DrawAllocations(double*** aux)	{
 		ComputeLikelihood(aux);
 	}
 	for (int i=sitemin; i<sitemax; i++)	{
-	// for (int i=0; i<GetNsite(); i++)	{
-		if (GetNrate(i) == 1)	{
-			ratealloc[i] = 0;
-		}
-		else	{
-			double max = 0;
-			double* logl = condsitelogL[i];
-			for (int j=0; j<GetNrate(i); j++)	{
-				if ((!j) || (max < logl[j]))	{
-					max = logl[j];
-				}
-			}
-			double cumul = 0;
-			double p[GetNrate(i)];
-			for (int j=0; j<GetNrate(i); j++)	{
-				cumul += GetRateWeight(i,j) * exp(logl[j] - max);
-				p[j] = cumul;
-			}
-			double u = rnd::GetRandom().Uniform() * cumul;
-			int j = 0;
-			while ((j<GetNrate(i)) && (p[j] < u)) j++;
-			if (j == GetNrate(i))	{
-				cerr << "error in SubstitutionProcess::SampleAlloc\n";
-				exit(1);
-			}
-			ratealloc[i] = j;
-		}
-	}
+        if (GetNrate(i) == 1)	{
+            ratealloc[i] = 0;
+        }
+        else	{
+            double max = 0;
+            double* logl = condsitelogL[i];
+            for (int j=0; j<GetNrate(i); j++)	{
+                if ((!j) || (max < logl[j]))	{
+                    max = logl[j];
+                }
+            }
+            double cumul = 0;
+            double p[GetNrate(i)];
+            for (int j=0; j<GetNrate(i); j++)	{
+                cumul += GetRateWeight(i,j) * exp(logl[j] - max);
+                p[j] = cumul;
+            }
+            double u = rnd::GetRandom().Uniform() * cumul;
+            int j = 0;
+            while ((j<GetNrate(i)) && (p[j] < u)) j++;
+            if (j == GetNrate(i))	{
+                cerr << "error in SubstitutionProcess::SampleAlloc\n";
+                exit(1);
+            }
+            ratealloc[i] = j;
+        }
+    }
 }
 
 void SubstitutionProcess::DrawAllocationsFromPrior()	{
 
 	for (int i=sitemin; i<sitemax; i++)	{
-		int k = (int) (GetNrate(i) * rnd::GetRandom().Uniform());
-		ratealloc[i] = k;
+        int k = (int) (GetNrate(i) * rnd::GetRandom().Uniform());
+        ratealloc[i] = k;
 	}
 }
 
@@ -449,7 +455,6 @@ void SubstitutionProcess::DrawAllocationsFromPrior()	{
 
 void SubstitutionProcess::ChooseStates(double*** t, int* states)	{
 	for (int i=sitemin; i<sitemax; i++)	{
-	// for (int i=0; i<GetNsite(); i++)	{
 		int j = ratealloc[i];
 		double* tmp = t[i][j];
 		double total = 0;

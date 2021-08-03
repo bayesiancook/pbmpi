@@ -320,23 +320,28 @@ void AACodonMutSelSBDPPhyloProcess::SlaveComputeSiteLogL()	{
 
 	double** sitelogl = new double*[ProfileProcess::GetNsite()];
 	for (int i=sitemin; i<sitemax; i++)	{
-		sitelogl[i] = new double[ncomp];
-		// sitelogl[i] = new double[GetNcomponent()];
+        if (ActiveSite(i))  {
+            sitelogl[i] = new double[ncomp];
+        }
 	}
 	
 	for (int k=0; k<ncomp; k++)	{
 	// for (int k=0; k<GetNcomponent(); k++)	{
 		for (int i=sitemin; i<sitemax; i++)	{
-			AACodonMutSelSBDPProfileProcess::alloc[i] = k;
+            if (ActiveSite(i))  {
+                AACodonMutSelSBDPProfileProcess::alloc[i] = k;
+            }
 		}
 		UpdateMatrix(k);
 		UpdateConditionalLikelihoods();
 		for (int i=sitemin; i<sitemax; i++)	{
-			sitelogl[i][k] = sitelogL[i];
-			if (std::isnan(sitelogl[i][k]))	{
-				cerr << "error in RASCATGTRSBDP::SlaveComputeSiteLogL: nan\n";
-				exit(1);
-			}
+            if (ActiveSite(i))  {
+                sitelogl[i][k] = sitelogL[i];
+                if (std::isnan(sitelogl[i][k]))	{
+                    cerr << "error in RASCATGTRSBDP::SlaveComputeSiteLogL: nan\n";
+                    exit(1);
+                }
+            }
 		}
 	}
 
@@ -345,35 +350,39 @@ void AACodonMutSelSBDPPhyloProcess::SlaveComputeSiteLogL()	{
 		meansitelogl[i] = 0;
 	}
 	for (int i=sitemin; i<sitemax; i++)	{
-		double max = 0;
-		for (int k=0; k<ncomp; k++)	{
-		// for (int k=0; k<GetNcomponent(); k++)	{
-			if ((!k) || (max < sitelogl[i][k]))	{
-				max = sitelogl[i][k];
-			}
-		}
-		double tot = 0;
-		double totweight = 0;
-		for (int k=0; k<ncomp; k++)	{
-		// for (int k=0; k<GetNcomponent(); k++)	{
-			tot += weight[k] * exp(sitelogl[i][k] - max);
-			totweight += weight[k];
-		}
-		meansitelogl[i] = log(tot) + max;
-		if (std::isnan(meansitelogl[i]))	{
-			cerr << "error: meansitelogl is nan\n";
-			exit(1);
-		}
-		if (std::isinf(meansitelogl[i]))	{
-			cerr << "error: meansitelogl is inf\n";
-			exit(1);
-		}
+        if (ActiveSite(i))  {
+            double max = 0;
+            for (int k=0; k<ncomp; k++)	{
+            // for (int k=0; k<GetNcomponent(); k++)	{
+                if ((!k) || (max < sitelogl[i][k]))	{
+                    max = sitelogl[i][k];
+                }
+            }
+            double tot = 0;
+            double totweight = 0;
+            for (int k=0; k<ncomp; k++)	{
+            // for (int k=0; k<GetNcomponent(); k++)	{
+                tot += weight[k] * exp(sitelogl[i][k] - max);
+                totweight += weight[k];
+            }
+            meansitelogl[i] = log(tot) + max;
+            if (std::isnan(meansitelogl[i]))	{
+                cerr << "error: meansitelogl is nan\n";
+                exit(1);
+            }
+            if (std::isinf(meansitelogl[i]))	{
+                cerr << "error: meansitelogl is inf\n";
+                exit(1);
+            }
+        }
 	}
 
 	MPI_Send(meansitelogl,ProfileProcess::GetNsite(),MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
 	
 	for (int i=sitemin; i<sitemax; i++)	{
-		delete[] sitelogl[i];
+        if (ActiveSite(i))  {
+            delete[] sitelogl[i];
+        }
 	}
 	delete[] sitelogl;
 	delete[] meansitelogl;

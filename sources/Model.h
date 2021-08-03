@@ -368,6 +368,8 @@ class Model	{
             process->GlobalUpdateParameters();
         }
 
+        // process->GlobalUpdateConditionalLikelihoods();
+
         int ncycle = process->GetNsite() / step;
         if (process->GetNsite() % step) {
             ncycle++;
@@ -388,6 +390,8 @@ class Model	{
             }
 
             process->GlobalSetSteppingFraction(0, nsite1);
+            process->GlobalUpdateConditionalLikelihoods();
+
             if (empiricalprior)  {
                 process->GlobalSetEmpiricalFrac(frac1);
             }
@@ -426,9 +430,6 @@ class Model	{
                     exit(1);
                 }
 
-                process->GlobalSetSteppingFraction(0, nsite1);
-                process->GlobalSetEmpiricalFrac(frac1);
-
                 totlogp1 += delta;
                 totlogp2 += delta*delta;
                 if ((!maxlogp) || (maxlogp < delta))    {
@@ -446,7 +447,6 @@ class Model	{
                 double logZ = log(totp1 / npoint) + maxlogp;
                 effsize = totp1 * totp1 / totp2;
 
-                // while ((npoint < maxsize) && ((npoint < minstepsize) || (effsize < mineffsize)))    {
                 if (npoint >= minnpoint)  {
                     if ((!mineffsize) || (effsize > mineffsize))    {
                         cont = 0;
@@ -456,7 +456,12 @@ class Model	{
                     cont = 0;
                 }
 
-                if (! cont) {
+                if (cont)   {
+                    process->GlobalResetAllConditionalLikelihoods();
+                    process->GlobalSetSteppingFraction(0, nsite1);
+                    process->GlobalSetEmpiricalFrac(frac1);
+                }
+                else    {
                     ofstream pos((name + ".param").c_str());
                     pos.precision(numeric_limits<double>::digits10);
                     ToStream(pos,true);

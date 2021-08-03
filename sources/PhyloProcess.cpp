@@ -143,6 +143,18 @@ void PhyloProcess::CreateConditionalLikelihoods()	{
 	condflag = true;
 }
 
+void PhyloProcess::GlobalResetAllConditionalLikelihoods()  {
+	assert(myid == 0);
+	MESSAGE signal = RESETALL;
+	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+}
+
+void PhyloProcess::SlaveResetAllConditionalLikelihoods()	{
+    for (int j=0; j<GetNlink(); j++)	{
+        Reset(condlmap[j], false);
+    }
+}
+
 void PhyloProcess::DeleteConditionalLikelihoods()	{
 
 	if (condflag)	{
@@ -252,7 +264,7 @@ double PhyloProcess::ComputeNodeLikelihood(const Link* from, int auxindex)	{
 void PhyloProcess::PostOrderPruning(const Link* from, double*** aux)	{
 
 	if (from->isLeaf())	{
-		Initialize(aux,GetData(from));
+        Initialize(aux,GetData(from));
 	}
 	else	{
 		for (const Link* link=from->Next(); link!=from; link=link->Next())	{
@@ -1613,6 +1625,9 @@ void PhyloProcess::SlaveExecute(MESSAGE signal)	{
 		tvalue = (arg[1] == 1) ? true : false;
 		SlaveReset(arg[0],tvalue);
 		break;
+    case RESETALL:
+        SlaveResetAllConditionalLikelihoods();
+        break;
 	case MULTIPLY:
 		MPI_Bcast(arg,3,MPI_INT,0,MPI_COMM_WORLD);
 		tvalue = (arg[2] == 1) ? true : false;
@@ -3235,13 +3250,15 @@ double PhyloProcess::GlobalGetFullLogLikelihood()  {
     for(int i=1; i<GetNprocs(); ++i) {
         MPI_Recv(tmp,GetNsite(),MPI_DOUBLE,i,TAG1,MPI_COMM_WORLD,&stat);
         for (int j=smin[i-1]; j<smax[i-1]; j++)	{
-            if (std::isnan(tmp[j]))	{
-                cerr << "error: nan logl received by master\n";
-                cerr << "site : " << j << '\n';
-                cerr << "proc : " << i << '\n';
-                exit(1);
+            if (ActiveSite(j))  {
+                if (std::isnan(tmp[j]))	{
+                    cerr << "error: nan logl received by master\n";
+                    cerr << "site : " << j << '\n';
+                    cerr << "proc : " << i << '\n';
+                    exit(1);
+                }
+                total += tmp[j];
             }
-            total += tmp[j];
         }
     }
     delete[] tmp;

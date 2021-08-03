@@ -88,145 +88,145 @@ void MatrixSubstitutionProcess::Propagate(double*** from, double*** to, double t
 	// double* bigaux = new double[(sitemax - sitemin) * GetNrate(0) * nstate];
 	double* aux = new double[GetNsite() * GetNrate(0) * nstate];
 	for(i=sitemin; i<sitemax; i++)	{
-		SubMatrix* matrix = GetMatrix(i);
-		double** eigenvect = matrix->GetEigenVect();
-		double** inveigenvect = matrix->GetInvEigenVect();
-		double* eigenval = matrix->GetEigenVal();
-		for(j=0; j<GetNrate(i); j++)	{
-			if ((!condalloc) || (ratealloc[i] == j))	{
-				double* up = from[i][j];
-				double* down = to[i][j];
-				//SubMatrix* matrix = GetMatrix(i);
-				length = time * GetRate(i,j);
+        if (ActiveSite(i))  {
+            SubMatrix* matrix = GetMatrix(i);
+            double** eigenvect = matrix->GetEigenVect();
+            double** inveigenvect = matrix->GetInvEigenVect();
+            double* eigenval = matrix->GetEigenVal();
+            for(j=0; j<GetNrate(i); j++)	{
+                if ((!condalloc) || (ratealloc[i] == j))	{
+                    double* up = from[i][j];
+                    double* down = to[i][j];
+                    //SubMatrix* matrix = GetMatrix(i);
+                    length = time * GetRate(i,j);
 
-				//double** eigenvect = matrix->GetEigenVect();
-				//double** inveigenvect= matrix->GetInvEigenVect();
-				//double* eigenval = matrix->GetEigenVal();
+                    //double** eigenvect = matrix->GetEigenVect();
+                    //double** inveigenvect= matrix->GetInvEigenVect();
+                    //double* eigenval = matrix->GetEigenVal();
 
-				// substitution matrix Q = P L P^{-1} where L is diagonal (eigenvalues) and P is the eigenvector matrix
-				// we need to compute 
-				// down = exp(length * Q) . up
-				// which we express as 
-				// down = P ( exp(length * L) . (P^{-1} . up) )  
-		
-				// thus we successively do the following matrix.vector products
+                    // substitution matrix Q = P L P^{-1} where L is diagonal (eigenvalues) and P is the eigenvector matrix
+                    // we need to compute 
+                    // down = exp(length * Q) . up
+                    // which we express as 
+                    // down = P ( exp(length * L) . (P^{-1} . up) )  
+            
+                    // thus we successively do the following matrix.vector products
 
-				// P^{-1} . up  -> aux
-				// exp(length * L) . aux  -> aux 	(where exp(length*L) is diagonal, so this is linear)
-				// P . aux -> down
+                    // P^{-1} . up  -> aux
+                    // exp(length * L) . aux  -> aux 	(where exp(length*L) is diagonal, so this is linear)
+                    // P . aux -> down
 
-				/*
-				int nstate = GetNstate();
-				double* aux = new double[nstate];
-				*/
-				//double* aux = bigaux + nstate * (i*GetNrate(0)  + j);
-				offset = nstate*(i*GetNrate(0) + j);
-				// P^{-1} . up  -> aux
-				//double* tmpaux = aux;
-				for(k=0; k<nstate; k++)	{
-					//(*tmpaux++) = 0;
-					aux[offset+k] = 0.0;
-				}
-				//tmpaux -= nstate;
-				//double* tmpup = up;
-				for(k=0; k<nstate; k++)	{
-					//double* tmpinveigen = inveigenvect[i];
-					for(l=0; l<nstate; l++)	{
-						//(*tmpaux) += (*tmpinveigen++) * (*tmpup++);
-						aux[offset+k] += inveigenvect[k][l] * up[l];
-					}
-					//tmpaux++;
-					//tmpup -= nstate;
-				}
-				//tmpaux -= nstate;
+                    /*
+                    int nstate = GetNstate();
+                    double* aux = new double[nstate];
+                    */
+                    //double* aux = bigaux + nstate * (i*GetNrate(0)  + j);
+                    offset = nstate*(i*GetNrate(0) + j);
+                    // P^{-1} . up  -> aux
+                    //double* tmpaux = aux;
+                    for(k=0; k<nstate; k++)	{
+                        //(*tmpaux++) = 0;
+                        aux[offset+k] = 0.0;
+                    }
+                    //tmpaux -= nstate;
+                    //double* tmpup = up;
+                    for(k=0; k<nstate; k++)	{
+                        //double* tmpinveigen = inveigenvect[i];
+                        for(l=0; l<nstate; l++)	{
+                            //(*tmpaux) += (*tmpinveigen++) * (*tmpup++);
+                            aux[offset+k] += inveigenvect[k][l] * up[l];
+                        }
+                        //tmpaux++;
+                        //tmpup -= nstate;
+                    }
+                    //tmpaux -= nstate;
 
-				// exp(length * L) . aux  -> aux
-				//double* tmpval = eigenval;
-				for(k=0; k<nstate; k++)	{
-					//(*tmpaux++) *= exp(length * (*tmpval++));
-					aux[offset+k] *= exp(length * eigenval[k]);
-				}
-				//tmpaux -= nstate;
-				//tmpval -= nstate;
+                    // exp(length * L) . aux  -> aux
+                    //double* tmpval = eigenval;
+                    for(k=0; k<nstate; k++)	{
+                        //(*tmpaux++) *= exp(length * (*tmpval++));
+                        aux[offset+k] *= exp(length * eigenval[k]);
+                    }
+                    //tmpaux -= nstate;
+                    //tmpval -= nstate;
 
-				// P . aux -> down
-				//double* tmpdown = down;
-				for(k=0; k<nstate; k++)	{
-					//(*tmpdown++) = 0;
-					down[k] = 0.0;
-				}
-				//tmpdown -= nstate;
+                    // P . aux -> down
+                    //double* tmpdown = down;
+                    for(k=0; k<nstate; k++)	{
+                        //(*tmpdown++) = 0;
+                        down[k] = 0.0;
+                    }
+                    //tmpdown -= nstate;
 
-				for(k=0; k<nstate; k++)	{
-					//double* tmpeigen = eigenvect[i];
-					for(l=0; l<nstate; l++)	{
-						//(*tmpdown) += (*tmpeigen++) * (*tmpaux++);
-						down[k] += eigenvect[k][l] * aux[offset+l]; 
-					}
-					//tmpdown++;
-					//tmpaux -= nstate;
-				}
-				//tmpdown -= nstate;
+                    for(k=0; k<nstate; k++)	{
+                        //double* tmpeigen = eigenvect[i];
+                        for(l=0; l<nstate; l++)	{
+                            //(*tmpdown) += (*tmpeigen++) * (*tmpaux++);
+                            down[k] += eigenvect[k][l] * aux[offset+l]; 
+                        }
+                        //tmpdown++;
+                        //tmpaux -= nstate;
+                    }
+                    //tmpdown -= nstate;
 
-				// exit in case of numerical errors
-				for(k=0; k<nstate; k++)	{
-					if (std::isnan(down[k]))	{
-						cerr << "error in back prop\n";
-						for(l=0; l<nstate; l++)	{
-							cerr << up[l] << '\t' << down[l] << '\t' << matrix->Stationary(l) << '\n';
-						}
-						exit(1);
-					}
-				}
-				maxup = 0.0;
-				for(k=0; k<nstate; k++)	{
-					if (up[k] < 0.0)	{
-						cerr << "error in backward propagate: negative prob : " << up[k] << "\n";
-						exit(1);
-					}
-					if (maxup < up[k])	{
-						maxup = up[k];
-					}
-				}
-				max = 0.0;
-				for(k=0; k<nstate; k++)	{
-					if (down[k] < 0.0)	{
-						infprobcount++;
-						down[k] = 0.0;
-					}
-					if (max < down[k])	{
-						max = down[k];
-					}
-				}
-				/*
-				if (maxup == 0.0)	{
-					cerr << "error in backward propagate: null up array\n";
-					cerr << "site : " << i << '\n';
-					for(l=0; l<nstate; l++)	{
-						cerr << matrix->Stationary(l) << '\n';
-					}
-					cerr << time << '\t' << length << '\n';
-					cerr << GetDim() << '\n';
-					cerr << GetMinStat(i) << '\n';
-					exit(1);
-				}
-				if (max == 0.0)	{
-					cerr << "error in backward propagate: null array\n";
-					for(k=0; k<nstate; k++)	{
-						cerr << up[k] << '\t' << down[k] << '\n';
-					}
-					cerr << length << '\n';
-					cerr << '\n';
-					exit(1);
-				}
-				*/
+                    // exit in case of numerical errors
+                    for(k=0; k<nstate; k++)	{
+                        if (std::isnan(down[k]))	{
+                            cerr << "error in back prop\n";
+                            for(l=0; l<nstate; l++)	{
+                                cerr << up[l] << '\t' << down[l] << '\t' << matrix->Stationary(l) << '\n';
+                            }
+                            exit(1);
+                        }
+                    }
+                    maxup = 0.0;
+                    for(k=0; k<nstate; k++)	{
+                        if (up[k] < 0.0)	{
+                            cerr << "error in backward propagate: negative prob : " << up[k] << "\n";
+                            exit(1);
+                        }
+                        if (maxup < up[k])	{
+                            maxup = up[k];
+                        }
+                    }
+                    max = 0.0;
+                    for(k=0; k<nstate; k++)	{
+                        if (down[k] < 0.0)	{
+                            infprobcount++;
+                            down[k] = 0.0;
+                        }
+                        if (max < down[k])	{
+                            max = down[k];
+                        }
+                    }
+                    /*
+                    if (maxup == 0.0)	{
+                        cerr << "error in backward propagate: null up array\n";
+                        cerr << "site : " << i << '\n';
+                        for(l=0; l<nstate; l++)	{
+                            cerr << matrix->Stationary(l) << '\n';
+                        }
+                        cerr << time << '\t' << length << '\n';
+                        cerr << GetDim() << '\n';
+                        cerr << GetMinStat(i) << '\n';
+                        exit(1);
+                    }
+                    if (max == 0.0)	{
+                        cerr << "error in backward propagate: null array\n";
+                        for(k=0; k<nstate; k++)	{
+                            cerr << up[k] << '\t' << down[k] << '\n';
+                        }
+                        cerr << length << '\n';
+                        cerr << '\n';
+                        exit(1);
+                    }
+                    */
 
-				// this is the offset (in log)
-				down[nstate] = up[nstate];
-			}
-		}
-	}
-
-	delete[] aux;
-	// propchrono.Stop();
+                    // this is the offset (in log)
+                    down[nstate] = up[nstate];
+                }
+            }
+        }
+    }
+    delete[] aux;
 }

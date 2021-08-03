@@ -268,17 +268,23 @@ void AACodonMutSelFinitePhyloProcess::SlaveComputeSiteLogL()	{
 
 	double** sitelogl = new double*[ProfileProcess::GetNsite()];
 	for (int i=sitemin; i<sitemax; i++)	{
-		sitelogl[i] = new double[GetNcomponent()];
+        if (ActiveSite(i))  {
+            sitelogl[i] = new double[GetNcomponent()];
+        }
 	}
 	
 	for (int k=0; k<GetNcomponent(); k++)	{
 		for (int i=sitemin; i<sitemax; i++)	{
-			AACodonMutSelFiniteProfileProcess::alloc[i] = k;
+            if (ActiveSite(i))  {
+                AACodonMutSelFiniteProfileProcess::alloc[i] = k;
+            }
 		}
 		UpdateMatrix(k);
 		UpdateConditionalLikelihoods();
 		for (int i=sitemin; i<sitemax; i++)	{
-			sitelogl[i][k] = sitelogL[i];
+            if (ActiveSite(i))  {
+                sitelogl[i][k] = sitelogL[i];
+            }
 		}
 	}
 
@@ -288,28 +294,30 @@ void AACodonMutSelFinitePhyloProcess::SlaveComputeSiteLogL()	{
 		meansitelogl[i] = 0;
 	}
 	for (int i=sitemin; i<sitemax; i++)	{
-		double max = 0;
-		for (int k=0; k<GetNcomponent(); k++)	{
-			if ((!k) || (max < sitelogl[i][k]))	{
-				max = sitelogl[i][k];
-			}
-		}
-		double tot = 0;
-		for (int k=0; k<GetNcomponent(); k++)	{
-			tot += weight[k] * exp(sitelogl[i][k] - max);
-            cumul[k] = tot;
-		}
-		meansitelogl[i] = log(tot) + max;
-        int k = 0;
-        double u = tot*rnd::GetRandom().Uniform();
-        while ((k < GetNcomponent()) && (u>cumul[k]))   {
-            k++;
+        if (ActiveSite(i))  {
+            double max = 0;
+            for (int k=0; k<GetNcomponent(); k++)	{
+                if ((!k) || (max < sitelogl[i][k]))	{
+                    max = sitelogl[i][k];
+                }
+            }
+            double tot = 0;
+            for (int k=0; k<GetNcomponent(); k++)	{
+                tot += weight[k] * exp(sitelogl[i][k] - max);
+                cumul[k] = tot;
+            }
+            meansitelogl[i] = log(tot) + max;
+            int k = 0;
+            double u = tot*rnd::GetRandom().Uniform();
+            while ((k < GetNcomponent()) && (u>cumul[k]))   {
+                k++;
+            }
+            if (k == GetNcomponent())   {
+                cerr << "error in RASCATFiniteGammaPhyloProcess::SlaveComputeSiteLogL: overflow\n";
+                exit(1);
+            }
+            AACodonMutSelFiniteProfileProcess::alloc[i] = k;
         }
-        if (k == GetNcomponent())   {
-            cerr << "error in RASCATFiniteGammaPhyloProcess::SlaveComputeSiteLogL: overflow\n";
-            exit(1);
-        }
-        AACodonMutSelFiniteProfileProcess::alloc[i] = k;
 	}
 	UpdateMatrices();
     UpdateConditionalLikelihoods();
@@ -317,7 +325,9 @@ void AACodonMutSelFinitePhyloProcess::SlaveComputeSiteLogL()	{
 	MPI_Send(meansitelogl,ProfileProcess::GetNsite(),MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
 	
 	for (int i=sitemin; i<sitemax; i++)	{
-		delete[] sitelogl[i];
+        if (ActiveSite(i))  {
+            delete[] sitelogl[i];
+        }
 	}
 	delete[] sitelogl;
 	delete[] meansitelogl;

@@ -35,33 +35,34 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 
 void PoissonSubstitutionProcess::Propagate(double*** from, double*** to, double time, bool condalloc)	{
 	for (int i=sitemin; i<sitemax; i++)	{
-	// for (int i=0; i<GetNsite(); i++)	{
-		const double* stat = GetStationary(i);
-		for (int j=0; j<GetNrate(i); j++)	{
-			if ((! condalloc) || (ratealloc[i] == j))	{
-				double* tmpfrom = from[i][j];
-				double* tmpto = to[i][j];
-				double expo = exp(-GetRate(i,j) * time);
-				double tot = 0;
-				int nstate = GetNstate(i);
-				for (int k=0; k<nstate; k++)	{
-					tot += (*tmpfrom++) * (*stat++);
-					// tot += tmpfrom[k] * stat[k];
-				}
-				tmpfrom -= nstate;
-				stat -= nstate;
-				tot *= (1-expo);
-				for (int k=0; k<nstate; k++)	{	
-					(*tmpto++) = expo * (*tmpfrom++) + tot;
-					// tmpto[k] = expo * tmpfrom[k] + tot;
-				}
-				(*tmpto) = (*tmpfrom);
-				tmpto -= nstate;
-				tmpfrom -= nstate;
-				// tmpto[GetNstate(i)] = tmpfrom[GetNstate(i)];
-			}
-		}
-	}
+        if (ActiveSite(i))  {
+            const double* stat = GetStationary(i);
+            for (int j=0; j<GetNrate(i); j++)	{
+                if ((! condalloc) || (ratealloc[i] == j))	{
+                    double* tmpfrom = from[i][j];
+                    double* tmpto = to[i][j];
+                    double expo = exp(-GetRate(i,j) * time);
+                    double tot = 0;
+                    int nstate = GetNstate(i);
+                    for (int k=0; k<nstate; k++)	{
+                        tot += (*tmpfrom++) * (*stat++);
+                        // tot += tmpfrom[k] * stat[k];
+                    }
+                    tmpfrom -= nstate;
+                    stat -= nstate;
+                    tot *= (1-expo);
+                    for (int k=0; k<nstate; k++)	{	
+                        (*tmpto++) = expo * (*tmpfrom++) + tot;
+                        // tmpto[k] = expo * tmpfrom[k] + tot;
+                    }
+                    (*tmpto) = (*tmpfrom);
+                    tmpto -= nstate;
+                    tmpfrom -= nstate;
+                    // tmpto[GetNstate(i)] = tmpfrom[GetNstate(i)];
+                }
+            }
+        }
+    }
 }
 
 /*

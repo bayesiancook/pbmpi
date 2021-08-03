@@ -23,6 +23,10 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 
 #include "TexTab.h"
 
+bool PhyloProcess::ActiveSite(int i)  {
+    return (minsitecutoff == -1) || ((steppingrank[i] >= minsitecutoff) && (steppingrank[i] < maxsitecutoff));
+}
+
 
 void PhyloProcess::GlobalPrepareStepping()   {
 	assert(myid == 0);
@@ -83,6 +87,8 @@ void PhyloProcess::SetSteppingFraction(int cutoff1, int cutoff2)  {
             }
         }
     }
+    minsitecutoff = cutoff1;
+    maxsitecutoff = cutoff2;
     // fill missing map
     FillMissingMap();
 }

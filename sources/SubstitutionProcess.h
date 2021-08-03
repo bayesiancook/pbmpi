@@ -105,6 +105,8 @@ class SubstitutionProcess : public virtual RateProcess, public virtual ProfilePr
 	void CreateCondSiteLogL();
 	void DeleteCondSiteLogL();
 
+    virtual bool ActiveSite(int i) = 0;
+
 	// ------------------
 	// various computatonial accessory methods
 	// used by PhyloProcess

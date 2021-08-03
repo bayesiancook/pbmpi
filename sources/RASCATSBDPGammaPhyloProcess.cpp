@@ -225,21 +225,23 @@ void RASCATSBDPGammaPhyloProcess::SlaveComputeSiteLogL()	{
 
 	double** sitelogl = new double*[GetNsite()];
 	for (int i=sitemin; i<sitemax; i++)	{
-		sitelogl[i] = new double[ncomp];
-		// sitelogl[i] = new double[GetNcomponent()];
+        if (ActiveSite(i))  {
+            sitelogl[i] = new double[ncomp];
+        }
 	}
 	
-	// UpdateMatrices();
-
 	for (int k=0; k<ncomp; k++)	{
-	// for (int k=0; k<GetNcomponent(); k++)	{
 		for (int i=sitemin; i<sitemax; i++)	{
-			PoissonSBDPProfileProcess::alloc[i] = k;
-            UpdateZip(i);
+            if (ActiveSite(i))  {
+                PoissonSBDPProfileProcess::alloc[i] = k;
+                UpdateZip(i);
+            }
 		}
 		UpdateConditionalLikelihoods();
 		for (int i=sitemin; i<sitemax; i++)	{
-			sitelogl[i][k] = sitelogL[i];
+            if (ActiveSite(i))  {
+                sitelogl[i][k] = sitelogL[i];
+            }
 		}
 	}
 
@@ -249,28 +251,30 @@ void RASCATSBDPGammaPhyloProcess::SlaveComputeSiteLogL()	{
 	}
 	double total = 0;
 	for (int i=sitemin; i<sitemax; i++)	{
-		double max = 0;
-		for (int k=0; k<ncomp; k++) {
-		// for (int k=0; k<GetNcomponent(); k++)	{
-			if ((!k) || (max < sitelogl[i][k]))	{
-				max = sitelogl[i][k];
-			}
-		}
-		double tot = 0;
-		double totweight = 0;
-		for (int k=0; k<ncomp; k++)	{
-		// for (int k=0; k<GetNcomponent(); k++)	{
-			tot += weight[k] * exp(sitelogl[i][k] - max);
-			totweight += weight[k];
-		}
-		meansitelogl[i] = log(tot) + max;
-		total += meansitelogl[i] ;
-	}
+        if (ActiveSite(i))  {
+            double max = 0;
+            for (int k=0; k<ncomp; k++) {
+                if ((!k) || (max < sitelogl[i][k]))	{
+                    max = sitelogl[i][k];
+                }
+            }
+            double tot = 0;
+            double totweight = 0;
+            for (int k=0; k<ncomp; k++)	{
+                tot += weight[k] * exp(sitelogl[i][k] - max);
+                totweight += weight[k];
+            }
+            meansitelogl[i] = log(tot) + max;
+            total += meansitelogl[i] ;
+        }
+    }
 
 	MPI_Send(meansitelogl,GetNsite(),MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
 	
 	for (int i=sitemin; i<sitemax; i++)	{
-		delete[] sitelogl[i];
+        if (ActiveSite(i))  {
+            delete[] sitelogl[i];
+        }
 	}
 	delete[] sitelogl;
 	delete[] meansitelogl;
