@@ -50,12 +50,12 @@ class Model	{
     int steppingdnsite;
     int steppingburnin;
     int steppingsize;
-    double steppingmineffsize;
+    double steppingmaxvar;
     int steppingmaxsize;
     string empstepping;
     int steppingcycle;
 
-	Model(string datafile, string treefile, int modeltype, int nratecat, int mixturetype, int ncat, int nmodemax, GeneticCodeType codetype, int suffstat, int fixncomp, int empmix, string mixtype, string rrtype, int iscodon, int fixtopo, int NSPR, int NNNI, int fixcodonprofile, int fixomega, int fixbl, int omegaprior, int kappaprior, int dirweightprior, double mintotweight, int dc, int inevery, int inuntil, int insaveall, int inincinit, int topoburnin, int insteppingdnsite, int insteppingburnin, int insteppingsize, double insteppingmineffsize, int insteppingmaxsize, string inempstepping, string inname, int myid, int nprocs)	{
+	Model(string datafile, string treefile, int modeltype, int nratecat, int mixturetype, int ncat, int nmodemax, GeneticCodeType codetype, int suffstat, int fixncomp, int empmix, string mixtype, string rrtype, int iscodon, int fixtopo, int NSPR, int NNNI, int fixcodonprofile, int fixomega, int fixbl, int omegaprior, int kappaprior, int dirweightprior, double mintotweight, int dc, int inevery, int inuntil, int insaveall, int inincinit, int topoburnin, int insteppingdnsite, int insteppingburnin, int insteppingsize, double insteppingmaxvar, int insteppingmaxsize, string inempstepping, string inname, int myid, int nprocs)	{
 
 		every = inevery;
 		until = inuntil;
@@ -65,7 +65,7 @@ class Model	{
         steppingdnsite = insteppingdnsite;
         steppingburnin = insteppingburnin;
         steppingsize = insteppingsize;
-        steppingmineffsize = insteppingmineffsize;
+        steppingmaxvar = insteppingmaxvar;
         steppingmaxsize = insteppingmaxsize;
         empstepping = inempstepping;
         steppingcycle = 0;
@@ -192,7 +192,7 @@ class Model	{
 
 		is >> type;
         if (type == "STEPPING") {
-            is >> steppingdnsite >> steppingburnin >> steppingsize >> steppingmineffsize >> steppingmaxsize;
+            is >> steppingdnsite >> steppingburnin >> steppingsize >> steppingmaxvar >> steppingmaxsize;
             is >> empstepping;
             is >> steppingcycle;
             is >> type;
@@ -238,7 +238,7 @@ class Model	{
 		if (header)	{
             if (steppingdnsite)  {
                 ss << "STEPPING\n";
-                ss << steppingdnsite << '\t' << steppingburnin << '\t' << steppingsize << '\t' << steppingmineffsize << '\t' << steppingmaxsize << '\n';
+                ss << steppingdnsite << '\t' << steppingburnin << '\t' << steppingsize << '\t' << steppingmaxvar << '\t' << steppingmaxsize << '\n';
                 ss << empstepping << '\n';
                 ss << steppingcycle << '\n';
             }
@@ -289,7 +289,7 @@ class Model	{
         }
         else    {
             SteppingRun(steppingdnsite, steppingburnin, steppingsize,
-                        steppingmineffsize, steppingmaxsize, empstepping);
+                        steppingmaxvar, steppingmaxsize, empstepping);
         }
     }
 
@@ -344,7 +344,7 @@ class Model	{
 		cerr << '\n';
 	}
 
-	void SteppingRun(int step, int burnin, int minnpoint, double mineffsize, double maxnpoint, string empname)    {
+	void SteppingRun(int step, int burnin, int minnpoint, double maxvar, double maxnpoint, string empname)    {
 
 
         int empiricalprior = 0;
@@ -402,7 +402,6 @@ class Model	{
             }
 
             int npoint = 0;
-            double effsize = 0;
             double maxlogp = 0;
             double totp1 = 0;
             double totp2 = 0;
@@ -450,10 +449,12 @@ class Model	{
                 }
 
                 double logZ = log(totp1 / npoint) + maxlogp;
-                effsize = totp1 * totp1 / totp2;
+                double effsize = totp1 * totp1 / totp2;
+                double meanlogp = totlogp1/npoint;
+                double varlogp = (totlogp2/npoint - meanlogp*meanlogp)/npoint;
 
                 if (npoint >= minnpoint)  {
-                    if ((!mineffsize) || (effsize > mineffsize))    {
+                    if ((!maxvar) || (varlogp < maxvar))    {
                         cont = 0;
                     }
                 }
@@ -471,9 +472,6 @@ class Model	{
                     pos.precision(numeric_limits<double>::digits10);
                     ToStream(pos,true);
                     pos.close();
-
-                    double meanlogp = totlogp1 / npoint;
-                    double varlogp = totlogp2 / npoint - meanlogp*meanlogp;
 
                     double meanlogprior = totlogprior / npoint;
 

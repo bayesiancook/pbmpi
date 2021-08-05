@@ -78,7 +78,7 @@ int main(int argc, char* argv[])	{
 	int steppingdnsite = 0;
     int steppingburnin = 0;
     int steppingminnpoint = 0;
-    double steppingmineffsize = 0;
+    double steppingmaxvar = 0;
     int steppingmaxnpoint = 0;
     string empstepping = "None";
 
@@ -163,7 +163,7 @@ int main(int argc, char* argv[])	{
                 i++;
                 steppingminnpoint = atoi(argv[i]);
                 i++;
-                steppingmineffsize = atof(argv[i]);
+                steppingmaxvar = atof(argv[i]);
                 i++;
                 steppingmaxnpoint = atoi(argv[i]);
             }
@@ -607,7 +607,7 @@ int main(int argc, char* argv[])	{
 				exit(1);
 			}
 		}
-		model = new Model(datafile,treefile,modeltype,dgam,mixturetype,ncat,nmodemax,type,suffstat,fixncomp,empmix,mixtype,rrtype,iscodon,fixtopo,NSPR,NNNI,fixcodonprofile,fixomega,fixbl,omegaprior,kappaprior,dirweightprior,mintotweight,dc,every,until,saveall,incinit,topoburnin,steppingdnsite,steppingburnin,steppingminnpoint,steppingmineffsize,steppingmaxnpoint,empstepping,name,myid,nprocs);
+		model = new Model(datafile,treefile,modeltype,dgam,mixturetype,ncat,nmodemax,type,suffstat,fixncomp,empmix,mixtype,rrtype,iscodon,fixtopo,NSPR,NNNI,fixcodonprofile,fixomega,fixbl,omegaprior,kappaprior,dirweightprior,mintotweight,dc,every,until,saveall,incinit,topoburnin,steppingdnsite,steppingburnin,steppingminnpoint,steppingmaxvar,steppingmaxnpoint,empstepping,name,myid,nprocs);
 		if (! myid)	{
             cerr << '\n';
             cerr << "chain name : " << name << '\n';
