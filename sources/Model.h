@@ -401,7 +401,44 @@ class Model	{
                 process->IncSize();
             }
 
-            int npoint = 0;
+            int finalnpoint = minnpoint;
+            if (maxvar) {
+                double meanlogp = 0;
+                double varlogp = 0;
+                for (int i=0; i<minnpoint; i++)    {
+                    Move(1,every);
+                    process->IncSize();
+
+                    process->GlobalSetSteppingFraction(nsite1, nsite2);
+                    double delta = process->GlobalGetFullLogLikelihood();
+                    double dlogp = 0;
+
+                    if (empiricalprior)  {
+                        double lnP1 = process->GetLogPrior();
+                        process->GlobalSetEmpiricalFrac(frac2);
+                        double lnP2 = process->GetLogPrior();
+                        delta += lnP2 - lnP1;
+                        dlogp = lnP2 - lnP1;
+                    }
+                    if (std::isnan(delta))   {
+                        cerr << "nan delta\n";
+                        exit(1);
+                    }
+
+                    meanlogp += dlogp;
+                    varlogp += dlogp*dlogp;
+                }
+                meanlogp /= minnpoint;
+                varlogp /= minnpoint;
+                varlogp -= meanlogp*meanlogp;
+                if (varlogp > maxvar)   {
+                    finalnpoint *= varlogp/maxvar;
+                    if (finalnpoint > maxnpoint) {
+                        finalnpoint = maxnpoint;
+                    }
+                }
+            }
+
             double maxlogp = 0;
             double totp1 = 0;
             double totp2 = 0;
@@ -409,9 +446,13 @@ class Model	{
             double totlogp2 = 0;
             double totlogprior = 0;
 
+            /*
             int cont = 1;
             while(cont) {
+            */
 
+            int npoint = 0;
+            while (npoint < finalnpoint)    {
                 Move(1,every);
                 process->IncSize();
                 npoint++;
@@ -453,6 +494,7 @@ class Model	{
                 double meanlogp = totlogp1/npoint;
                 double varlogp = (totlogp2/npoint - meanlogp*meanlogp)/npoint;
 
+                /*
                 if (npoint >= minnpoint)  {
                     if ((!maxvar) || (varlogp < maxvar))    {
                         cont = 0;
@@ -461,8 +503,10 @@ class Model	{
                 if (maxnpoint && (npoint == maxnpoint)) {
                     cont = 0;
                 }
+                */
 
-                if (cont)   {
+                // if (cont)   {
+                if (npoint < finalnpoint)   {
                     process->GlobalResetAllConditionalLikelihoods();
                     process->GlobalSetSteppingFraction(0, nsite1);
                     process->GlobalSetEmpiricalFrac(frac1);
