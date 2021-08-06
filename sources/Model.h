@@ -425,8 +425,8 @@ class Model	{
                         exit(1);
                     }
 
-                    meanlogp += dlogp;
-                    varlogp += dlogp*dlogp;
+                    meanlogp += delta;
+                    varlogp += delta*delta;
 
                     process->GlobalResetAllConditionalLikelihoods();
                     process->GlobalSetSteppingFraction(0, nsite1);
