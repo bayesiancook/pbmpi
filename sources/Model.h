@@ -427,6 +427,10 @@ class Model	{
 
                     meanlogp += dlogp;
                     varlogp += dlogp*dlogp;
+
+                    process->GlobalResetAllConditionalLikelihoods();
+                    process->GlobalSetSteppingFraction(0, nsite1);
+                    process->GlobalSetEmpiricalFrac(frac1);
                 }
                 meanlogp /= minnpoint;
                 varlogp /= minnpoint;
