@@ -496,11 +496,11 @@ class Model	{
                 double logZ = log(totp1 / npoint) + maxlogp;
                 double effsize = totp1 * totp1 / totp2;
                 double meanlogp = totlogp1/npoint;
-                double varlogp = (totlogp2/npoint - meanlogp*meanlogp)/npoint;
+                double varlogp = totlogp2/npoint - meanlogp*meanlogp;
 
                 /*
                 if (npoint >= minnpoint)  {
-                    if ((!maxvar) || (varlogp < maxvar))    {
+                    if ((!maxvar) || (varlogp/npoint < maxvar))    {
                         cont = 0;
                     }
                 }
