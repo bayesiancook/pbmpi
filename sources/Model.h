@@ -411,14 +411,14 @@ class Model	{
 
                     process->GlobalSetSteppingFraction(nsite1, nsite2);
                     double delta = process->GlobalGetFullLogLikelihood();
-                    double dlogp = 0;
+                    // double dlogp = 0;
 
                     if (empiricalprior)  {
                         double lnP1 = process->GetLogPrior();
                         process->GlobalSetEmpiricalFrac(frac2);
                         double lnP2 = process->GetLogPrior();
                         delta += lnP2 - lnP1;
-                        dlogp = lnP2 - lnP1;
+                        // dlogp = lnP2 - lnP1;
                     }
                     if (std::isnan(delta))   {
                         cerr << "nan delta\n";
@@ -436,7 +436,8 @@ class Model	{
                 varlogp /= minnpoint;
                 varlogp -= meanlogp*meanlogp;
                 if (varlogp > maxvar)   {
-                    finalnpoint *= varlogp/maxvar;
+                    finalnpoint *= exp(varlogp)/exp(maxvar);
+                    // finalnpoint *= varlogp/maxvar;
                     if (finalnpoint > maxnpoint) {
                         finalnpoint = maxnpoint;
                     }
