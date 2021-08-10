@@ -184,6 +184,7 @@ void RASCATGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 
     siteloglcutoff = 0;
     int posthyper = 0;
+    int siteprofilesuffstat = 0;
 
 	try	{
 
@@ -297,7 +298,9 @@ void RASCATGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
             else if (s == "-posthyper") {
                 posthyper = 1;
             }
-
+            else if (s == "-siteprofilesuffstat")  {
+                siteprofilesuffstat = 1;
+            }
 			else if ( (s == "-x") || (s == "-extract") )	{
 				i++;
 				if (i == argc) throw(0);
@@ -378,6 +381,9 @@ void RASCATGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	}
     else if (posthyper) {
 		ReadPostHyper(name,burnin,every,until);
+    }
+    else if (siteprofilesuffstat)  {
+        ReadSiteProfileSuffStat(name, burnin, every, until);
     }
 	else if (ppred == -1)	{
 		AllPostPred(name,burnin,every,until,rateprior,profileprior,rootprior);
@@ -526,6 +532,70 @@ void RASCATGammaPhyloProcess::GlobalSetSiteLogLCutoff()  {
 
 void RASCATGammaPhyloProcess::SlaveSetSiteLogLCutoff()  {
 	MPI_Bcast(&siteloglcutoff,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+}
+
+void RASCATGammaPhyloProcess::ReadSiteProfileSuffStat(string name, int burnin, int every, int until){
+
+    double* meancount = new double[GetNsite()*GetDim()];
+    for (int k=0; k<GetNsite()*GetDim(); k++)   {
+        meancount[k] = 0;
+    }
+
+  	ifstream is((name + ".chain").c_str());
+	if (!is)	{
+		cerr << "error: no .chain file found\n";
+		exit(1);
+	}
+	cerr << "burnin : " << burnin << "\n";
+	cerr << "until : " << until << '\n';
+	int i=0;
+	while ((i < until) && (i < burnin))	{
+		FromStream(is);
+		i++;
+	}
+	int samplesize = 0;
+
+	while (i < until)	{
+		cerr << ".";
+
+		cerr.flush();
+		samplesize++;
+		FromStream(is);
+		i++;
+
+		MESSAGE signal = BCAST_TREE;
+		MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+		GlobalBroadcastTree();
+		GlobalUpdateConditionalLikelihoods();
+		GlobalCollapse();
+
+        GlobalUpdateSiteProfileSuffStat();
+        for (int k=0; k<GetNsite()*GetDim(); k++)   {
+            meancount[k] += allocsiteprofilesuffstatcount[k];
+        }
+
+		GlobalUnfold();
+
+		int nrep = 1;
+		while ((i<until) && (nrep < every))	{
+			FromStream(is);
+			i++;
+			nrep++;
+		}
+	}
+	cerr << '\n';
+    for (int k=0; k<GetNsite()*GetDim(); k++)   {
+        meancount[k] /= samplesize;
+    }
+    ofstream os((name + ".siteprofilesuffstat").c_str());
+    for (int i=0; i<GetNsite(); i++)    {
+        for (int k=0; k<GetDim(); k++)  {
+            os << meancount[i*GetDim() + k] << '\t';
+        }
+        os << '\n';
+    }
+    cerr << "posterior mean site profile suffstats in " << name << ".siteprofilesuffstat\n";
+    cerr << '\n';
 }
 
 void RASCATGammaPhyloProcess::ReadSiteProfiles(string name, int burnin, int every, int until)	{
