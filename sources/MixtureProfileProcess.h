@@ -154,6 +154,7 @@ class MixtureProfileProcess: public virtual ProfileProcess	{
     }
 
 	void SampleStat(double* stat, double statmin = 0);
+    void SampleEmpiricalStat(double* stat, const double* count, double statsmin = 0);
 
 	void UpdateOccupancyNumbers();
 	double ResampleEmptyProfiles();
@@ -169,6 +170,8 @@ class MixtureProfileProcess: public virtual ProfileProcess	{
 	virtual double LogStatPrior();
 
 	virtual double LogStatPrior(int cat);
+    double LogStatPrior(const double* profile);
+    double EmpiricalLogStatPrior(const double* profile, const double* count);
 
 	virtual void SwapComponents(int cat1, int cat2);
 

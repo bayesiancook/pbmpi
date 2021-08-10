@@ -54,7 +54,7 @@ void RASCATSBDPGammaPhyloProcess::SlaveExecute(MESSAGE signal)	{
 		SlaveUpdateRateSuffStat();
 		break;
 	default:
-		PhyloProcess::SlaveExecute(signal);
+		RASCATGammaPhyloProcess::SlaveExecute(signal);
 	}
 }
 

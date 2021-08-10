@@ -203,6 +203,29 @@ void MixtureProfileProcess::SampleStat(double* prof, double statmin)	{
 	totstatcount++;
 }
 
+void MixtureProfileProcess::SampleEmpiricalStat(double* prof, const double* count, double statmin)	{
+	if (! statmin)	{
+		statmin = stateps;
+	}
+	double total = 0;
+	int infreached = 0;
+	for (int k=0; k<GetDim(); k++)	{
+		prof[k] = rnd::GetRandom().sGamma(dirweight[k] + count[k]);
+		if (prof[k] < statmin)	{
+			prof[k] = statmin;
+			infreached = 1;
+		}
+		total += prof[k];
+	}
+	for (int k=0; k<GetDim(); k++)	{
+		prof[k] /= total;
+	}
+	if (infreached)	{
+		statinfcount++;
+	}
+	totstatcount++;
+}
+
 double MixtureProfileProcess::LogProfilePrior()	{
 	double total = 0;
 	total += LogHyperPrior();
@@ -241,6 +264,28 @@ double MixtureProfileProcess::LogStatPrior(int cat)	{
 	}
 	total += rnd::GetRandom().logGamma(totalweight);
 	logstatprior[cat] = total;
+	return total;
+}
+
+double MixtureProfileProcess::LogStatPrior(const double* profile) {
+	double total = 0;
+	double totalweight = 0;
+	for (int k=0; k<GetDim(); k++)	{
+		total += (dirweight[k] - 1) * log(profile[k]) - rnd::GetRandom().logGamma(dirweight[k]);
+		totalweight += dirweight[k];
+	}
+	total += rnd::GetRandom().logGamma(totalweight);
+	return total;
+}
+
+double MixtureProfileProcess::EmpiricalLogStatPrior(const double* profile, const double* count) {
+	double total = 0;
+	double totalweight = 0;
+	for (int k=0; k<GetDim(); k++)	{
+		total += (dirweight[k] + count[k] - 1) * log(profile[k]) - rnd::GetRandom().logGamma(dirweight[k] + count[k]);
+		totalweight += dirweight[k] + count[k];
+	}
+	total += rnd::GetRandom().logGamma(totalweight);
 	return total;
 }
 

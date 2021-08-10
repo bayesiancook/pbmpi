@@ -105,6 +105,9 @@ void RASCATGammaPhyloProcess::SlaveExecute(MESSAGE signal)	{
 	case UPDATE_RATE:
 		SlaveUpdateRateSuffStat();
 		break;
+    case ISSITELOGL:
+        SlaveComputeISSiteLogL();
+        break;
 	default:
 		PhyloProcess::SlaveExecute(signal);
 	}
@@ -185,6 +188,10 @@ void RASCATGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
     siteloglcutoff = 0;
     int posthyper = 0;
     int siteprofilesuffstat = 0;
+    // importance sampling estimation of site logl
+    int issitelogl = 0;
+    int isnrep = 0;
+    string empname = "None";
 
 	try	{
 
@@ -301,6 +308,13 @@ void RASCATGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
             else if (s == "-siteprofilesuffstat")  {
                 siteprofilesuffstat = 1;
             }
+            else if (s == "-issitelogl")    {
+                issitelogl = 1;
+                i++;
+                isnrep = atoi(argv[i]);
+                i++;
+                empname = argv[i];
+            }
 			else if ( (s == "-x") || (s == "-extract") )	{
 				i++;
 				if (i == argc) throw(0);
@@ -384,6 +398,9 @@ void RASCATGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
     }
     else if (siteprofilesuffstat)  {
         ReadSiteProfileSuffStat(name, burnin, every, until);
+    }
+    else if (issitelogl)    {
+        ReadISSiteLogL(name, empname, burnin, isnrep);
     }
 	else if (ppred == -1)	{
 		AllPostPred(name,burnin,every,until,rateprior,profileprior,rootprior);
@@ -596,6 +613,227 @@ void RASCATGammaPhyloProcess::ReadSiteProfileSuffStat(string name, int burnin, i
     }
     cerr << "posterior mean site profile suffstats in " << name << ".siteprofilesuffstat\n";
     cerr << '\n';
+}
+
+void RASCATGammaPhyloProcess::ReadISSiteLogL(string name, string empname, int burnin, int nrep)    {
+
+    double* empcount = new double[GetNsite()*GetDim()];
+    ifstream eis(empname.c_str());
+    for (int k=0; k<GetNsite()*GetDim(); k++)   {
+        eis >> empcount[k];
+    }
+
+	ifstream is((name + ".chain").c_str());
+	if (!is)	{
+		cerr << "error: no .chain file found\n";
+		exit(1);
+	}
+
+	int width = GetNsite()/(GetNprocs()-1);
+	int smin[GetNprocs()-1];
+	int smax[GetNprocs()-1];
+	int maxwidth = 0;
+	for(int i=0; i<GetNprocs()-1; ++i) {
+		smin[i] = width*i;
+		smax[i] = width*(1+i);
+		if (i == (GetNprocs()-2)) smax[i] = GetNsite();
+		if (maxwidth < (smax[i] - smin[i]))	{
+			maxwidth = smax[i] - smin[i];
+		}
+	}
+
+	int i=0;
+    cerr << "burnin\n";
+	while (i < burnin)	{
+        cerr << '.';
+		FromStream(is);
+		i++;
+	}
+    cerr << '\n';
+
+    cerr << "computing IS site logls\n";
+    QuickUpdate();
+    MPI_Status stat;
+    MESSAGE signal = ISSITELOGL;
+    MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+    MPI_Bcast(&nrep,1,MPI_INT,0,MPI_COMM_WORLD);
+    MPI_Bcast(empcount,GetNsite()*GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+
+	double* meansitelogl = new double[GetNsite()];
+	double* varsitelogl = new double[GetNsite()];
+
+    for(int i=1; i<GetNprocs(); ++i) {
+        MPI_Recv(meansitelogl,GetNsite(),MPI_DOUBLE,i,TAG1,MPI_COMM_WORLD,&stat);
+        MPI_Recv(varsitelogl,GetNsite(),MPI_DOUBLE,i,TAG1,MPI_COMM_WORLD,&stat);
+    }
+
+    cerr << "ok\n";
+
+    ofstream os((name + ".priorsitelogl").c_str());
+    for (int i=0; i<GetNsite(); i++)    {
+        os << meansitelogl[i] << '\t' << varsitelogl[i] << '\n';
+    }
+    cerr << "prior site logls in " << name << ".priorsitelogl\n";
+    cerr << '\n';
+
+    for(int i=1; i<GetNprocs(); ++i) {
+        MPI_Recv(meansitelogl,GetNsite(),MPI_DOUBLE,i,TAG1,MPI_COMM_WORLD,&stat);
+        MPI_Recv(varsitelogl,GetNsite(),MPI_DOUBLE,i,TAG1,MPI_COMM_WORLD,&stat);
+    }
+
+    cerr << "ok\n";
+
+    ofstream pos((name + ".postsitelogl").c_str());
+    for (int i=0; i<GetNsite(); i++)    {
+        pos << meansitelogl[i] << '\t' << varsitelogl[i] << '\n';
+    }
+    cerr << "post site logls in " << name << ".postsitelogl\n";
+    cerr << '\n';
+
+    delete[] meansitelogl;
+    delete[] varsitelogl;
+}
+
+void RASCATGammaPhyloProcess::SlaveComputeISSiteLogL()	{
+
+	if (! SumOverRateAllocations())	{
+		cerr << "rate error\n";
+		exit(1);
+	}
+
+    if (GetNmodeMax() < GetNsite()) {
+        cerr << "error: nmodemax should be equal to nsite\n";
+        exit(1);
+    }
+
+    for (int i=sitemin; i<sitemax; i++)	{
+        PoissonDPProfileProcess::alloc[i] = i;
+    }
+	
+    int nrep;
+    MPI_Bcast(&nrep,1,MPI_INT,0,MPI_COMM_WORLD);
+
+    double* empcount = new double[GetNsite()*GetDim()];
+    MPI_Bcast(empcount,GetNsite()*GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+
+	double** sitelogl = new double*[GetNsite()];
+	for (int i=sitemin; i<sitemax; i++)	{
+        if (ActiveSite(i))  {
+            sitelogl[i] = new double[nrep];
+        }
+	}
+
+	for (int k=0; k<nrep; k++)	{
+		for (int i=sitemin; i<sitemax; i++)	{
+            if (ActiveSite(i))  {
+                SampleStat(profile[i]);
+                UpdateZip(i);
+            }
+		}
+		UpdateConditionalLikelihoods();
+		for (int i=sitemin; i<sitemax; i++)	{
+            if (ActiveSite(i))  {
+                sitelogl[i][k] = sitelogL[i];
+            }
+		}
+	}
+
+	double* priormeansitelogl = new double[GetNsite()];
+	double* priorvarsitelogl = new double[GetNsite()];
+	for (int i=0; i<GetNsite(); i++)	{
+		priormeansitelogl[i] = 0;
+		priorvarsitelogl[i] = 0;
+	}
+
+	for (int i=sitemin; i<sitemax; i++)	{
+        if (ActiveSite(i))  {
+            double max = 0;
+            for (int k=0; k<nrep; k++) {
+                if ((!k) || (max < sitelogl[i][k]))	{
+                    max = sitelogl[i][k];
+                }
+            }
+            double tot = 0;
+            for (int k=0; k<nrep; k++)	{
+                tot += exp(sitelogl[i][k] - max);
+            }
+            tot /= nrep;
+            priormeansitelogl[i] = log(tot) + max;
+
+            double relvar = 0;
+            for (int k=0; k<nrep; k++)	{
+                double tmp = exp(sitelogl[i][k] - max) / tot;
+                relvar += tmp*tmp;
+            }
+            relvar /= nrep;
+            relvar -= 1;
+            priorvarsitelogl[i] = relvar;
+        }
+    }
+
+	MPI_Send(priormeansitelogl,GetNsite(),MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
+	MPI_Send(priorvarsitelogl,GetNsite(),MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
+	
+	delete[] priormeansitelogl;
+	delete[] priorvarsitelogl;
+
+    // Empirical Posterior
+
+	for (int k=0; k<nrep; k++)	{
+		for (int i=sitemin; i<sitemax; i++)	{
+            if (ActiveSite(i))  {
+                SampleEmpiricalStat(profile[i], empcount + i*GetDim());
+                UpdateZip(i);
+                sitelogl[i][k] = LogStatPrior(profile[i]) - EmpiricalLogStatPrior(profile[i], empcount + i*GetDim());
+            }
+		}
+		UpdateConditionalLikelihoods();
+		for (int i=sitemin; i<sitemax; i++)	{
+            if (ActiveSite(i))  {
+                sitelogl[i][k] += sitelogL[i];
+            }
+		}
+	}
+
+	double* postmeansitelogl = new double[GetNsite()];
+	double* postvarsitelogl = new double[GetNsite()];
+	for (int i=0; i<GetNsite(); i++)	{
+		postmeansitelogl[i] = 0;
+		postvarsitelogl[i] = 0;
+	}
+
+	for (int i=sitemin; i<sitemax; i++)	{
+        if (ActiveSite(i))  {
+            double max = 0;
+            for (int k=0; k<nrep; k++) {
+                if ((!k) || (max < sitelogl[i][k]))	{
+                    max = sitelogl[i][k];
+                }
+            }
+            double tot = 0;
+            for (int k=0; k<nrep; k++)	{
+                tot += exp(sitelogl[i][k] - max);
+            }
+            tot /= nrep;
+            postmeansitelogl[i] = log(tot) + max;
+
+            double relvar = 0;
+            for (int k=0; k<nrep; k++)	{
+                double tmp = exp(sitelogl[i][k] - max) / tot;
+                relvar += tmp*tmp;
+            }
+            relvar /= nrep;
+            relvar -= 1;
+            postvarsitelogl[i] = relvar;
+        }
+    }
+
+	MPI_Send(postmeansitelogl,GetNsite(),MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
+	MPI_Send(postvarsitelogl,GetNsite(),MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
+	
+	delete[] postmeansitelogl;
+	delete[] postvarsitelogl;
+
 }
 
 void RASCATGammaPhyloProcess::ReadSiteProfiles(string name, int burnin, int every, int until)	{
