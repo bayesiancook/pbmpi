@@ -69,7 +69,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	// returns average success rate
 	virtual double Move(double tuning = 1.0) = 0;
 
-    virtual void GlobalSetEmpiricalPrior(istream& is)   {
+    virtual void GlobalSetEmpiricalPrior(istream& is)  {
         cerr << "in PhyloProcess::GlobalSetEmpiricalPrior\n";
         exit(1);
     }
@@ -368,6 +368,10 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	}
 
     double GlobalGetFullLogLikelihood();
+
+    virtual double GlobalGetSteppingLogLikelihood(int nrep) {
+        return GlobalGetFullLogLikelihood();
+    }
 
 	virtual void GlobalUnfold();
 	virtual void GlobalCollapse();

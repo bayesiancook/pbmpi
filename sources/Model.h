@@ -54,8 +54,9 @@ class Model	{
     int steppingmaxsize;
     string empstepping;
     int steppingcycle;
+    int steppingnrep;
 
-	Model(string datafile, string treefile, int modeltype, int nratecat, int mixturetype, int ncat, int nmodemax, GeneticCodeType codetype, int suffstat, int fixncomp, int empmix, string mixtype, string rrtype, int iscodon, int fixtopo, int NSPR, int NNNI, int fixcodonprofile, int fixomega, int fixbl, int omegaprior, int kappaprior, int dirweightprior, double mintotweight, int dc, int inevery, int inuntil, int insaveall, int inincinit, int topoburnin, int insteppingdnsite, int insteppingburnin, int insteppingsize, double insteppingmaxvar, int insteppingmaxsize, string inempstepping, string inname, int myid, int nprocs)	{
+	Model(string datafile, string treefile, int modeltype, int nratecat, int mixturetype, int ncat, int nmodemax, GeneticCodeType codetype, int suffstat, int fixncomp, int empmix, string mixtype, string rrtype, int iscodon, int fixtopo, int NSPR, int NNNI, int fixcodonprofile, int fixomega, int fixbl, int omegaprior, int kappaprior, int dirweightprior, double mintotweight, int dc, int inevery, int inuntil, int insaveall, int inincinit, int topoburnin, int insteppingdnsite, int insteppingburnin, int insteppingsize, double insteppingmaxvar, int insteppingmaxsize, int insteppingnrep, string inempstepping, string inname, int myid, int nprocs)	{
 
 		every = inevery;
 		until = inuntil;
@@ -67,6 +68,7 @@ class Model	{
         steppingsize = insteppingsize;
         steppingmaxvar = insteppingmaxvar;
         steppingmaxsize = insteppingmaxsize;
+        steppingnrep = insteppingnrep;
         empstepping = inempstepping;
         steppingcycle = 0;
 
@@ -193,6 +195,7 @@ class Model	{
 		is >> type;
         if (type == "STEPPING") {
             is >> steppingdnsite >> steppingburnin >> steppingsize >> steppingmaxvar >> steppingmaxsize;
+            is >> steppingnrep;
             is >> empstepping;
             is >> steppingcycle;
             is >> type;
@@ -239,6 +242,7 @@ class Model	{
             if (steppingdnsite)  {
                 ss << "STEPPING\n";
                 ss << steppingdnsite << '\t' << steppingburnin << '\t' << steppingsize << '\t' << steppingmaxvar << '\t' << steppingmaxsize << '\n';
+                ss << steppingnrep << '\n';
                 ss << empstepping << '\n';
                 ss << steppingcycle << '\n';
             }
@@ -289,7 +293,7 @@ class Model	{
         }
         else    {
             SteppingRun(steppingdnsite, steppingburnin, steppingsize,
-                        steppingmaxvar, steppingmaxsize, empstepping);
+                        steppingmaxvar, steppingmaxsize, steppingnrep, empstepping);
         }
     }
 
@@ -344,7 +348,7 @@ class Model	{
 		cerr << '\n';
 	}
 
-	void SteppingRun(int step, int burnin, int minnpoint, double maxvar, double maxnpoint, string empname)    {
+	void SteppingRun(int step, int burnin, int minnpoint, double maxvar, double maxnpoint, int nrep, string empname)    {
 
 
         int empiricalprior = 0;
@@ -410,7 +414,7 @@ class Model	{
                     process->IncSize();
 
                     process->GlobalSetSteppingFraction(nsite1, nsite2);
-                    double delta = process->GlobalGetFullLogLikelihood();
+                    double delta = process->GlobalGetSteppingLogLikelihood(nrep);
                     // double dlogp = 0;
 
                     if (empiricalprior)  {
@@ -463,7 +467,7 @@ class Model	{
                 npoint++;
 
                 process->GlobalSetSteppingFraction(nsite1, nsite2);
-                double delta = process->GlobalGetFullLogLikelihood();
+                double delta = process->GlobalGetSteppingLogLikelihood(nrep);
                 double dlogp = 0;
 
                 if (empiricalprior)  {

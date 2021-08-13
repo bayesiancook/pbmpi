@@ -326,6 +326,7 @@ class RASCATGammaPhyloProcess : public virtual PoissonPhyloProcess, public virtu
 	int iscodon;
 	GeneticCodeType codetype;
     double siteloglcutoff;
+    double* empcount;
 };
 
 #endif

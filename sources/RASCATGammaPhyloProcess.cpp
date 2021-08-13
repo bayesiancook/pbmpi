@@ -524,6 +524,12 @@ void RASCATGammaPhyloProcess::GlobalSetEmpiricalPrior(istream& is)    {
 	MPI_Bcast(branchempbeta,GetNbranch(),MPI_DOUBLE,0,MPI_COMM_WORLD);
 	MPI_Bcast(&empkappaalpha,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
 	MPI_Bcast(&empkappabeta,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+
+    empcount = new double[GetNsite()*GetDim()];
+    for (int k=0; k<GetNsite()*GetDim(); k++)   {
+        is >> empcount[k];
+    }
+    MPI_Bcast(empcount,GetNsite()*GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
 }
 
 void RASCATGammaPhyloProcess::SlaveSetEmpiricalPrior()    {
@@ -538,6 +544,9 @@ void RASCATGammaPhyloProcess::SlaveSetEmpiricalPrior()    {
 	MPI_Bcast(branchempbeta,GetNbranch(),MPI_DOUBLE,0,MPI_COMM_WORLD);
 	MPI_Bcast(&empkappaalpha,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
 	MPI_Bcast(&empkappabeta,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+
+    empcount = new double[GetNsite()*GetDim()];
+    MPI_Bcast(empcount,GetNsite()*GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
 }
 
 void RASCATGammaPhyloProcess::GlobalSetSiteLogLCutoff()  {

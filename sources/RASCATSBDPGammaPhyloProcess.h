@@ -242,6 +242,9 @@ class RASCATSBDPGammaPhyloProcess : public virtual RASCATGammaPhyloProcess, publ
 	void SlaveComputeCVScore();
 	void SlaveComputeSiteLogL();
 	// void SlaveComputeSiteLogCVScore();
+    //
+    double GlobalGetSteppingLogLikelihood(int nrep);
+
 
 	void FromStream(istream& is)	{
 		GammaBranchProcess::FromStream(is);
@@ -318,6 +321,13 @@ class RASCATSBDPGammaPhyloProcess : public virtual RASCATGammaPhyloProcess, publ
 	}
 
 	void SlaveExecute(MESSAGE signal);
+
+    /*
+    void GlobalGetEmpiricalCounts(string name);
+    void SlaveGetEmpiricalCounts();
+    */
+    void GlobalSteppingLogLikelihood(int nrep);
+    void SlaveGetSteppingLogLikelihood();
 };
 
 #endif
