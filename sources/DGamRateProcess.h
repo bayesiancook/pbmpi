@@ -35,6 +35,13 @@ class DGamRateProcess : public virtual RateProcess {
 		return 1;
 	}
 
+    int GetMaxNrate()   {
+		if (SumOverRateAllocations())	{
+			return Ncat;
+		}
+		return 1;
+	}
+
 	int GetNcat() {return Ncat;}
 
 	double GetRate(int site, int cat = 0)	{
@@ -60,6 +67,14 @@ class DGamRateProcess : public virtual RateProcess {
 		for (int i=0; i<GetNsite(); i++)	{
 			alloc[i] = ratealloc[i];
 		}
+		sumflag = false;
+	}
+
+	void SiteActivateSumOverRateAllocation(int site) {
+		sumflag = true;
+	}
+
+	void SiteInactivateSumOverRateAllocation(int site)	{
 		sumflag = false;
 	}
 

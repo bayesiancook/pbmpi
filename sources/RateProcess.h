@@ -34,12 +34,21 @@ class RateProcess {
 	int GetNsite() {return nsite;}
 
 	virtual int GetNrate(int site) = 0;
+    virtual int GetMaxNrate() = 0;
 	virtual double GetRate(int site, int cat = 0) = 0;
 	virtual double GetRateWeight(int site, int cat) = 0;
 	double GetMeanRate();
 	virtual double GetPriorMeanRate() = 0;
 	virtual double GetAlpha() {return 1;}
 
+	virtual void SiteActivateSumOverRateAllocation(int site)	{
+		cerr << "in RateProcess::SiteActivateSumOverRateAlloc\n";
+		exit(1);
+	}
+	virtual void SiteInactivateSumOverRateAllocation(int site)	{
+		cerr << "in RateProcess::SiteINactivateSumOverRateAlloc\n";
+		exit(1);
+	}
 	virtual void ActivateSumOverRateAllocations() = 0;
 	virtual void InactivateSumOverRateAllocations(int* ratealloc) = 0;
 	bool SumOverRateAllocations() {return sumflag;}

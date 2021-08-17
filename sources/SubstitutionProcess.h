@@ -160,6 +160,35 @@ class SubstitutionProcess : public virtual RateProcess, public virtual ProfilePr
 	virtual void MakeMPIPartition() = 0;
 	*/
 
+	// site-wise versions of the same functions
+
+	// CPU : level 1
+	// if aux==0, assumes likelihoods have been computed
+	void SiteDrawAllocations(int site, double** aux);
+
+	// CPU : level 1
+	void SiteReset(int site, double** condl, bool condalloc = false);
+	void SiteMultiply(int site, double** from, double** to, bool condalloc = false);
+	void SiteMultiplyByStationaries(int site, double** from, bool condalloc = false);
+	void SiteOffset(int site, double** condl, bool condalloc = false);
+	virtual void SiteInitialize(int site, double** condl, const int leafstate, bool condalloc = false);
+
+	// CPU : level 2
+	double SiteComputeLikelihood(int site, double** aux, bool condalloc = false);
+
+	// CPU : level 3
+	// implemented in GTR or POisson Substitution process
+	virtual void SitePropagate(int site, double** from, double** to, double time, bool condalloc = false)	{
+		cerr << "in SubstitutionProcess::SitePropagate\n";
+		exit(1);
+	}
+
+	// CPU : level 1
+	// implemented in GTR or POisson Substitution process
+	// here, assumes that each site is under the rate category defined by double* ratealloc
+	virtual int SiteChooseState(int site, double** aux);
+
+
 	int sitemin;
 	int sitemax;
 	double** condsitelogL;

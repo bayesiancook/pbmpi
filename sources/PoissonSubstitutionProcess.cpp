@@ -450,3 +450,33 @@ void PoissonSubstitutionProcess::UnzipBranchSitePath(BranchSitePath** patharray,
 	}
 }
 
+
+void PoissonSubstitutionProcess::SitePropagate(int i, double** from, double** to, double time, bool condalloc)	{
+
+	const double* stat = GetStationary(i);
+	for (int j=0; j<GetNrate(i); j++)	{
+		if ((! condalloc) || (ratealloc[i] == j))	{
+			double* tmpfrom = from[j];
+			double* tmpto = to[j];
+			double expo = exp(-GetRate(i,j) * time);
+			double tot = 0;
+			int nstate = GetNstate(i);
+			for (int k=0; k<nstate; k++)	{
+				tot += (*tmpfrom++) * (*stat++);
+				// tot += tmpfrom[k] * stat[k];
+			}
+			tmpfrom -= nstate;
+			stat -= nstate;
+			tot *= (1-expo);
+			for (int k=0; k<nstate; k++)	{	
+				(*tmpto++) = expo * (*tmpfrom++) + tot;
+				// tmpto[k] = expo * tmpfrom[k] + tot;
+			}
+			(*tmpto) = (*tmpfrom);
+			tmpto -= nstate;
+			tmpfrom -= nstate;
+			// tmpto[GetNstate(i)] = tmpfrom[GetNstate(i)];
+		}
+	}
+}
+

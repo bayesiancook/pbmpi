@@ -26,6 +26,7 @@ class UniformRateProcess : public virtual RateProcess {
 	UniformRateProcess() {}
 	~UniformRateProcess() {}
 
+    int GetMaxNrate() {return 1;}
 	int GetNrate(int site) {return 1;}
 	double GetRate(int site, int cat = 0)	{return 1.0;}
 	double GetRateWeight(int site, int cat) {return 1.0;}
@@ -37,6 +38,14 @@ class UniformRateProcess : public virtual RateProcess {
 	}
 
 	void InactivateSumOverRateAllocations(int* ratealloc) {
+		sumflag = false;
+	}
+
+	void SiteActivateSumOverRateAllocation(int site) {
+		sumflag = true;
+	}
+
+	void SiteInactivateSumOverRateAllocation(int site)	{
 		sumflag = false;
 	}
 

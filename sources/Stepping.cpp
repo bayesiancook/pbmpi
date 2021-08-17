@@ -55,6 +55,7 @@ void PhyloProcess::SlavePrepareStepping()	{
     bkdata = new SequenceAlignment(GetData());
     steppingrank = new int[GetNsite()];
 	MPI_Bcast(steppingrank,GetNsite(),MPI_INT,0,MPI_COMM_WORLD);
+    CreateSiteConditionalLikelihoods();
 }
 
 void PhyloProcess::GlobalSetSteppingFraction(int cutoff1, int cutoff2)    {
@@ -105,3 +106,134 @@ void PhyloProcess::SlaveSetEmpiricalFrac()  {
 	MPI_Bcast(&frac,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
     SetEmpiricalFrac(frac);
 }
+
+/*
+void PhyloProcess::GlobalCreateSiteDataStructures() {
+	MESSAGE signal = CREATESITE;
+	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+    // CreateSiteConditionalLikelihoods();
+}
+
+void PhyloProcess::SlaveCreateSiteDataStructures()  {
+    CreateSiteConditionalLikelihoods();
+}
+
+void PhyloProcess::GlobalDeleteSiteDataStructures() {
+	MESSAGE signal = DELETESITE;
+	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+    // DeleteSiteConditionalLikelihoods();
+}
+
+void PhyloProcess::SlaveDeleteSiteDataStructures()  {
+    DeleteSiteConditionalLikelihoods();
+}
+*/
+
+void PhyloProcess::CreateSiteConditionalLikelihoods()	{
+
+	if (! sitecondlmap)	{
+		sitecondlmap = new double**[GetNlink()];
+		for (int j=0; j<GetNlink(); j++)	{
+			sitecondlmap[j] = new double*[GetMaxNrate()];
+			for (int k=0; k<GetMaxNrate(); k++)	{
+				sitecondlmap[j][k] = new double[GetGlobalNstate()+1];
+			}
+		}
+	}
+}
+
+void PhyloProcess::DeleteSiteConditionalLikelihoods()	{
+
+	if (sitecondlmap)	{
+		for (int j=0; j<GetNlink(); j++)	{
+			for (int k=0; k<GetMaxNrate(); k++)	{
+				delete[] sitecondlmap[j][k];
+			}
+			delete[] sitecondlmap[j];
+		}
+		delete[] sitecondlmap;
+		sitecondlmap = 0;
+	}
+}
+
+double PhyloProcess::SiteLogLikelihood(int site)	{
+
+	PrepareSiteLogLikelihood(site);
+	SiteActivateSumOverRateAllocation(site);
+	SitePostOrderPruning(site,GetRoot());
+	SiteMultiplyByStationaries(site,sitecondlmap[0]);
+	SiteComputeLikelihood(site,sitecondlmap[0]);
+	return sitelogL[site];
+}
+
+void PhyloProcess::SitePostOrderPruning(int site, const Link* from)	{
+
+	if (from->isLeaf())	{
+		SiteInitialize(site,sitecondlmap[0],GetData(from)[site]);
+	}
+	else	{
+		for (const Link* link=from->Next(); link!=from; link=link->Next())	{
+			SitePostOrderPruning(site,link->Out());
+			SitePropagate(site,sitecondlmap[0],sitecondlmap[GetLinkIndex(link)],GetLength(link->GetBranch()));
+		}
+		SiteReset(site,sitecondlmap[0]);
+		for (const Link* link=from->Next(); link!=from; link=link->Next())	{
+			SiteMultiply(site,sitecondlmap[GetLinkIndex(link)],sitecondlmap[0]);
+		}
+		SiteOffset(site,sitecondlmap[0]);
+	}
+	if (from->isRoot())	{
+	}	
+}
+
+double PhyloProcess::GlobalGetSiteSteppingLogLikelihood(int site, int nrep)   {
+
+	MESSAGE signal = STEPPINGSITELOGL;
+	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(&site,1,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(&nrep,1,MPI_INT,0,MPI_COMM_WORLD);
+
+	int width = GetNsite()/(GetNprocs()-1);
+	int smin[GetNprocs()-1];
+	int smax[GetNprocs()-1];
+	int maxwidth = 0;
+	for(int i=0; i<GetNprocs()-1; ++i) {
+		smin[i] = width*i;
+		smax[i] = width*(1+i);
+		if (i == (GetNprocs()-2)) smax[i] = GetNsite();
+		if (maxwidth < (smax[i] - smin[i]))	{
+			maxwidth = smax[i] - smin[i];
+		}
+	}
+
+    int slave = -1;
+    for(int i=1; i<GetNprocs(); ++i) {
+        if ((site >= smin[i-1]) && (site < smax[i-1]))  {
+            slave = i;
+        }
+    }
+
+    if (slave == -1)    {
+        cerr << "error: slave proc not found\n";
+        exit(1);
+    }
+
+    double ret;
+	MPI_Status stat;
+    MPI_Recv(&ret,1,MPI_DOUBLE,MPI_ANY_SOURCE,TAG1,MPI_COMM_WORLD,&stat);
+    return ret;
+}
+
+void PhyloProcess::SlaveGetSiteSteppingLogLikelihood()  {
+
+    int site, nrep;
+	MPI_Bcast(&site,1,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(&nrep,1,MPI_INT,0,MPI_COMM_WORLD);
+
+    double ret = 0;
+    if ((site >= sitemin) && (site < sitemax))  {
+        ret = SiteLogLikelihood(site);
+        MPI_Send(&ret,1,MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
+    }
+}
+

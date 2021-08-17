@@ -53,7 +53,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	// virtual void SlaveUpdate();
 
 	// default constructor: pointers set to nil
-	PhyloProcess() :  siteratesuffstatcount(0), siteratesuffstatbeta(0), branchlengthsuffstatcount(0), branchlengthsuffstatbeta(0), condflag(false), data(0), bkdata(0), steppingrank(0), minsitecutoff(-1), maxsitecutoff(-1), myid(-1), nprocs(0), size(0), version("1.9"), totaltime(0), dataclamped(1), rateprior(0), profileprior(0), rootprior(1), topoburnin(0) {
+	PhyloProcess() : sitecondlmap(0), condlmap(0), siteratesuffstatcount(0), siteratesuffstatbeta(0), branchlengthsuffstatcount(0), branchlengthsuffstatbeta(0), condflag(false), data(0), bkdata(0), steppingrank(0), minsitecutoff(-1), maxsitecutoff(-1), myid(-1), nprocs(0), size(0), version("1.9"), totaltime(0), dataclamped(1), rateprior(0), profileprior(0), rootprior(1), topoburnin(0) {
 		fixbl = 0;
 		sitesuffstat = 1;
 	}
@@ -198,6 +198,35 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 
 	void GlobalUpdateConditionalLikelihoods();
 	double GlobalComputeNodeLikelihood(const Link* from, int auxindex = -1);
+
+    /*
+    void GlobalCreateSiteDataStructures();
+    void SlaveCreateSiteDataStructures();
+
+    void GlobalDeleteSiteDataStructures();
+    void SlaveDeleteSiteDataStructures();
+    */
+
+	void CreateSiteConditionalLikelihoods();
+	void DeleteSiteConditionalLikelihoods();
+
+	virtual void PrepareSiteLogLikelihood(int site) {
+		cerr << "in default PrepareSiteLogLikelihood\n";
+		exit(1);
+	}
+
+    // for simple models: sums over rate allocations
+    // for mixture models: sums over rate and profile allocations
+    // + importance sampling for sbdp models
+    // this can be parallelized:
+    // each slave can deal with some of the components
+    //
+
+    virtual double GlobalGetSiteSteppingLogLikelihood(int site, int nrep);
+    virtual void SlaveGetSiteSteppingLogLikelihood();
+
+	virtual double SiteLogLikelihood(int site);
+	void SitePostOrderPruning(int site, const Link* from);
 
     void SetSteppingFraction(int cutoff1, int cutoff2);
     void GlobalSetSteppingFraction(int cutoff1, int cutoff2);
@@ -370,7 +399,15 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
     double GlobalGetFullLogLikelihood();
 
     virtual double GlobalGetSteppingLogLikelihood(int nrep) {
-        return GlobalGetFullLogLikelihood();
+        double tot = 0;
+        for (int i=0; i<GetNsite(); i++)    {
+            if (ActiveSite(i))  {
+                double tmp = GlobalGetSiteSteppingLogLikelihood(i, nrep);
+                tot += tmp;
+            }
+        }
+        return tot;
+        // return GlobalGetFullLogLikelihood();
     }
 
 	virtual void GlobalUnfold();
@@ -558,6 +595,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 		return myid;
 	}
 
+	double*** sitecondlmap;
 	double**** condlmap;
 	BranchSitePath*** submap;
 	int** nodestate;

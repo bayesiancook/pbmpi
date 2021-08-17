@@ -32,6 +32,10 @@ class PoissonPhyloProcess : public virtual PhyloProcess, public virtual PoissonS
 		PhyloProcess::Unfold();
 	}
 
+	virtual void PrepareSiteLogLikelihood(int site) {
+		UpdateZip(site);
+	}
+
 	void Collapse();
 
 	// protected:

@@ -1722,6 +1722,9 @@ void PhyloProcess::SlaveExecute(MESSAGE signal)	{
 	case SITELOGL:
 		SlaveComputeSiteLogL();
 		break;
+	case STEPPINGSITELOGL:
+		SlaveGetSiteSteppingLogLikelihood();
+		break;
 	case STATEPOSTPROBS:
 		SlaveComputeStatePostProbs();
 		break;
@@ -1746,6 +1749,14 @@ void PhyloProcess::SlaveExecute(MESSAGE signal)	{
     case EMPIRICALPRIOR:
         SlaveSetEmpiricalPrior();
         break;
+    /*
+    case CREATESITE:
+        SlaveCreateSiteDataStructures();
+        break;
+    case DELETESITE:
+        SlaveDeleteSiteDataStructures();
+        break;
+    */
 	
 	default:
 		// or : SubstitutionProcess::SlaveExecute?
@@ -3492,3 +3503,5 @@ void PhyloProcess::SlaveCountMapping()	{
 	MPI_Send(&count,1,MPI_INT,0,TAG1,MPI_COMM_WORLD);
 
 }
+
+
