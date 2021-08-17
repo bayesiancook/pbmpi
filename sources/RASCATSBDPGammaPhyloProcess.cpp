@@ -288,34 +288,12 @@ double RASCATSBDPGammaPhyloProcess::GlobalGetSiteSteppingLogLikelihood(int site,
 
     int oldalloc = PoissonSBDPProfileProcess::alloc[site];
 
-    MPI_Status stat;
     MESSAGE signal = STEPPINGSITELOGL;
     MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
     MPI_Bcast(&site,1,MPI_INT,0,MPI_COMM_WORLD);
     MPI_Bcast(&nrep,1,MPI_INT,0,MPI_COMM_WORLD);
 
     UpdateOccupancyNumbers();
-    int nocc = GetNOccupiedComponent();
-	int width = nocc / (GetNprocs()-1);
-    int r = nocc % (GetNprocs()-1);
-	int smin[GetNprocs()-1];
-	int smax[GetNprocs()-1];
-    int s = 0;
-	for(int i=0; i<GetNprocs()-1; i++) {
-		smin[i] = s;
-        if (i < r)  {
-            s += width + 1;
-        }
-        else    {
-            s += width;
-        }
-        smax[i] = s;
-    }
-    if (s != nocc)  {
-        cerr << "error: nocc checksum\n";
-        cerr << s << '\t' << nocc << '\n';
-        exit(1);
-    }
 
     double master_logl[2*GetNprocs()];
     double slave_logl[2];
@@ -378,14 +356,30 @@ double RASCATSBDPGammaPhyloProcess::GlobalGetSiteSteppingLogLikelihood(int site,
     }
     int procalloc0 = rnd::GetRandom().FiniteDiscrete(GetNprocs()-1, post0) + 1;
 
+    double w0[GetNcomponent()];
+    double totw0 = 0;
+    double totw1 = 0;
+    for (int k=0; k<GetNcomponent(); k++) {
+        if (occupancy[k])   {
+            w0[k] = 0;
+            totw1 += weight[k];
+        }
+        else    {
+            w0[k] = weight[k];
+            totw0 += weight[k];
+        }
+    }
+    for (int k=0; k<GetNcomponent(); k++) {
+        w0[k] /= totw0;
+    }
     double l0 = 0;
     double l1 = 1;
     double logl = l1;
 
     if (GetNcomponent() > GetNOccupiedComponent())  {
         double max = (L0 > L1) ? L0 : L1;
-        l0 = exp(L0-max);
-        l1 = exp(L1-max);
+        l0 = totw0 * exp(L0-max);
+        l1 = totw1 * exp(L1-max);
         logl = log(l0 + l1) + max;
     }
 
@@ -395,20 +389,6 @@ double RASCATSBDPGammaPhyloProcess::GlobalGetSiteSteppingLogLikelihood(int site,
         AddSite(site, newalloc);
     }
     else    {
-        double w0[GetNcomponent()];
-        double totw0 = 0;
-        for (int k=0; k<GetNcomponent(); k++) {
-            if (occupancy[k])   {
-                w0[k] = 0;
-            }
-            else    {
-                w0[k] = weight[k];
-                totw0 += weight[k];
-            }
-        }
-        for (int k=0; k<GetNcomponent(); k++) {
-            w0[k] /= totw0;
-        }
         int newalloc = rnd::GetRandom().FiniteDiscrete(GetNcomponent(), w0);
         RemoveSite(site, oldalloc);
         AddSite(site, newalloc);
