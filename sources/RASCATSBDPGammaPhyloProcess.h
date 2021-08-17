@@ -318,7 +318,7 @@ class RASCATSBDPGammaPhyloProcess : public virtual RASCATGammaPhyloProcess, publ
 
 	void SlaveExecute(MESSAGE signal);
 
-    double GlobalGetSiteSteppingLogLikelihood(int site, int nrep);
+    double GlobalGetSiteSteppingLogLikelihood(int site, int nrep, int restore);
     void SlaveGetSiteSteppingLogLikelihood();
 };
 

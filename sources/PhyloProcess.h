@@ -222,7 +222,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
     // each slave can deal with some of the components
     //
 
-    virtual double GlobalGetSiteSteppingLogLikelihood(int site, int nrep);
+    virtual double GlobalGetSiteSteppingLogLikelihood(int site, int nrep, int restore);
     virtual void SlaveGetSiteSteppingLogLikelihood();
 
 	virtual double SiteLogLikelihood(int site);
@@ -398,11 +398,11 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 
     double GlobalGetFullLogLikelihood();
 
-    virtual double GlobalGetSteppingLogLikelihood(int nrep) {
+    virtual double GlobalGetSteppingLogLikelihood(int nrep, int restore) {
         double tot = 0;
         for (int i=0; i<GetNsite(); i++)    {
             if (ActiveSite(i))  {
-                double tmp = GlobalGetSiteSteppingLogLikelihood(i, nrep);
+                double tmp = GlobalGetSiteSteppingLogLikelihood(i, nrep, restore);
                 tot += tmp;
             }
         }

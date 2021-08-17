@@ -414,15 +414,13 @@ class Model	{
                     process->IncSize();
 
                     process->GlobalSetSteppingFraction(nsite1, nsite2);
-                    double delta = process->GlobalGetSteppingLogLikelihood(nrep);
-                    // double dlogp = 0;
+                    double delta = process->GlobalGetSteppingLogLikelihood(nrep, 0);
 
                     if (empiricalprior)  {
                         double lnP1 = process->GetLogPrior();
                         process->GlobalSetEmpiricalFrac(frac2);
                         double lnP2 = process->GetLogPrior();
                         delta += lnP2 - lnP1;
-                        // dlogp = lnP2 - lnP1;
                     }
                     if (std::isnan(delta))   {
                         cerr << "nan delta\n";
@@ -432,7 +430,6 @@ class Model	{
                     meanlogp += delta;
                     varlogp += delta*delta;
 
-                    process->GlobalResetAllConditionalLikelihoods();
                     process->GlobalSetSteppingFraction(0, nsite1);
                     process->GlobalSetEmpiricalFrac(frac1);
                 }
@@ -467,7 +464,8 @@ class Model	{
                 npoint++;
 
                 process->GlobalSetSteppingFraction(nsite1, nsite2);
-                double delta = process->GlobalGetSteppingLogLikelihood(nrep);
+                int restore = (npoint == finalnpoint) ? 0 : 1;
+                double delta = process->GlobalGetSteppingLogLikelihood(nrep, restore);
                 double dlogp = 0;
 
                 if (empiricalprior)  {
@@ -514,9 +512,7 @@ class Model	{
                 }
                 */
 
-                // if (cont)   {
                 if (npoint < finalnpoint)   {
-                    process->GlobalResetAllConditionalLikelihoods();
                     process->GlobalSetSteppingFraction(0, nsite1);
                     process->GlobalSetEmpiricalFrac(frac1);
                 }

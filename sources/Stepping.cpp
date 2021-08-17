@@ -186,7 +186,7 @@ void PhyloProcess::SitePostOrderPruning(int site, const Link* from)	{
 	}	
 }
 
-double PhyloProcess::GlobalGetSiteSteppingLogLikelihood(int site, int nrep)   {
+double PhyloProcess::GlobalGetSiteSteppingLogLikelihood(int site, int nrep, int restore)   {
 
 	MESSAGE signal = STEPPINGSITELOGL;
 	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);

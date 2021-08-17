@@ -281,7 +281,7 @@ void RASCATSBDPGammaPhyloProcess::SlaveComputeSiteLogL()	{
 
 }
 
-double RASCATSBDPGammaPhyloProcess::GlobalGetSiteSteppingLogLikelihood(int site, int nrep0) {
+double RASCATSBDPGammaPhyloProcess::GlobalGetSiteSteppingLogLikelihood(int site, int nrep0, int restore) {
 
     int w = nrep0 / (GetNprocs()-1);
     int nrep = w * (GetNprocs()-1);
@@ -290,8 +290,11 @@ double RASCATSBDPGammaPhyloProcess::GlobalGetSiteSteppingLogLikelihood(int site,
 
     MESSAGE signal = STEPPINGSITELOGL;
     MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
-    MPI_Bcast(&site,1,MPI_INT,0,MPI_COMM_WORLD);
-    MPI_Bcast(&nrep,1,MPI_INT,0,MPI_COMM_WORLD);
+    int param[3];
+    param[0] = site;
+    param[1] = nrep;
+    param[2] = restore;
+    MPI_Bcast(param,3,MPI_INT,0,MPI_COMM_WORLD);
 
     UpdateOccupancyNumbers();
 
@@ -383,21 +386,23 @@ double RASCATSBDPGammaPhyloProcess::GlobalGetSiteSteppingLogLikelihood(int site,
         logl = log(l0 + l1) + max;
     }
 
-    if ((l1 + l0)*rnd::GetRandom().Uniform() < l1)  {
-        int newalloc = master_alloc[procalloc1];
-        RemoveSite(site, oldalloc);
-        AddSite(site, newalloc);
-    }
-    else    {
-        int newalloc = rnd::GetRandom().FiniteDiscrete(GetNcomponent(), w0);
-        RemoveSite(site, oldalloc);
-        AddSite(site, newalloc);
-        for (int k=0; k<GetDim(); k++)  {
-            profile[newalloc][k] = master_profile[GetDim()*procalloc0+k];
+    if (! restore)  {
+        if ((l1 + l0)*rnd::GetRandom().Uniform() < l1)  {
+            int newalloc = master_alloc[procalloc1];
+            RemoveSite(site, oldalloc);
+            AddSite(site, newalloc);
         }
+        else    {
+            int newalloc = rnd::GetRandom().FiniteDiscrete(GetNcomponent(), w0);
+            RemoveSite(site, oldalloc);
+            AddSite(site, newalloc);
+            for (int k=0; k<GetDim(); k++)  {
+                profile[newalloc][k] = master_profile[GetDim()*procalloc0+k];
+            }
+        }
+        ResampleEmptyProfiles();
+        GlobalUpdateParameters();
     }
-    ResampleEmptyProfiles();
-    GlobalUpdateParameters();
     return logl;
 }
 
@@ -408,9 +413,11 @@ void RASCATSBDPGammaPhyloProcess::SlaveGetSiteSteppingLogLikelihood()    {
 		exit(1);
 	}
 
-    int site,nrep;
-    MPI_Bcast(&site,1,MPI_INT,0,MPI_COMM_WORLD);
-    MPI_Bcast(&nrep,1,MPI_INT,0,MPI_COMM_WORLD);
+    int param[3];
+    MPI_Bcast(param,3,MPI_INT,0,MPI_COMM_WORLD);
+    int site = param[0];
+    int nrep = param[1];
+    int restore = param[2];
 
     int bkalloc = PoissonSBDPProfileProcess::alloc[site];
     double bkprofile[GetDim()];
@@ -551,13 +558,16 @@ void RASCATSBDPGammaPhyloProcess::SlaveGetSiteSteppingLogLikelihood()    {
         }
     }
 
-    for (int k=0; k<GetDim(); k++)  {
-        profile[bkalloc][k] = bkprofile[k];
-    }
-
     MPI_Gather(slave_logl, 2, MPI_DOUBLE, master_logl, 2, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Gather(&slave_alloc, 1, MPI_INT, master_alloc, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Gather(slave_profile, GetDim(), MPI_DOUBLE, master_profile, GetDim(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    if (restore)    {
+        PoissonSBDPProfileProcess::alloc[site] = bkalloc;
+        for (int k=0; k<GetDim(); k++)  {
+            profile[bkalloc][k] = bkprofile[k];
+        }
+    }
 }
 
 /*
