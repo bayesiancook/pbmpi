@@ -405,10 +405,10 @@ class Model	{
                 process->IncSize();
             }
 
+            double meanlogp0 = 0;
+            double varlogp0 = 0;
             int finalnpoint = minnpoint;
             if (maxvar) {
-                double meanlogp = 0;
-                double varlogp = 0;
                 for (int i=0; i<minnpoint; i++)    {
                     Move(1,every);
                     process->IncSize();
@@ -427,18 +427,18 @@ class Model	{
                         exit(1);
                     }
 
-                    meanlogp += delta;
-                    varlogp += delta*delta;
+                    meanlogp0 += delta;
+                    varlogp0 += delta*delta;
 
                     process->GlobalSetSteppingFraction(0, nsite1);
                     process->GlobalSetEmpiricalFrac(frac1);
                 }
-                meanlogp /= minnpoint;
-                varlogp /= minnpoint;
-                varlogp -= meanlogp*meanlogp;
-                if (varlogp > maxvar)   {
-                    finalnpoint *= exp(varlogp)/exp(maxvar);
-                    // finalnpoint *= varlogp/maxvar;
+                meanlogp0 /= minnpoint;
+                varlogp0 /= minnpoint;
+                varlogp0 -= meanlogp0*meanlogp0;
+                if (varlogp0 > maxvar)   {
+                    finalnpoint *= exp(varlogp0)/exp(maxvar);
+                    // finalnpoint *= varlogp0/maxvar;
                     if (finalnpoint > maxnpoint) {
                         finalnpoint = maxnpoint;
                     }
@@ -509,7 +509,12 @@ class Model	{
                     double meanlogprior = totlogprior / npoint;
 
                     ofstream los((name + ".stepping").c_str(), ios_base::app);
-                    los << frac1 << '\t' << nsite1 << '\t' << logZ << '\t' << meanlogp << '\t' << meanlogprior << '\t' << varlogp << '\t' << npoint << '\t' << effsize << '\n';
+                    if (maxvar) {
+                        los << frac1 << '\t' << nsite1 << '\t' << logZ << '\t' << meanlogp << '\t' << meanlogprior << '\t' << varlogp << '\t' << npoint << '\t' << effsize << '\t' << meanlogp0 << '\t' << varlogp0 << '\n';
+                    }
+                    else    {
+                        los << frac1 << '\t' << nsite1 << '\t' << logZ << '\t' << meanlogp << '\t' << meanlogprior << '\t' << varlogp << '\t' << npoint << '\t' << effsize << '\n';
+                    }
                     los.close();
                     steppingcycle++;
                 }
