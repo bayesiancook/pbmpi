@@ -320,6 +320,10 @@ class RASCATSBDPGammaPhyloProcess : public virtual RASCATGammaPhyloProcess, publ
 
     double GlobalGetSiteSteppingLogLikelihood(int site, int nrep, int restore);
     void SlaveGetSiteSteppingLogLikelihood();
+    double GlobalGetSiteSteppingLogLikelihoodIS(int site, int nrep, int restore);
+    void SlaveGetSiteSteppingLogLikelihoodIS(int site, int nrep, int restore);
+    double GlobalGetSiteSteppingLogLikelihoodNonIS(int site, int nrep, int restore);
+    void SlaveGetSiteSteppingLogLikelihoodNonIS(int site, int nrep, int restore);
 };
 
 #endif
