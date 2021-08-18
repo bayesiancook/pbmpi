@@ -44,7 +44,7 @@ class ProfileProcess {
 
 	virtual string GetVersion() = 0;
 
-    void SetProfileFrac(double infrac)  {
+    virtual void SetProfileFrac(double infrac)  {
         profilefrac = infrac;
     }
 

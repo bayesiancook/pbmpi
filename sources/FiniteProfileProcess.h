@@ -25,7 +25,7 @@ class FiniteProfileProcess: public virtual MixtureProfileProcess	{
 
 	public:
 
-	FiniteProfileProcess(int K = 1) : weight(0), fixncomp(false), empmix(false), Ncat(0), nmodemax(refnmodemax), statfix(0), empweight(0), dirweightprior(0)  {
+	FiniteProfileProcess(int K = 1) : weight(0), fixncomp(false), empmix(false), Ncat(0), nmodemax(refnmodemax), statfix(0), empweight(0), dirweightprior(0), empdirweight(0)  {
 		Ncomponent = K;
 		weightalpha = 1;
 	}
@@ -37,6 +37,15 @@ class FiniteProfileProcess: public virtual MixtureProfileProcess	{
 	void SetFixedNcomponent(bool in = true)	{
 		fixncomp = in;
 	}
+
+    void SetProfileFrac(double infrac)    {
+        profilefrac = infrac;
+        if (fixncomp && (Ncomponent == 1))  {
+            for (int k=0; k<GetDim(); k++)  {
+                dirweight[k] = profilefrac + (1-profilefrac)*empdirweight[k];
+            }
+        }
+    }
 
 	virtual int GetNmodeMax() {return fixncomp ? Ncomponent : nmodemax;} 
 	virtual void SetNmodeMax(int n) {nmodemax = n;}
@@ -98,6 +107,8 @@ class FiniteProfileProcess: public virtual MixtureProfileProcess	{
 	int dirweightprior;
 	// 0 : flexible
 	// 1 : rigid
+    
+    double* empdirweight;
 
 };
 

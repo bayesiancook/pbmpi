@@ -652,6 +652,8 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPostHyper(string name, int burnin, int 
     double varratealpha = 0;
     vector<double> meandirweight(GetDim(), 0);
     vector<double> vardirweight(GetDim(), 0);
+    vector<double> meanrr(GetNrr(), 0);
+    vector<double> varrr(GetNrr(), 0);
     vector<double> meanbl(GetNbranch(), 0);
     vector<double> varbl(GetNbranch(), 0);
     double meankappaalpha = 0;
@@ -685,6 +687,11 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPostHyper(string name, int burnin, int 
             meandirweight[k] += dirweight[k];
             vardirweight[k] += dirweight[k]*dirweight[k];
         }
+        for (int k=0; k<GetNrr(); k++)  {
+            meanrr[k] += rr[k];
+            varrr[k] += rr[k]*rr[k];
+        }
+
         for (int j=1; j<GetNbranch(); j++)  {
             meanbl[j] += blarray[j];
             varbl[j] += blarray[j]*blarray[j];
@@ -715,6 +722,13 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPostHyper(string name, int burnin, int 
             os << meandirweight[k]*meandirweight[k]/vardirweight[k] << '\t';
             os << meandirweight[k]/vardirweight[k] << '\n';
         }
+    }
+    for (int k=0; k<GetNrr(); k++)  {
+        meanrr[k] /= samplesize;
+        varrr[k] /= samplesize;
+        varrr[k] -= meanrr[k]*meanrr[k];
+        os << meanrr[k]*meanrr[k]/varrr[k] << '\t';
+        os << meanrr[k]/varrr[k] << '\n';
     }
     for (int j=1; j<GetNbranch(); j++)  {
         meanbl[j] /= samplesize;
@@ -886,6 +900,9 @@ void RASCATGTRSBDPGammaPhyloProcess::GlobalSetEmpiricalPrior(istream& is)    {
             is >> empdirweightalpha[k] >> empdirweightbeta[k];
         }
     }
+    for (int k=0; k<GetNrr(); k++)  {
+        is >> emprralpha[k] >> emprrbeta[k];
+    }
     for (int j=1; j<GetNbranch(); j++)  {
         is >> branchempalpha[j] >> branchempbeta[j];
     }
@@ -899,16 +916,25 @@ void RASCATGTRSBDPGammaPhyloProcess::GlobalSetEmpiricalPrior(istream& is)    {
         MPI_Bcast(empdirweightalpha,GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
         MPI_Bcast(empdirweightbeta,GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
     }
+    MPI_Bcast(emprralpha,GetNrr(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+    MPI_Bcast(emprrbeta,GetNrr(),MPI_DOUBLE,0,MPI_COMM_WORLD);
 	MPI_Bcast(branchempalpha,GetNbranch(),MPI_DOUBLE,0,MPI_COMM_WORLD);
 	MPI_Bcast(branchempbeta,GetNbranch(),MPI_DOUBLE,0,MPI_COMM_WORLD);
 	MPI_Bcast(&empkappaalpha,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
 	MPI_Bcast(&empkappabeta,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
 
+    /*
     empcount = new double[GetNsite()*GetDim()];
+    empbeta = new double[GetNsite()*GetDim()];
     for (int k=0; k<GetNsite()*GetDim(); k++)   {
         is >> empcount[k];
     }
+    for (int k=0; k<GetNsite()*GetDim(); k++)   {
+        is >> empbeta[k];
+    }
     MPI_Bcast(empcount,GetNsite()*GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+    MPI_Bcast(empbeta,GetNsite()*GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+    */
 }
 
 void RASCATGTRSBDPGammaPhyloProcess::SlaveSetEmpiricalPrior()    {
@@ -919,11 +945,151 @@ void RASCATGTRSBDPGammaPhyloProcess::SlaveSetEmpiricalPrior()    {
         MPI_Bcast(empdirweightalpha,GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
         MPI_Bcast(empdirweightbeta,GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
     }
+    MPI_Bcast(emprralpha,GetNrr(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+    MPI_Bcast(emprrbeta,GetNrr(),MPI_DOUBLE,0,MPI_COMM_WORLD);
 	MPI_Bcast(branchempalpha,GetNbranch(),MPI_DOUBLE,0,MPI_COMM_WORLD);
 	MPI_Bcast(branchempbeta,GetNbranch(),MPI_DOUBLE,0,MPI_COMM_WORLD);
 	MPI_Bcast(&empkappaalpha,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
 	MPI_Bcast(&empkappabeta,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
 
+    /*
     empcount = new double[GetNsite()*GetDim()];
+    empbeta = new double[GetNsite()*GetDim()];
     MPI_Bcast(empcount,GetNsite()*GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+    MPI_Bcast(empbeta,GetNsite()*GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+    */
+}
+
+double RASCATGTRSBDPGammaPhyloProcess::GlobalGetSiteSteppingLogLikelihood(int site, int nrep0, int restore) {
+
+    int nrep_per_proc = nrep0 / (GetNprocs()-1);
+    if (nrep0 % (GetNprocs() - 1))  {
+        nrep_per_proc ++;
+    }
+    // int nrep = nrep_per_proc * (GetNprocs()-1);
+
+    MESSAGE signal = STEPPINGSITELOGL;
+    MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+    int param[3];
+    param[0] = site;
+    param[1] = nrep_per_proc;
+    param[2] = restore;
+    MPI_Bcast(param,3,MPI_INT,0,MPI_COMM_WORLD);
+
+    int oldalloc = ExpoConjugateGTRSBDPProfileProcess::alloc[site];
+
+    double master_logl[GetNprocs()];
+    double slave_logl;
+
+    int master_alloc[GetNprocs()];
+    int slave_alloc = -1;
+
+    MPI_Gather(&slave_logl, 1, MPI_DOUBLE, master_logl, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Gather(&slave_alloc, 1, MPI_INT, master_alloc, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    double max = 0;
+    for (int i=1; i<GetNprocs(); i++)   {
+        if ((!max) || (max < master_logl[i]))    {
+            max = master_logl[i];
+        }
+    }
+    double tot = 0;
+    double post[GetNprocs()-1];
+    for (int i=1; i<GetNprocs(); i++)   {
+        double tmp = exp(master_logl[i]-max);
+        post[i-1] = tmp;
+        tot += tmp;
+    }
+
+    double L = log(tot) + max;
+
+    for (int i=1; i<GetNprocs(); i++)   {
+        post[i-1] /= tot;
+    }
+    int procalloc = rnd::GetRandom().FiniteDiscrete(GetNprocs()-1, post) + 1;
+
+    if (! restore)  {
+        int newalloc = master_alloc[procalloc];
+        RemoveSite(site, oldalloc);
+        AddSite(site, newalloc);
+        GlobalUpdateParameters();
+    }
+    return L;
+}
+
+void RASCATGTRSBDPGammaPhyloProcess::SlaveGetSiteSteppingLogLikelihood()    {
+
+	if (! SumOverRateAllocations())	{
+		cerr << "rate error\n";
+		exit(1);
+	}
+
+    int param[3];
+    MPI_Bcast(param,3,MPI_INT,0,MPI_COMM_WORLD);
+    int site = param[0];
+    // int nrep = param[1];
+    int restore = param[2];
+
+    int bkalloc = ExpoConjugateGTRSBDPProfileProcess::alloc[site];
+
+	int width = GetNcomponent() / (GetNprocs()-1);
+    int r = GetNcomponent() % (GetNprocs()-1);
+	int smin[GetNprocs()-1];
+	int smax[GetNprocs()-1];
+    int s = 0;
+	for(int i=0; i<GetNprocs()-1; i++) {
+		smin[i] = s;
+        if (i < r)  {
+            s += width + 1;
+        }
+        else    {
+            s += width;
+        }
+        smax[i] = s;
+    }
+    if (s != GetNcomponent())  {
+        cerr << "error: ncomp checksum\n";
+        exit(1);
+    }
+
+    int kmin = smin[myid-1];
+    int kmax = smax[myid-1];
+    int krange = kmax - kmin;
+
+    double sitelogl[krange];
+    for (int k=kmin; k<kmax; k++)	{
+        ExpoConjugateGTRSBDPProfileProcess::alloc[site] = k;
+        double tmp = SiteLogLikelihood(site);
+        sitelogl[k-kmin] = tmp;
+    }
+
+    double max = 0;
+    for (int k=kmin; k<kmax; k++)	{
+        if ((!max) || (max < sitelogl[k-kmin]))	{
+            max = sitelogl[k-kmin];
+        }
+    }
+
+    double post[krange];
+    double tot= 0;
+    for (int k=kmin; k<kmax; k++)   {
+        post[k-kmin] = weight[k] * exp(sitelogl[k-kmin] - max);
+        tot += post[k-kmin];
+    }
+
+    double slave_logl = log(tot) + max;
+
+    for (int k=kmin; k<kmax; k++)   {
+        post[k-kmin] /= tot;
+    }
+    int slave_alloc = rnd::GetRandom().FiniteDiscrete(krange, post) + kmin;
+
+    double master_logl[GetNprocs()];
+    int master_alloc[GetNprocs()];
+
+    MPI_Gather(&slave_logl, 1, MPI_DOUBLE, master_logl, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Gather(&slave_alloc, 1, MPI_INT, master_alloc, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    if (restore)    {
+        ExpoConjugateGTRSBDPProfileProcess::alloc[site] = bkalloc;
+    }
 }

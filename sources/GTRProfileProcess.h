@@ -25,7 +25,7 @@ class GTRProfileProcess : public virtual MatrixProfileProcess {
 
 	public:
 
-	GTRProfileProcess() : rr(0), fixrr(false), rrtype("None") {}
+	GTRProfileProcess() : rr(0), fixrr(false), rrtype("None"), emprralpha(0), emprrbeta(0) {}
 	virtual ~GTRProfileProcess() {}
 
 	int GetNrr()	{
@@ -91,7 +91,8 @@ class GTRProfileProcess : public virtual MatrixProfileProcess {
 
 	// relative rates
 	virtual double LogRRPrior();
-	virtual void SampleRR();
+	void SampleRR();
+    void PriorSampleRR();
 
 	// assumes that site-specific sufficient statistics are already updated
 	// collect them into more compact sufficient statistics
@@ -109,6 +110,8 @@ class GTRProfileProcess : public virtual MatrixProfileProcess {
 
 	bool fixrr;
 	string rrtype;
+    double* emprralpha;
+    double* emprrbeta;
 
 };
 

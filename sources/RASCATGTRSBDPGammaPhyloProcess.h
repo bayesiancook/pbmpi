@@ -228,6 +228,9 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
     void GlobalSetEmpiricalPrior(istream& is);
     void SlaveSetEmpiricalPrior();
 
+    double GlobalGetSiteSteppingLogLikelihood(int site, int nrep, int restore);
+    void SlaveGetSiteSteppingLogLikelihood();
+
 	void TraceHeader(ostream& os)	{
 		os << "iter\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
 		if (! fixrr)	{
@@ -324,6 +327,16 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 		return 1;
 	}
 
+	virtual void PrepareSiteLogLikelihood(int site) {
+		int cat = ExpoConjugateGTRSBDPProfileProcess::alloc[site];
+		if (! matrixarray[cat])	{
+			cerr << "error in prepare site log likelihood: matrix is not allocated\n";
+			exit(1);
+			// CreateMatrix(cat);
+		}
+		UpdateMatrix(cat);
+	}
+
 	void ToStreamHeader(ostream& os)	{
 		PhyloProcess::ToStreamHeader(os);
 		os << datafile << '\n';
@@ -390,7 +403,10 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 	int iscodon;
 	GeneticCodeType codetype;
     double siteloglcutoff;
+    /*
     double* empcount;
+    double* empbeta;
+    */
 };
 
 #endif

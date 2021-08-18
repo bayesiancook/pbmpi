@@ -44,11 +44,16 @@ void FiniteProfileProcess::Create(int innsite, int indim, int ncat, int infixnco
         }
 		MixtureProfileProcess::Create(innsite,indim);
 		weight = new double[GetNmodeMax()];
+        empdirweight = new double[GetDim()];
+        for (int k=0; k<GetDim(); k++)  {
+            empdirweight[k] = 1.0;
+        }
 	}
 }
 
 void FiniteProfileProcess::Delete()	{
 	if (weight)	{
+        delete[] empdirweight;
 		if (statfix)	{
 			for (int i=0; i<Ncat; i++)	{
 				delete[] statfix[i];

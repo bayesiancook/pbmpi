@@ -30,6 +30,8 @@ void GTRProfileProcess::Create(int innsite, int indim)	{
 		ProfileProcess::Create(innsite,indim);
 		Nrr = GetDim() * (GetDim()-1) / 2;
 		rr = new double[Nrr];
+        emprralpha = new double[Nrr];
+        emprrbeta = new double[Nrr];
 		SampleRR();
 	}
 }
@@ -37,6 +39,8 @@ void GTRProfileProcess::Create(int innsite, int indim)	{
 void GTRProfileProcess::Delete()	{
 	if (rr)	{
 		DeleteMatrices();
+        delete[] emprrbeta;
+        delete[] emprralpha;
 		delete[] rr;
 		rr = 0;
 		ProfileProcess::Delete();
@@ -45,8 +49,17 @@ void GTRProfileProcess::Delete()	{
 
 double GTRProfileProcess::LogRRPrior()	{
 	double total = 0;
-	for (int i=0; i<GetNrr(); i++)	{
-		total -= rr[i];
+    if (profilefrac == 1.0) {
+        for (int i=0; i<GetNrr(); i++)	{
+            total -= rr[i];
+        }
+    }
+    else    {
+        for (int i=0; i<GetNrr(); i++)	{
+            double a = profilefrac + (1.0-profilefrac) * emprralpha[i];
+            double b = profilefrac + (1.0-profilefrac) * emprrbeta[i];
+            total += a*log(b) - rnd::GetRandom().logGamma(a) + (a-1)*log(rr[i]) - b*rr[i];
+        }
 	}
 	return total;
 }
@@ -56,6 +69,22 @@ void GTRProfileProcess::SampleRR()	{
 		// rr[i] = LG_RR[i];
 		rr[i] = rnd::GetRandom().sExpo();
 	}
+}
+
+void GTRProfileProcess::PriorSampleRR()	{
+    if (profilefrac == 1.0) {
+        for (int i=0; i<GetNrr(); i++)	{
+            // rr[i] = LG_RR[i];
+            rr[i] = rnd::GetRandom().sExpo();
+        }
+    }
+    else    {
+        for (int i=0; i<GetNrr(); i++)	{
+            double a = profilefrac + (1.0-profilefrac) * emprralpha[i];
+            double b = profilefrac + (1.0-profilefrac) * emprrbeta[i];
+            rr[i] = rnd::GetRandom().Gamma(a,b);
+        }
+    }
 }
 
 void GTRProfileProcess::SetRR(string type)	{

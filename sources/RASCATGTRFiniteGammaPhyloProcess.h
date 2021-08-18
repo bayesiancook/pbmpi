@@ -345,6 +345,16 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 		GetTree()->ToStream(os);
 	}
 
+	virtual void PrepareSiteLogLikelihood(int site) {
+		int cat = ExpoConjugateGTRFiniteProfileProcess::alloc[site];
+		if (! matrixarray[cat])	{
+			cerr << "error in prepare site log likelihood: matrix is not allocated\n";
+			exit(1);
+			// CreateMatrix(cat);
+		}
+		UpdateMatrix(cat);
+	}
+
 	void ToStream(ostream& os)	{
 		GammaBranchProcess::ToStream(os);
 		DGamRateProcess::ToStream(os);

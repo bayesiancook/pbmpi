@@ -133,8 +133,9 @@ class MixtureProfileProcess: public virtual ProfileProcess	{
 	}
 
 	// sample all aspects of the mixture (number of components, composition) from the prior
-	void SampleProfile();
-    void PriorSampleProfile()   {
+	virtual void SampleProfile();
+
+    virtual void PriorSampleProfile()   {
         PriorSampleHyper();
         PriorSampleAlloc();
         PriorSampleStat();
