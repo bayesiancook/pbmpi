@@ -221,6 +221,8 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 
 	int ancstatepostprobs = 0;
     siteloglcutoff = 0;
+    int posthyper = 0;
+    int siteprofilesuffstat = 0;
 
 	try	{
 
@@ -331,6 +333,12 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 			else if (s == "-r")	{
 				rates = 1;
 			}
+            else if (s == "-posthyper") {
+                posthyper = 1;
+            }
+            else if (s == "-siteprofilesuffstat")  {
+                siteprofilesuffstat = 1;
+            }
 
 			else if ( (s == "-x") || (s == "-extract") )	{
 				i++;
@@ -407,6 +415,12 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	else if (rr)	{
 		ReadRelRates(name,burnin,every,until);
 	}
+    else if (posthyper) {
+		ReadPostHyper(name,burnin,every,until);
+    }
+    else if (siteprofilesuffstat)  {
+        ReadSiteProfileSuffStat(name, burnin, every, until);
+    }
 	else if (ppred == -1)	{
 		AllPostPred(name,burnin,every,until,rateprior,profileprior,rootprior);
 	}
@@ -430,6 +444,77 @@ void RASCATGTRSBDPGammaPhyloProcess::GlobalSetSiteLogLCutoff()  {
 
 void RASCATGTRSBDPGammaPhyloProcess::SlaveSetSiteLogLCutoff()  {
 	MPI_Bcast(&siteloglcutoff,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+}
+
+void RASCATGTRSBDPGammaPhyloProcess::ReadSiteProfileSuffStat(string name, int burnin, int every, int until){
+
+    double* meancount = new double[GetNsite()*GetDim()];
+    double* meanbeta = new double[GetNsite()*GetDim()];
+    for (int k=0; k<GetNsite()*GetDim(); k++)   {
+        meancount[k] = 0;
+        meanbeta[k] = 0;
+    }
+
+  	ifstream is((name + ".chain").c_str());
+	if (!is)	{
+		cerr << "error: no .chain file found\n";
+		exit(1);
+	}
+	cerr << "burnin : " << burnin << "\n";
+	cerr << "until : " << until << '\n';
+	int i=0;
+	while ((i < until) && (i < burnin))	{
+		FromStream(is);
+		i++;
+	}
+	int samplesize = 0;
+
+	while (i < until)	{
+		cerr << ".";
+
+		cerr.flush();
+		samplesize++;
+		FromStream(is);
+		i++;
+
+		MESSAGE signal = BCAST_TREE;
+		MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+		GlobalBroadcastTree();
+		GlobalUpdateConditionalLikelihoods();
+		GlobalCollapse();
+
+        GlobalUpdateSiteProfileSuffStat();
+        for (int k=0; k<GetNsite()*GetDim(); k++)   {
+            meancount[k] += allocsiteprofilesuffstatcount[k];
+            meanbeta[k] += allocsiteprofilesuffstatbeta[k];
+        }
+
+		GlobalUnfold();
+
+		int nrep = 1;
+		while ((i<until) && (nrep < every))	{
+			FromStream(is);
+			i++;
+			nrep++;
+		}
+	}
+	cerr << '\n';
+    for (int k=0; k<GetNsite()*GetDim(); k++)   {
+        meancount[k] /= samplesize;
+        meanbeta[k] /= samplesize;
+    }
+    ofstream os((name + ".siteprofilesuffstat").c_str());
+    for (int i=0; i<GetNsite(); i++)    {
+        for (int k=0; k<GetDim(); k++)  {
+            os << meancount[i*GetDim() + k] << '\t';
+        }
+        for (int k=0; k<GetDim(); k++)  {
+            os << meanbeta[i*GetDim() + k] << '\t';
+        }
+        os << '\n';
+    }
+    cerr << "posterior mean site profile suffstats in " << name << ".siteprofilesuffstat\n";
+    cerr << '\n';
 }
 
 void RASCATGTRSBDPGammaPhyloProcess::ReadRelRates(string name, int burnin, int every, int until)	{
@@ -558,6 +643,92 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadSiteProfiles(string name, int burnin, i
 		os << '\n';
 	}
 	cerr << "mean site-specific profiles in " << name << ".siteprofiles\n";
+	cerr << '\n';
+}
+
+void RASCATGTRSBDPGammaPhyloProcess::ReadPostHyper(string name, int burnin, int every, int until)	{
+
+    double meanratealpha = 0;
+    double varratealpha = 0;
+    vector<double> meandirweight(GetDim(), 0);
+    vector<double> vardirweight(GetDim(), 0);
+    vector<double> meanbl(GetNbranch(), 0);
+    vector<double> varbl(GetNbranch(), 0);
+    double meankappaalpha = 0;
+    double varkappaalpha = 0;
+
+	ifstream is((name + ".chain").c_str());
+	if (!is)	{
+		cerr << "error: no .chain file found\n";
+		exit(1);
+	}
+
+	cerr << "burnin : " << burnin << "\n";
+	cerr << "until : " << until << '\n';
+	int i=0;
+	while ((i < until) && (i < burnin))	{
+		FromStream(is);
+		i++;
+	}
+	int samplesize = 0;
+
+	while (i < until)	{
+		cerr << ".";
+		cerr.flush();
+		samplesize++;
+		FromStream(is);
+		i++;
+
+        meanratealpha += alpha;
+        varratealpha += alpha*alpha;
+        for (int k=0; k<GetDim(); k++)  {
+            meandirweight[k] += dirweight[k];
+            vardirweight[k] += dirweight[k]*dirweight[k];
+        }
+        for (int j=1; j<GetNbranch(); j++)  {
+            meanbl[j] += blarray[j];
+            varbl[j] += blarray[j]*blarray[j];
+        }
+        meankappaalpha += kappa;
+        varkappaalpha += kappa*kappa;
+
+		int nrep = 1;
+		while ((i<until) && (nrep < every))	{
+			FromStream(is);
+			i++;
+			nrep++;
+		}
+	}
+	cerr << '\n';
+	
+	ofstream os((name + ".posthyper").c_str());
+    meanratealpha /= samplesize;
+    varratealpha /= samplesize;
+    varratealpha -= meanratealpha*meanratealpha;
+    os << meanratealpha*meanratealpha / varratealpha << '\t';
+    os << meanratealpha / varratealpha << '\n';
+    if (! dirweightprior)   {
+        for (int k=0; k<GetDim(); k++)  {
+            meandirweight[k] /= samplesize;
+            vardirweight[k] /= samplesize;
+            vardirweight[k] -= meandirweight[k]*meandirweight[k];
+            os << meandirweight[k]*meandirweight[k]/vardirweight[k] << '\t';
+            os << meandirweight[k]/vardirweight[k] << '\n';
+        }
+    }
+    for (int j=1; j<GetNbranch(); j++)  {
+        meanbl[j] /= samplesize;
+        varbl[j] /= samplesize;
+        varbl[j] -= meanbl[j]*meanbl[j];
+        os << meanbl[j]*meanbl[j]/varbl[j] << '\t';
+        os << meanbl[j]/varbl[j] << '\n';
+    }
+    meankappaalpha /= samplesize;
+    varkappaalpha /= samplesize;
+    varkappaalpha -= meankappaalpha * meankappaalpha;
+    os << meankappaalpha*meankappaalpha/varkappaalpha << '\t';
+    os << meankappaalpha / varkappaalpha << '\n';
+	cerr << "posterior mean shape and scale params in " << name << ".posthyper\n";
 	cerr << '\n';
 }
 
@@ -707,3 +878,52 @@ void RASCATGTRSBDPGammaPhyloProcess::SlaveComputeSiteLogL()	{
 	delete[] meansitelogl;
 }
 
+void RASCATGTRSBDPGammaPhyloProcess::GlobalSetEmpiricalPrior(istream& is)    {
+    // read from stream
+    is >> empalpha >> empbeta;
+    if (!dirweightprior)    {
+        for (int k=0; k<GetDim(); k++)  {
+            is >> empdirweightalpha[k] >> empdirweightbeta[k];
+        }
+    }
+    for (int j=1; j<GetNbranch(); j++)  {
+        is >> branchempalpha[j] >> branchempbeta[j];
+    }
+    is >> empkappaalpha >> empkappabeta;
+
+	MESSAGE signal = EMPIRICALPRIOR;
+	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+	MPI_Bcast(&empalpha,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+	MPI_Bcast(&empbeta,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+    if (!dirweightprior)    {
+        MPI_Bcast(empdirweightalpha,GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+        MPI_Bcast(empdirweightbeta,GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+    }
+	MPI_Bcast(branchempalpha,GetNbranch(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+	MPI_Bcast(branchempbeta,GetNbranch(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+	MPI_Bcast(&empkappaalpha,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+	MPI_Bcast(&empkappabeta,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+
+    empcount = new double[GetNsite()*GetDim()];
+    for (int k=0; k<GetNsite()*GetDim(); k++)   {
+        is >> empcount[k];
+    }
+    MPI_Bcast(empcount,GetNsite()*GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+}
+
+void RASCATGTRSBDPGammaPhyloProcess::SlaveSetEmpiricalPrior()    {
+
+	MPI_Bcast(&empalpha,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+	MPI_Bcast(&empbeta,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+    if (!dirweightprior)    {
+        MPI_Bcast(empdirweightalpha,GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+        MPI_Bcast(empdirweightbeta,GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+    }
+	MPI_Bcast(branchempalpha,GetNbranch(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+	MPI_Bcast(branchempbeta,GetNbranch(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+	MPI_Bcast(&empkappaalpha,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+	MPI_Bcast(&empkappabeta,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
+
+    empcount = new double[GetNsite()*GetDim()];
+    MPI_Bcast(empcount,GetNsite()*GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+}

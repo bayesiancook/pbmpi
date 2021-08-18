@@ -202,6 +202,29 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 		Delete();
 	}
 
+    void GlobalSetEmpiricalPrior(istream& is);
+    void SlaveSetEmpiricalPrior();
+
+    double GlobalGetSiteSteppingLogLikelihood(int site, int nrep, int restore)  {
+        if (fixncomp && (GetNcomponent() == 1))    {
+            return PhyloProcess::GlobalGetSiteSteppingLogLikelihood(site, nrep, restore);
+        }
+        return GlobalGetSiteSteppingLogLikelihoodNonIS(site, nrep, restore);
+    }
+
+    void SlaveGetSiteSteppingLogLikelihood()    {
+        if (fixncomp && (GetNcomponent() == 1))    {
+            PhyloProcess::SlaveGetSiteSteppingLogLikelihood();
+        }
+        else    {
+            SlaveGetSiteSteppingLogLikelihoodNonIS();
+        }
+    }
+
+    double GlobalGetSiteSteppingLogLikelihoodNonIS(int site, int nrep, int restore);
+    void SlaveGetSiteSteppingLogLikelihoodNonIS();
+
+
 	double GetLogProb()	{
 		return GetLogPrior() + GetLogLikelihood();
 	}
@@ -338,6 +361,7 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 	virtual void ReadPB(int argc, char* argv[]);
 	void SlaveComputeCVScore();
 	void SlaveComputeSiteLogL();
+	void ReadPostHyper(string name, int burnin, int every, int until);
 
 	void ReadRelRates(string name, int burnin, int every, int until);
 	void ReadSiteProfiles(string name, int burnin, int every, int until);

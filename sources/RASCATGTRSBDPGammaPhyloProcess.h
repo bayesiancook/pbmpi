@@ -225,6 +225,9 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 		Delete();
 	}
 
+    void GlobalSetEmpiricalPrior(istream& is);
+    void SlaveSetEmpiricalPrior();
+
 	void TraceHeader(ostream& os)	{
 		os << "iter\ttime\ttopo\tloglik\tlength\talpha\tNmode\tstatent\tstatalpha";
 		if (! fixrr)	{
@@ -364,6 +367,9 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 	virtual void ReadPB(int argc, char* argv[]);
 	void ReadRelRates(string name, int burnin, int every, int until);
 	void ReadSiteProfiles(string name, int burnin, int every, int until);
+	void ReadPostHyper(string name, int burnin, int every, int until);
+	void ReadSiteProfileSuffStat(string name, int burnin, int every, int until);
+
 	void SlaveComputeCVScore();
 	void SlaveComputeSiteLogL();
 
@@ -384,6 +390,7 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 	int iscodon;
 	GeneticCodeType codetype;
     double siteloglcutoff;
+    double* empcount;
 };
 
 #endif

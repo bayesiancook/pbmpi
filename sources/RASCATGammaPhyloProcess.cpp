@@ -105,9 +105,11 @@ void RASCATGammaPhyloProcess::SlaveExecute(MESSAGE signal)	{
 	case UPDATE_RATE:
 		SlaveUpdateRateSuffStat();
 		break;
+    /*
     case ISSITELOGL:
         SlaveComputeISSiteLogL();
         break;
+    */
 	default:
 		PhyloProcess::SlaveExecute(signal);
 	}
@@ -189,9 +191,11 @@ void RASCATGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
     int posthyper = 0;
     int siteprofilesuffstat = 0;
     // importance sampling estimation of site logl
+    /*
     int issitelogl = 0;
     int isnrep = 0;
     string empname = "None";
+    */
 
 	try	{
 
@@ -308,6 +312,7 @@ void RASCATGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
             else if (s == "-siteprofilesuffstat")  {
                 siteprofilesuffstat = 1;
             }
+            /*
             else if (s == "-issitelogl")    {
                 issitelogl = 1;
                 i++;
@@ -315,6 +320,7 @@ void RASCATGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
                 i++;
                 empname = argv[i];
             }
+            */
 			else if ( (s == "-x") || (s == "-extract") )	{
 				i++;
 				if (i == argc) throw(0);
@@ -399,9 +405,11 @@ void RASCATGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
     else if (siteprofilesuffstat)  {
         ReadSiteProfileSuffStat(name, burnin, every, until);
     }
+    /*
     else if (issitelogl)    {
         ReadISSiteLogL(name, empname, burnin, isnrep);
     }
+    */
 	else if (ppred == -1)	{
 		AllPostPred(name,burnin,every,until,rateprior,profileprior,rootprior);
 	}
@@ -624,6 +632,7 @@ void RASCATGammaPhyloProcess::ReadSiteProfileSuffStat(string name, int burnin, i
     cerr << '\n';
 }
 
+/*
 void RASCATGammaPhyloProcess::ReadISSiteLogL(string name, string empname, int burnin, int nrep)    {
 
     double* empcount = new double[GetNsite()*GetDim()];
@@ -844,6 +853,7 @@ void RASCATGammaPhyloProcess::SlaveComputeISSiteLogL()	{
 	delete[] postvarsitelogl;
 
 }
+*/
 
 void RASCATGammaPhyloProcess::ReadSiteProfiles(string name, int burnin, int every, int until)	{
 

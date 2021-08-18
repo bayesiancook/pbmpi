@@ -205,6 +205,25 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
     void GlobalSetEmpiricalPrior(istream& is);
     void SlaveSetEmpiricalPrior();
 
+    double GlobalGetSiteSteppingLogLikelihood(int site, int nrep, int restore)  {
+        if (fixncomp && (GetNcomponent() == 1))    {
+            return PhyloProcess::GlobalGetSiteSteppingLogLikelihood(site, nrep, restore);
+        }
+        return GlobalGetSiteSteppingLogLikelihoodNonIS(site, nrep, restore);
+    }
+
+    void SlaveGetSiteSteppingLogLikelihood()    {
+        if (fixncomp && (GetNcomponent() == 1))    {
+            PhyloProcess::SlaveGetSiteSteppingLogLikelihood();
+        }
+        else    {
+            SlaveGetSiteSteppingLogLikelihoodNonIS();
+        }
+    }
+
+    double GlobalGetSiteSteppingLogLikelihoodNonIS(int site, int nrep, int restore);
+    void SlaveGetSiteSteppingLogLikelihoodNonIS();
+
 	double GetLogProb()	{
 		return GetLogPrior() + GetLogLikelihood();
 	}

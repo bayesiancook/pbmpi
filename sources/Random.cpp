@@ -310,6 +310,9 @@ int Random::Choose(int scale)	{
 
 int Random::FiniteDiscrete(int n, const double* probarray)	{
 
+    if (!n) {
+        return -1;
+    }
 	double total = 0;
 	double* cumul = new double[n];
 	for (int k=0; k<n; k++)	{
