@@ -405,40 +405,74 @@ class Model	{
                 process->IncSize();
             }
 
-            double meanlogp0 = 0;
-            double varlogp0 = 0;
+            double premaxlogp = 0;
+            double pretotp1 = 0;
+            double pretotp2 = 0;
+            double pretotlogp1 = 0;
+            double pretotlogp2 = 0;
+            double pretotlogprior = 0;
+
+            double prelogZ = 0;
+            double preeffsize = 0;
+            double premeanlogp = 0;
+            double prevarlogp = 0;
+            double premeanlogprior = 0;
+
             int finalnpoint = minnpoint;
+
             if (maxvar) {
-                for (int i=0; i<minnpoint; i++)    {
+                int npoint = 0;
+                while (npoint < minnpoint)  {
                     Move(1,every);
                     process->IncSize();
+                    npoint++;
 
                     process->GlobalSetSteppingFraction(nsite1, nsite2);
                     double delta = process->GlobalGetSteppingLogLikelihood(nrep, 1);
 
+                    double dlogp = 0;
                     if (empiricalprior)  {
                         double lnP1 = process->GetLogPrior();
                         process->GlobalSetEmpiricalFrac(frac2);
                         double lnP2 = process->GetLogPrior();
                         delta += lnP2 - lnP1;
+                        dlogp = lnP2 - lnP1;
                     }
                     if (std::isnan(delta))   {
                         cerr << "nan delta\n";
                         exit(1);
                     }
 
-                    meanlogp0 += delta;
-                    varlogp0 += delta*delta;
+                    pretotlogprior += dlogp;
+                    pretotlogp1 += delta;
+                    pretotlogp2 += delta*delta;
+                    if ((!premaxlogp) || (premaxlogp < delta))    {
+                        pretotp1 *= exp(premaxlogp-delta);
+                        pretotp1 += 1.0;
+                        pretotp2 *= exp(2*(premaxlogp-delta));
+                        pretotp2 += 1.0;
+                        premaxlogp = delta;
+                    }
+                    else    {
+                        pretotp1 += exp(delta - premaxlogp);
+                        pretotp2 += exp(2*(delta - premaxlogp));
+                    }
+
+                    if (npoint == minnpoint)    {
+                        prelogZ = log(pretotp1 / npoint) + premaxlogp;
+                        preeffsize = pretotp1 * pretotp1 / pretotp2;
+                        premeanlogp = pretotlogp1/npoint;
+                        prevarlogp = pretotlogp2/npoint - premeanlogp*premeanlogp;
+                        premeanlogprior = pretotlogprior / npoint;
+                    }
 
                     process->GlobalSetSteppingFraction(0, nsite1);
                     process->GlobalSetEmpiricalFrac(frac1);
                 }
-                meanlogp0 /= minnpoint;
-                varlogp0 /= minnpoint;
-                varlogp0 -= meanlogp0*meanlogp0;
-                if (varlogp0 > maxvar)   {
-                    finalnpoint *= exp(varlogp0)/exp(maxvar);
-                    // finalnpoint *= varlogp0/maxvar;
+
+                if (prevarlogp > maxvar)   {
+                    finalnpoint *= exp(prevarlogp)/exp(maxvar);
+                    // finalnpoint *= prevarlogp/maxvar;
                     if (finalnpoint > maxnpoint) {
                         finalnpoint = maxnpoint;
                     }
@@ -462,7 +496,6 @@ class Model	{
                 int restore = (npoint == finalnpoint) ? 0 : 1;
                 double delta = process->GlobalGetSteppingLogLikelihood(nrep, restore);
                 double dlogp = 0;
-
                 if (empiricalprior)  {
                     double lnP1 = process->GetLogPrior();
                     process->GlobalSetEmpiricalFrac(frac2);
@@ -491,26 +524,26 @@ class Model	{
                     totp2 += exp(2*(delta - maxlogp));
                 }
 
-                double logZ = log(totp1 / npoint) + maxlogp;
-                double effsize = totp1 * totp1 / totp2;
-                double meanlogp = totlogp1/npoint;
-                double varlogp = totlogp2/npoint - meanlogp*meanlogp;
-
                 if (npoint < finalnpoint)   {
                     process->GlobalSetSteppingFraction(0, nsite1);
                     process->GlobalSetEmpiricalFrac(frac1);
                 }
                 else    {
+
+                    double logZ = log(totp1 / npoint) + maxlogp;
+                    double effsize = totp1 * totp1 / totp2;
+                    double meanlogp = totlogp1/npoint;
+                    double varlogp = totlogp2/npoint - meanlogp*meanlogp;
+                    double meanlogprior = totlogprior / npoint;
+
                     ofstream pos((name + ".param").c_str());
                     pos.precision(numeric_limits<double>::digits10);
                     ToStream(pos,true);
                     pos.close();
 
-                    double meanlogprior = totlogprior / npoint;
-
                     ofstream los((name + ".stepping").c_str(), ios_base::app);
                     if (maxvar) {
-                        los << frac1 << '\t' << nsite1 << '\t' << logZ << '\t' << meanlogp << '\t' << meanlogprior << '\t' << varlogp << '\t' << npoint << '\t' << effsize << '\t' << meanlogp0 << '\t' << varlogp0 << '\n';
+                        los << frac1 << '\t' << nsite1 << '\t' << logZ << '\t' << meanlogp << '\t' << meanlogprior << '\t' << varlogp << '\t' << npoint << '\t' << effsize << '\t' << prelogZ << '\t' << premeanlogp << '\t' << premeanlogprior << '\t' << prevarlogp << '\t' << minnpoint << '\t' << preeffsize <<  '\n';
                     }
                     else    {
                         los << frac1 << '\t' << nsite1 << '\t' << logZ << '\t' << meanlogp << '\t' << meanlogprior << '\t' << varlogp << '\t' << npoint << '\t' << effsize << '\n';
