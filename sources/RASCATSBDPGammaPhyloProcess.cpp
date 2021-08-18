@@ -283,8 +283,11 @@ void RASCATSBDPGammaPhyloProcess::SlaveComputeSiteLogL()	{
 
 double RASCATSBDPGammaPhyloProcess::GlobalGetSiteSteppingLogLikelihood(int site, int nrep0, int restore) {
 
-    int w = nrep0 / (GetNprocs()-1);
-    int nrep = w * (GetNprocs()-1);
+    int nrep_per_proc = nrep0 / (GetNprocs()-1);
+    if (nrep0 % (GetNprocs() - 1))  {
+        nrep_per_proc ++;
+    }
+    int nrep = nrep_per_proc * (GetNprocs()-1);
 
     int oldalloc = PoissonSBDPProfileProcess::alloc[site];
 
@@ -292,7 +295,7 @@ double RASCATSBDPGammaPhyloProcess::GlobalGetSiteSteppingLogLikelihood(int site,
     MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
     int param[3];
     param[0] = site;
-    param[1] = nrep;
+    param[1] = nrep_per_proc;
     param[2] = restore;
     MPI_Bcast(param,3,MPI_INT,0,MPI_COMM_WORLD);
 
@@ -361,11 +364,11 @@ double RASCATSBDPGammaPhyloProcess::GlobalGetSiteSteppingLogLikelihood(int site,
 
     double w0[GetNcomponent()];
     double totw0 = 0;
-    double totw1 = 0;
+    // double totw1 = 0;
     for (int k=0; k<GetNcomponent(); k++) {
         if (occupancy[k])   {
             w0[k] = 0;
-            totw1 += weight[k];
+            // totw1 += weight[k];
         }
         else    {
             w0[k] = weight[k];
@@ -382,7 +385,8 @@ double RASCATSBDPGammaPhyloProcess::GlobalGetSiteSteppingLogLikelihood(int site,
     if (GetNcomponent() > GetNOccupiedComponent())  {
         double max = (L0 > L1) ? L0 : L1;
         l0 = totw0 * exp(L0-max);
-        l1 = totw1 * exp(L1-max);
+        l1 = exp(L1-max);
+        // l1 = totw1 * exp(L1-max);
         logl = log(l0 + l1) + max;
     }
 
@@ -569,195 +573,4 @@ void RASCATSBDPGammaPhyloProcess::SlaveGetSiteSteppingLogLikelihood()    {
         }
     }
 }
-
-/*
-double RASCATSBDPGammaPhyloProcess::GlobalGetSiteSteppingLogLikelihood(int site, int nrep) {
-
-    MPI_Status stat;
-    MESSAGE signal = STEPPINGSITELOGL;
-    MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
-    MPI_Bcast(&site,1,MPI_INT,0,MPI_COMM_WORLD);
-    MPI_Bcast(&nrep,1,MPI_INT,0,MPI_COMM_WORLD);
-
-	int width = GetNsite()/(GetNprocs()-1);
-	int smin[GetNprocs()-1];
-	int smax[GetNprocs()-1];
-	int maxwidth = 0;
-	for(int i=0; i<GetNprocs()-1; ++i) {
-		smin[i] = width*i;
-		smax[i] = width*(1+i);
-		if (i == (GetNprocs()-2)) smax[i] = GetNsite();
-		if (maxwidth < (smax[i] - smin[i]))	{
-			maxwidth = smax[i] - smin[i];
-		}
-	}
-
-    int slave = -1;
-    for(int i=1; i<GetNprocs(); ++i) {
-        if ((site >= smin[i-1]) && (site < smax[i-1]))  {
-            slave = i;
-        }
-    }
-
-    if (slave == -1)    {
-        cerr << "error: slave proc not found\n";
-        exit(1);
-    }
-
-    double logl = 0;
-    int sitealloc = 0;
-    double siteprofile[GetDim()];
-    MPI_Recv(&logl,1,MPI_DOUBLE,slave,TAG1,MPI_COMM_WORLD,&stat);
-    MPI_Recv(&sitealloc,1,MPI_INT,slave,TAG1,MPI_COMM_WORLD,&stat);
-    MPI_Recv(siteprofile,GetDim(),MPI_DOUBLE,slave,TAG1,MPI_COMM_WORLD,&stat);
-
-    UpdateOccupancyNumbers();
-    if (!occupancy[sitealloc])   {
-        for (int k=0; k<GetDim(); k++)  {
-            profile[sitealloc][k] = siteprofile[k];
-        }
-    }
-    RemoveSite(site, PoissonSBDPProfileProcess::alloc[site]);
-    AddSite(site, sitealloc);
-    ResampleEmptyProfiles();
-    GlobalUpdateParameters();
-    return logl;
-}
-
-void RASCATSBDPGammaPhyloProcess::SlaveGetSiteSteppingLogLikelihood()    {
-
-	if (! SumOverRateAllocations())	{
-		cerr << "rate error\n";
-		exit(1);
-	}
-
-    int site,nrep;
-    MPI_Bcast(&site,1,MPI_INT,0,MPI_COMM_WORLD);
-    MPI_Bcast(&nrep,1,MPI_INT,0,MPI_COMM_WORLD);
-
-    if ((site >= sitemin) && (site < sitemax))  {
-
-        UpdateOccupancyNumbers();
-
-        double sitelogl[GetNcomponent()];
-        for (int k=0; k<GetNcomponent(); k++)	{
-            sitelogl[k] = 0;
-        }
-	
-        // first sum over non-empty components
-        for (int k=0; k<GetNcomponent(); k++)	{
-            if (occupancy[k])   {
-                PoissonSBDPProfileProcess::alloc[site] = k;
-                UpdateZip(site);
-            }
-            UpdateConditionalLikelihoods();
-            sitelogl[k] = sitelogL[site];
-        }
-
-        double max1 = 0;
-        for (int k=0; k<GetNcomponent(); k++) {
-            if (occupancy[k])   {
-                if ((!max1) || (max1 < sitelogl[k]))	{
-                    max1 = sitelogl[k];
-                }
-            }
-        }
-
-        double post1[GetNcomponent()];
-        double tot1= 0;
-        double w0[GetNcomponent()];
-        double totw0 = 0;
-        int emptycomp = -1;
-
-        for (int k=0; k<GetNcomponent(); k++) {
-            if (occupancy[k])   {
-                post1[k] = weight[k] * exp(sitelogl[k] - max1);
-                tot1 += post1[k];
-                w0[k] = 0;
-            }
-            else    {
-                post1[k] = 0;
-                if (emptycomp == -1)    {
-                    emptycomp = k;
-                }
-                w0[k] = weight[k];
-                totw0 += weight[k];
-            }
-        }
-
-        double L1 = log(tot1) + max1;
-
-        for (int k=0; k<GetNcomponent(); k++)   {
-            w0[k] /= totw0;
-            post1[k] /= tot1;
-        }
-        int alloc1 = rnd::GetRandom().FiniteDiscrete(GetNcomponent(), post1);
-        int alloc0 = rnd::GetRandom().FiniteDiscrete(GetNcomponent(), w0);
-
-        double L0 = 0;
-        double siteprofile[GetDim()];
-        for (int k=0; k<GetDim(); k++)  {
-            siteprofile[k] = 0;
-        }
-
-        if (emptycomp != -1)    {
-            RemoveSite(site, PoissonSBDPProfileProcess::alloc[site]);
-            AddSite(site, emptycomp);
-            vector<vector<double>> isprofile(nrep, vector<double>(GetDim(), 0));
-            vector<double> islogl(nrep, 0);
-
-            for (int rep=0; rep<nrep; rep++)    {
-                SampleEmpiricalStat(profile[emptycomp], empcount + site*GetDim());
-                for (int k=0; k<GetDim(); k++)  {
-                    isprofile[rep][k] = profile[emptycomp][k];
-                }
-                UpdateZip(site);
-                UpdateConditionalLikelihoods();
-                islogl[rep] = sitelogL[site];
-                islogl[rep] += RASCATGammaPhyloProcess::LogStatPrior(profile[emptycomp]) - EmpiricalLogStatPrior(profile[emptycomp], empcount + site*GetDim());
-            }
-
-            double max0 = 0;
-            for (int rep=0; rep<nrep; rep++)    {
-                if ((!max0) || (max0 < islogl[rep]))  {
-                    max0 = islogl[rep];
-                }
-            }
-
-            double tot0 = 0;
-            double isw[nrep];
-            for (int rep=0; rep<nrep; rep++)	{
-                isw[rep] = exp(islogl[rep] - max0);
-                tot0 += isw[rep];
-            }
-            L0 = log(tot0/nrep) + max0 + log(totw0);
-            for (int rep=0; rep<nrep; rep++)	{
-                isw[rep] /= tot0;
-            }
-            int weightindex = rnd::GetRandom().FiniteDiscrete(nrep, isw);
-            for (int k=0; k<GetDim(); k++)  {
-                siteprofile[k] = isprofile[weightindex][k];
-            }
-
-        }
-
-        double max = (L0 > L1) ? L0 : L1;
-        double l0 = exp(L0-max);
-        double l1 = exp(L1-max);
-        double logl = log(l0 + l1) + max;
-
-        int alloc = 0;
-        if ((l0 + l1)*rnd::GetRandom().Uniform() > l0)  {
-            alloc = alloc1;
-        }
-        else    {
-            alloc = alloc0;
-        }
-
-        MPI_Send(&logl,1,MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
-        MPI_Send(&alloc,1,MPI_INT,0,TAG1,MPI_COMM_WORLD);
-        MPI_Send(siteprofile,GetDim(),MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
-    }
-}
-*/
 

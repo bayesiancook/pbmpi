@@ -414,7 +414,7 @@ class Model	{
                     process->IncSize();
 
                     process->GlobalSetSteppingFraction(nsite1, nsite2);
-                    double delta = process->GlobalGetSteppingLogLikelihood(nrep, 0);
+                    double delta = process->GlobalGetSteppingLogLikelihood(nrep, 1);
 
                     if (empiricalprior)  {
                         double lnP1 = process->GetLogPrior();
@@ -451,11 +451,6 @@ class Model	{
             double totlogp1 = 0;
             double totlogp2 = 0;
             double totlogprior = 0;
-
-            /*
-            int cont = 1;
-            while(cont) {
-            */
 
             int npoint = 0;
             while (npoint < finalnpoint)    {
@@ -500,17 +495,6 @@ class Model	{
                 double effsize = totp1 * totp1 / totp2;
                 double meanlogp = totlogp1/npoint;
                 double varlogp = totlogp2/npoint - meanlogp*meanlogp;
-
-                /*
-                if (npoint >= minnpoint)  {
-                    if ((!maxvar) || (varlogp/npoint < maxvar))    {
-                        cont = 0;
-                    }
-                }
-                if (maxnpoint && (npoint == maxnpoint)) {
-                    cont = 0;
-                }
-                */
 
                 if (npoint < finalnpoint)   {
                     process->GlobalSetSteppingFraction(0, nsite1);
