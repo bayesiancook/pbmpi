@@ -710,14 +710,29 @@ void RASCATGTRFiniteGammaPhyloProcess::ReadPostHyper(string name, int burnin, in
             }
         }
 
-        for (int k=0; k<GetNrr(); k++)  {
-            meanrr[k] += rr[k];
-            varrr[k] += rr[k]*rr[k];
+        // double meanRR = 1.0;
+        if (! fixrr)    {
+            /*
+            for (int k=0; k<GetNrr(); k++)  {
+                meanRR += rr[k];
+            }
+            meanRR /= GetNrr();
+            */
+            for (int k=0; k<GetNrr(); k++)  {
+                double tmp = rr[k];
+                // double tmp = rr[k] / meanRR;
+                meanrr[k] += tmp;
+                varrr[k] += tmp*tmp;
+            }
         }
 
         for (int j=1; j<GetNbranch(); j++)  {
-            meanbl[j] += blarray[j];
-            varbl[j] += blarray[j]*blarray[j];
+            double tmp = blarray[j];
+            // double tmp = blarray[j] * meanRR;
+            meanbl[j] += tmp;
+            varbl[j] += tmp*tmp;
+            // meanbl[j] += blarray[j];
+            // varbl[j] += blarray[j]*blarray[j];
         }
 
 		int nrep = 1;
@@ -735,6 +750,7 @@ void RASCATGTRFiniteGammaPhyloProcess::ReadPostHyper(string name, int burnin, in
     varratealpha -= meanratealpha*meanratealpha;
     os << meanratealpha*meanratealpha / varratealpha << '\t';
     os << meanratealpha / varratealpha << '\n';
+    os << '\n';
 	if (! dirweightprior)   {
         for (int k=0; k<GetDim(); k++)  {
             meandirweight[k] /= samplesize;
@@ -743,6 +759,7 @@ void RASCATGTRFiniteGammaPhyloProcess::ReadPostHyper(string name, int burnin, in
             os << meandirweight[k]*meandirweight[k]/vardirweight[k] << '\t';
             os << meandirweight[k]/vardirweight[k] << '\n';
         }
+        os << '\n';
     }
     if (fixncomp && (GetNcomponent() == 1)) {
         double num = 0;
@@ -759,14 +776,18 @@ void RASCATGTRFiniteGammaPhyloProcess::ReadPostHyper(string name, int burnin, in
             os << conc * meanfreq[k] << '\t';
         }
         os << '\n';
+        os << '\n';
     }
 
-    for (int k=0; k<GetNrr(); k++)  {
-        meanrr[k] /= samplesize;
-        varrr[k] /= samplesize;
-        varrr[k] -= meanrr[k]*meanrr[k];
-        os << meanrr[k]*meanrr[k]/varrr[k] << '\t';
-        os << meanrr[k]/varrr[k] << '\n';
+    if (! fixrr)    {
+        for (int k=0; k<GetNrr(); k++)  {
+            meanrr[k] /= samplesize;
+            varrr[k] /= samplesize;
+            varrr[k] -= meanrr[k]*meanrr[k];
+            os << meanrr[k]*meanrr[k]/varrr[k] << '\t';
+            os << meanrr[k]/varrr[k] << '\n';
+        }
+        os << '\n';
     }
 
     for (int j=1; j<GetNbranch(); j++)  {
@@ -794,8 +815,17 @@ void RASCATGTRFiniteGammaPhyloProcess::GlobalSetEmpiricalPrior(istream& is)    {
             is >> empdirweight[k];
         }
     }
-    for (int k=0; k<GetNrr(); k++)  {
-        is >> emprralpha[k] >> emprrbeta[k];
+    if (! fixrr)    {
+        for (int k=0; k<GetNrr(); k++)  {
+            is >> emprralpha[k] >> emprrbeta[k];
+        }
+        /*
+        double pseudocount = 1.0;
+        for (int k=0; k<GetNrr(); k++)  {
+            emprralpha[k] += pseudocount * LG_RR[k];
+            emprrbeta[k] += pseudocount * LG_RR[k];
+        }
+        */
     }
     for (int j=1; j<GetNbranch(); j++)  {
         is >> branchempalpha[j] >> branchempbeta[j];
@@ -811,8 +841,10 @@ void RASCATGTRFiniteGammaPhyloProcess::GlobalSetEmpiricalPrior(istream& is)    {
     if (fixncomp && (GetNcomponent() == 1)) {
         MPI_Bcast(empdirweight,GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
     }
-    MPI_Bcast(emprralpha,GetNrr(),MPI_DOUBLE,0,MPI_COMM_WORLD);
-    MPI_Bcast(emprrbeta,GetNrr(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+    if (! fixrr)    {
+        MPI_Bcast(emprralpha,GetNrr(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+        MPI_Bcast(emprrbeta,GetNrr(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+    }
 	MPI_Bcast(branchempalpha,GetNbranch(),MPI_DOUBLE,0,MPI_COMM_WORLD);
 	MPI_Bcast(branchempbeta,GetNbranch(),MPI_DOUBLE,0,MPI_COMM_WORLD);
 }
@@ -828,8 +860,10 @@ void RASCATGTRFiniteGammaPhyloProcess::SlaveSetEmpiricalPrior()    {
     if (fixncomp && (GetNcomponent() == 1)) {
         MPI_Bcast(empdirweight,GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
     }
-    MPI_Bcast(emprralpha,GetNrr(),MPI_DOUBLE,0,MPI_COMM_WORLD);
-    MPI_Bcast(emprrbeta,GetNrr(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+    if (! fixrr)    {
+        MPI_Bcast(emprralpha,GetNrr(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+        MPI_Bcast(emprrbeta,GetNrr(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+    }
 	MPI_Bcast(branchempalpha,GetNbranch(),MPI_DOUBLE,0,MPI_COMM_WORLD);
 	MPI_Bcast(branchempbeta,GetNbranch(),MPI_DOUBLE,0,MPI_COMM_WORLD);
 }

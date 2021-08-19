@@ -104,7 +104,6 @@ void FiniteProfileProcess::PriorSampleHyper()   {
             double a = profilefrac + (1-profilefrac) * empdirweightalpha[k];
             double b = profilefrac + (1-profilefrac) * empdirweightbeta[k];
             dirweight[k] = rnd::GetRandom().Gamma(a,b);
-            // dirweight[k] = rnd::GetRandom().sExpo();
         }
     }
     else    {

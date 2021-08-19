@@ -48,6 +48,10 @@ void GTRProfileProcess::Delete()	{
 }
 
 double GTRProfileProcess::LogRRPrior()	{
+    if (fixrr)  {
+        cerr << "error: in GTRProfileProcess::LogRRPrior\n";
+        exit(1);
+    }
 	double total = 0;
     if (profilefrac == 1.0) {
         for (int i=0; i<GetNrr(); i++)	{

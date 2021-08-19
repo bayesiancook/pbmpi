@@ -47,6 +47,15 @@ class GTRMixtureProfileProcess : public virtual GTRProfileProcess, public virtua
         MixtureProfileProcess::PriorSampleProfile();
     }
 
+    virtual double LogProfilePrior()    {
+        double ret = 0;
+        if (! fixrr)    {
+            ret += LogRRPrior();
+        }
+        ret += MixtureProfileProcess::LogProfilePrior();
+        return ret;
+    }
+
 	// simply creates/deletes GTR matrices for all currently existing components
 	void CreateMatrix(int k);
 	virtual void UpdateMatrix(int k);

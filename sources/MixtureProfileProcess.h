@@ -160,7 +160,7 @@ class MixtureProfileProcess: public virtual ProfileProcess	{
 	void UpdateOccupancyNumbers();
 	double ResampleEmptyProfiles();
 
-	double LogProfilePrior();
+	virtual double LogProfilePrior();
 
 	virtual double LogHyperPrior() = 0;
 	virtual double LogAllocPrior()	{
