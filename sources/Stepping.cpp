@@ -28,7 +28,7 @@ bool PhyloProcess::ActiveSite(int i)  {
 }
 
 
-void PhyloProcess::GlobalPrepareStepping()   {
+void PhyloProcess::GlobalPrepareStepping(string name, int size, int rand)   {
 	assert(myid == 0);
     if (bkdata) {
         cerr << "error in SlaveBackupData: bkdata already exists\n";
@@ -40,11 +40,29 @@ void PhyloProcess::GlobalPrepareStepping()   {
     bkdata = new SequenceAlignment(GetData());
 
     steppingrank = new int[GetNsite()];
-    rnd::GetRandom().DrawFromUrn(steppingrank, GetNsite(), GetNsite());
-    for (int i=0; i<GetNsite(); i++)    {
-        steppingrank[i] = i;
+    if (size)   {
+        ifstream is((name + ".siteranks").c_str());
+        for (int i=0; i<GetNsite(); i++)    {
+            is >> steppingrank[i];
+        }
     }
-	MPI_Bcast(steppingrank,GetNsite(),MPI_INT,0,MPI_COMM_WORLD);
+    else    {
+        if (rand)   {
+            rnd::GetRandom().DrawFromUrn(steppingrank, GetNsite(), GetNsite());
+        }
+        else    {
+            for (int i=0; i<GetNsite(); i++)    {
+                steppingrank[i] = i;
+            }
+        }
+        ofstream os((name + ".siteranks").c_str());
+        for (int i=0; i<GetNsite(); i++)    {
+            os << steppingrank[i] << '\t';
+        }
+        os << '\n';
+    }
+    MPI_Bcast(steppingrank,GetNsite(),MPI_INT,0,MPI_COMM_WORLD);
+
 }
 
 void PhyloProcess::SlavePrepareStepping()	{

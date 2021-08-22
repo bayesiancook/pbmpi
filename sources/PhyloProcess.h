@@ -232,7 +232,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
     void GlobalSetSteppingFraction(int cutoff1, int cutoff2);
     void SlaveSetSteppingFraction();
 
-    void GlobalPrepareStepping();
+    void GlobalPrepareStepping(string name, int size, int rand);
     void SlavePrepareStepping();
 
     bool ActiveSite(int i);

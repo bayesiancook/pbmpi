@@ -53,10 +53,11 @@ class Model	{
     double steppingmaxvar;
     int steppingmaxsize;
     string empstepping;
+    int halfway;
     int steppingcycle;
-    int steppingnrep;
+    int randstepping;
 
-	Model(string datafile, string treefile, int modeltype, int nratecat, int mixturetype, int ncat, int nmodemax, GeneticCodeType codetype, int suffstat, int fixncomp, int empmix, string mixtype, string rrtype, int iscodon, int fixtopo, int NSPR, int NNNI, int fixcodonprofile, int fixomega, int fixbl, int omegaprior, int kappaprior, int dirweightprior, double mintotweight, int dc, int inevery, int inuntil, int insaveall, int inincinit, int topoburnin, int insteppingdnsite, int insteppingburnin, int insteppingsize, double insteppingmaxvar, int insteppingmaxsize, int insteppingnrep, string inempstepping, string inname, int myid, int nprocs)	{
+	Model(string datafile, string treefile, int modeltype, int nratecat, int mixturetype, int ncat, int nmodemax, GeneticCodeType codetype, int suffstat, int fixncomp, int empmix, string mixtype, string rrtype, int iscodon, int fixtopo, int NSPR, int NNNI, int fixcodonprofile, int fixomega, int fixbl, int omegaprior, int kappaprior, int dirweightprior, double mintotweight, int dc, int inevery, int inuntil, int insaveall, int inincinit, int topoburnin, int insteppingdnsite, int insteppingburnin, int insteppingsize, double insteppingmaxvar, int insteppingmaxsize, int inrandstepping, string inempstepping, int inhalfway, string inname, int myid, int nprocs)	{
 
 		every = inevery;
 		until = inuntil;
@@ -68,8 +69,9 @@ class Model	{
         steppingsize = insteppingsize;
         steppingmaxvar = insteppingmaxvar;
         steppingmaxsize = insteppingmaxsize;
-        steppingnrep = insteppingnrep;
+        randstepping = inrandstepping;
         empstepping = inempstepping;
+        halfway = inhalfway;
         steppingcycle = 0;
 
 		// 1 : CAT
@@ -195,8 +197,9 @@ class Model	{
 		is >> type;
         if (type == "STEPPING") {
             is >> steppingdnsite >> steppingburnin >> steppingsize >> steppingmaxvar >> steppingmaxsize;
-            is >> steppingnrep;
+            is >> randstepping;
             is >> empstepping;
+            is >> halfway;
             is >> steppingcycle;
             is >> type;
         }
@@ -242,9 +245,10 @@ class Model	{
             if (steppingdnsite)  {
                 ss << "STEPPING\n";
                 ss << steppingdnsite << '\t' << steppingburnin << '\t' << steppingsize << '\t' << steppingmaxvar << '\t' << steppingmaxsize << '\n';
-                ss << steppingnrep << '\n';
                 ss << empstepping << '\n';
+                ss << halfway << '\n';
                 ss << steppingcycle << '\n';
+                ss << randstepping << '\n';
             }
 			ss << type << '\n';
 			ss << every << '\t' << until << '\t' << GetSize() << '\n';
@@ -293,7 +297,7 @@ class Model	{
         }
         else    {
             SteppingRun(steppingdnsite, steppingburnin, steppingsize,
-                        steppingmaxvar, steppingmaxsize, steppingnrep, empstepping);
+                        steppingmaxvar, steppingmaxsize, randstepping, empstepping, halfway);
         }
     }
 
@@ -348,8 +352,12 @@ class Model	{
 		cerr << '\n';
 	}
 
-	void SteppingRun(int step, int burnin, int minnpoint, double maxvar, double maxnpoint, int nrep, string empname)    {
+	void SteppingRun(int step, int burnin, int minnpoint, double maxvar, double maxnpoint, int rand, string empname, int halfway)    {
 
+
+        // deprecated option for importance sampling estimation of mixture log likelihood
+        // deactivated when nrep = 0
+        int nrep = 0;
 
         int empiricalprior = 0;
         if (empname != "None")  {
@@ -357,7 +365,7 @@ class Model	{
             ifstream is(empname.c_str());
             process->GlobalSetEmpiricalPrior(is);
         }
-		process->GlobalPrepareStepping();
+		process->GlobalPrepareStepping(name, GetSize(), rand);
 	
 		ofstream ros((name + ".run").c_str()); stringstream buf;
 		buf << 1 << '\n';
@@ -382,12 +390,24 @@ class Model	{
 		while (RunningStatus() && (steppingcycle < ncycle)) {
 
             double frac1 = ((double) steppingcycle) / ncycle;
+            if (halfway)    {
+                frac1 *= 2;
+                if (frac1 > 1.0)    {
+                    frac1 = 1.0;
+                }
+            }
             int nsite1 = steppingcycle * step;
             if (nsite1 > process->GetNsite()) {
                 nsite1 = process->GetNsite();
             }
 
             double frac2 = ((double) steppingcycle + 1.0) / ncycle;
+            if (halfway)    {
+                frac2 *= 2;
+                if (frac2 > 1.0)    {
+                    frac2 = 1.0;
+                }
+            }
             int nsite2 = (steppingcycle + 1) * step;
             if (nsite2 > process->GetNsite()) {
                 nsite2 = process->GetNsite();
