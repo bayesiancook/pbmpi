@@ -47,7 +47,13 @@ void ExpoConjugateGTRProfileProcess::Delete()	{
 void ExpoConjugateGTRProfileProcess::MoveRR()	{
 	GlobalUpdateRRSuffStat();
 	for (int i=0; i<GetNrr(); i++)	{
-		rr[i] = rnd::GetRandom().Gamma(1.0 + rrsuffstatcount[i], 1.0 + rrsuffstatbeta[i]);
+        double a = 1.0;
+        double b = 1.0;
+        if (profilefrac != 1.0) {
+            a = profilefrac + (1-profilefrac)*emprralpha[i];
+            b = profilefrac + (1-profilefrac)*emprrbeta[i];
+        }
+		rr[i] = rnd::GetRandom().Gamma(a + rrsuffstatcount[i], b + rrsuffstatbeta[i]);
 	}
 }
 

@@ -107,8 +107,15 @@ void FiniteProfileProcess::PriorSampleHyper()   {
         }
     }
     else    {
-        for (int k=0; k<GetDim(); k++)  {
-            dirweight[k] = 1.0;
+        if (fixncomp && (GetNcomponent() == 1))   {
+            for (int k=0; k<GetDim(); k++)  {
+                dirweight[k] = profilefrac + (1.0-profilefrac) * empdirweight[k];
+            }
+        }
+        else    {
+            for (int k=0; k<GetDim(); k++)  {
+                dirweight[k] = 1.0;
+            }
         }
     }
 }

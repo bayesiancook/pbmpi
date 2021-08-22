@@ -42,6 +42,7 @@ void MixtureProfileProcess::Create(int innsite, int indim)	{
         for (int i=0; i<GetDim(); i++)  {
             empdirweightalpha[i] = 1.0;
             empdirweightbeta[i] = 1.0;
+            dirweight[i] = 1.0;
         }
 	}
 }
