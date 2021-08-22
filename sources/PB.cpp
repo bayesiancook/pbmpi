@@ -81,7 +81,7 @@ int main(int argc, char* argv[])	{
     double steppingmaxvar = 0;
     int steppingmaxnpoint = 0;
     string empstepping = "None";
-    int halfway = 1;
+    int halfway = 0;
     int randstepping = 0;
 
     bool help = false;
