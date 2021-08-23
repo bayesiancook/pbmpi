@@ -283,6 +283,13 @@ void RASCATSBDPGammaPhyloProcess::SlaveComputeSiteLogL()	{
 
 double RASCATSBDPGammaPhyloProcess::GlobalGetSiteSteppingLogLikelihood(int site, int nrep0, int restore) {
 
+    if (nrep0)  {
+        if (! empcount) {
+            cerr << "error: in IS site log likelihood, empcount not created\n";
+            exit(1);
+        }
+    }
+
     int nrep_per_proc = nrep0 / (GetNprocs()-1);
     if (nrep0 % (GetNprocs() - 1))  {
         nrep_per_proc ++;

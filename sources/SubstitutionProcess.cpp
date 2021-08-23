@@ -344,7 +344,9 @@ double SubstitutionProcess::ComputeLikelihood(double*** aux, bool condalloc)	{
     }
     logL = 0;
     for (int i=sitemin; i<sitemax; i++)	{
-        logL += sitelogL[i];
+        if (ActiveSite(i))  {
+            logL += sitelogL[i];
+        }
     }
     return logL;
 }

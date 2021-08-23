@@ -62,7 +62,7 @@ class RASCATGammaPhyloProcess : public virtual PoissonPhyloProcess, public virtu
     void GlobalSetSiteLogLCutoff();
     void SlaveSetSiteLogLCutoff();
 
-	RASCATGammaPhyloProcess() {}
+	RASCATGammaPhyloProcess() : empcount(0) {}
 
 	RASCATGammaPhyloProcess(string indatafile, string treefile, int nratecat, int iniscodon, GeneticCodeType incodetype, int infixtopo, int inkappaprior, double inmintotweight, int indc, int me, int np)	{
 		myid = me;

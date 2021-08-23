@@ -482,6 +482,7 @@ void RASCATGammaPhyloProcess::ReadPostHyper(string name, int burnin, int every, 
     varratealpha -= meanratealpha*meanratealpha;
     os << meanratealpha*meanratealpha / varratealpha << '\t';
     os << meanratealpha / varratealpha << '\n';
+    os << '\n';
     if (! dirweightprior)   {
         for (int k=0; k<GetDim(); k++)  {
             meandirweight[k] /= samplesize;
@@ -490,6 +491,7 @@ void RASCATGammaPhyloProcess::ReadPostHyper(string name, int burnin, int every, 
             os << meandirweight[k]*meandirweight[k]/vardirweight[k] << '\t';
             os << meandirweight[k]/vardirweight[k] << '\n';
         }
+        os << '\n';
     }
     for (int j=1; j<GetNbranch(); j++)  {
         meanbl[j] /= samplesize;
@@ -498,6 +500,7 @@ void RASCATGammaPhyloProcess::ReadPostHyper(string name, int burnin, int every, 
         os << meanbl[j]*meanbl[j]/varbl[j] << '\t';
         os << meanbl[j]/varbl[j] << '\n';
     }
+    os << '\n';
     meankappaalpha /= samplesize;
     varkappaalpha /= samplesize;
     varkappaalpha -= meankappaalpha * meankappaalpha;
@@ -533,11 +536,13 @@ void RASCATGammaPhyloProcess::GlobalSetEmpiricalPrior(istream& is)    {
 	MPI_Bcast(&empkappaalpha,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
 	MPI_Bcast(&empkappabeta,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
 
+    /*
     empcount = new double[GetNsite()*GetDim()];
     for (int k=0; k<GetNsite()*GetDim(); k++)   {
         is >> empcount[k];
     }
     MPI_Bcast(empcount,GetNsite()*GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+    */
 }
 
 void RASCATGammaPhyloProcess::SlaveSetEmpiricalPrior()    {
@@ -553,8 +558,10 @@ void RASCATGammaPhyloProcess::SlaveSetEmpiricalPrior()    {
 	MPI_Bcast(&empkappaalpha,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
 	MPI_Bcast(&empkappabeta,1,MPI_DOUBLE,0,MPI_COMM_WORLD);
 
+    /*
     empcount = new double[GetNsite()*GetDim()];
     MPI_Bcast(empcount,GetNsite()*GetDim(),MPI_DOUBLE,0,MPI_COMM_WORLD);
+    */
 }
 
 void RASCATGammaPhyloProcess::GlobalSetSiteLogLCutoff()  {

@@ -197,10 +197,10 @@ class Model	{
 		is >> type;
         if (type == "STEPPING") {
             is >> steppingdnsite >> steppingburnin >> steppingsize >> steppingmaxvar >> steppingmaxsize;
-            is >> randstepping;
             is >> empstepping;
             is >> halfway;
             is >> steppingcycle;
+            is >> randstepping;
             is >> type;
         }
 		int size;

@@ -48,7 +48,7 @@ void RASCATGTRSBDPGammaPhyloProcess::GlobalUpdateParameters()	{
 	assert(myid == 0);
 
 	// ResampleWeights();
-	RenormalizeProfiles();
+	// RenormalizeProfiles();
 
 	int i,j,nrr,nbranch = GetNbranch(),ni,nd,L1,L2;
 	nrr = GetNrr();

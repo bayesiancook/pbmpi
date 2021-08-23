@@ -53,7 +53,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	// virtual void SlaveUpdate();
 
 	// default constructor: pointers set to nil
-	PhyloProcess() : sitecondlmap(0), condlmap(0), siteratesuffstatcount(0), siteratesuffstatbeta(0), branchlengthsuffstatcount(0), branchlengthsuffstatbeta(0), condflag(false), data(0), bkdata(0), steppingrank(0), minsitecutoff(-1), maxsitecutoff(-1), myid(-1), nprocs(0), size(0), version("1.9"), totaltime(0), dataclamped(1), rateprior(0), profileprior(0), rootprior(1), topoburnin(0) {
+	PhyloProcess() : missingmap(0), sitecondlmap(0), condlmap(0), siteratesuffstatcount(0), siteratesuffstatbeta(0), branchlengthsuffstatcount(0), branchlengthsuffstatbeta(0), condflag(false), data(0), bkdata(0), steppingrank(0), minsitecutoff(-1), maxsitecutoff(-1), myid(-1), nprocs(0), size(0), version("1.9"), totaltime(0), dataclamped(1), rateprior(0), profileprior(0), rootprior(1), topoburnin(0) {
 		fixbl = 0;
 		sitesuffstat = 1;
 	}
