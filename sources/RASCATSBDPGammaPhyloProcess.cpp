@@ -619,16 +619,27 @@ double RASCATSBDPGammaPhyloProcess::GlobalGetSiteSteppingLogLikelihoodNonIS(int 
 
     double max = 0;
     for (int i=1; i<GetNprocs(); i++)   {
-        if ((!max) || (max < master_logl[i]))    {
-            max = master_logl[i];
+        if (master_alloc[i] != -1)    {
+            if ((!max) || (max < master_logl[i]))    {
+                max = master_logl[i];
+            }
         }
     }
     double tot = 0;
     double post[GetNprocs()-1];
     for (int i=1; i<GetNprocs(); i++)   {
-        double tmp = exp(master_logl[i]-max);
-        post[i-1] = tmp;
-        tot += tmp;
+        if (master_alloc[i] != -1)    {
+            double tmp = exp(master_logl[i]-max);
+            post[i-1] = tmp;
+            tot += tmp;
+        }
+        else    {
+            post[i-1] = 0;
+        }
+    }
+    if (! tot)  {
+        cerr << "error in stepping logl: total likelihood is 0\n";
+        exit(1);
     }
 
     double L = log(tot) + max;
@@ -696,12 +707,18 @@ void RASCATSBDPGammaPhyloProcess::SlaveGetSiteSteppingLogLikelihoodNonIS(int sit
         tot += post[k-kmin];
     }
 
-    double slave_logl = log(tot) + max;
+    double slave_logl = 0;
+    if (tot)    {
+        slave_logl = log(tot) + max;
+    }
+    else    {
+        cerr << "idle slave\n";
+    }
 
     for (int k=kmin; k<kmax; k++)   {
         post[k-kmin] /= tot;
     }
-    int slave_alloc = rnd::GetRandom().FiniteDiscrete(krange, post) + kmin;
+    int slave_alloc = krange ? rnd::GetRandom().FiniteDiscrete(krange, post) + kmin : -1;
 
     double master_logl[GetNprocs()];
     int master_alloc[GetNprocs()];
