@@ -328,6 +328,7 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 	}
 
 	virtual void PrepareSiteLogLikelihood(int site) {
+        /*
 		int cat = ExpoConjugateGTRSBDPProfileProcess::alloc[site];
 		if (! matrixarray[cat])	{
 			cerr << "error in prepare site log likelihood: matrix is not allocated\n";
@@ -335,6 +336,7 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 			// CreateMatrix(cat);
 		}
 		UpdateMatrix(cat);
+        */
 	}
 
 	void ToStreamHeader(ostream& os)	{

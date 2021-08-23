@@ -993,6 +993,7 @@ double RASCATGTRSBDPGammaPhyloProcess::GlobalGetSiteSteppingLogLikelihood(int si
             max = master_logl[i];
         }
     }
+
     double tot = 0;
     double post[GetNprocs()-1];
     for (int i=1; i<GetNprocs(); i++)   {

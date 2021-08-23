@@ -151,7 +151,7 @@ void PhyloProcess::GlobalResetAllConditionalLikelihoods()  {
 
 void PhyloProcess::SlaveResetAllConditionalLikelihoods()	{
     for (int j=0; j<GetNlink(); j++)	{
-        Reset(condlmap[j], false);
+        Reset(condlmap[j], false, true);
     }
 }
 

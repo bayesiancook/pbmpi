@@ -380,7 +380,7 @@ class Model	{
             process->GlobalUpdateParameters();
         }
 
-        // process->GlobalUpdateConditionalLikelihoods();
+        process->GlobalResetAllConditionalLikelihoods();
 
         int ncycle = process->GetNsite() / step;
         if (process->GetNsite() % step) {
@@ -414,6 +414,10 @@ class Model	{
             }
 
             process->GlobalSetSteppingFraction(0, nsite1);
+
+            // not necessary: increasing series of sites
+            // process->GlobalResetAllConditionalLikelihoods();
+
             process->GlobalUpdateConditionalLikelihoods();
 
             if (empiricalprior)  {

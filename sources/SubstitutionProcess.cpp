@@ -120,9 +120,10 @@ void SubstitutionProcess::DeleteConditionalLikelihoodVector(double*** condl)	{
 //-------------------------------------------------------------------------
 
 // set the vector uniformly to 1 
-void SubstitutionProcess::Reset(double*** t, bool condalloc)	{
+void SubstitutionProcess::Reset(double*** t, bool condalloc, bool all)	{
 	for (int i=sitemin; i<sitemax; i++)	{
-        if (ActiveSite(i))  {
+        // if (ActiveSite(i))  {
+        if (all || ActiveSite(i))  {
             for (int j=0; j<GetNrate(i); j++)	{
                 if ((! condalloc) || (ratealloc[i] == j))	{
                     double* tmp = t[i][j];
@@ -262,6 +263,13 @@ void SubstitutionProcess::Offset(double*** t, bool condalloc)	{
 //-------------------------------------------------------------------------
 
 double SubstitutionProcess::ComputeLikelihood(double*** aux, bool condalloc)	{
+
+	for (int i=sitemin; i<sitemax; i++)	{
+        sitelogL[i] = 0;
+        for (int j=0; j<GetNrate(i); j++)	{
+            condsitelogL[i][j] = 0;
+        }
+    }
 
 	for (int i=sitemin; i<sitemax; i++)	{
         if (ActiveSite(i))  {
@@ -642,6 +650,7 @@ void SubstitutionProcess::SiteOffset(int i, double** t, bool condalloc)	{
 
 double SubstitutionProcess::SiteComputeLikelihood(int i, double** aux, bool condalloc)	{
 
+    double sitelogl = 0;
 	if (condalloc)	{
 		int j = ratealloc[i];
 		double* t = aux[j];
@@ -661,12 +670,12 @@ double SubstitutionProcess::SiteComputeLikelihood(int i, double** aux, bool cond
 			exit(1);
 			*/
 		}
-		sitelogL[i] = log(tot) + (*t);
+		sitelogl = log(tot) + (*t);
 		t -= nstate;
 	}
 	else	{
 		double max = 0;
-		double* logl = condsitelogL[i];
+		double logl[GetNrate(i)];
 		for (int j=0; j<GetNrate(i); j++)	{
 			double* t = aux[j];
 			double tot = 0;
@@ -703,7 +712,7 @@ double SubstitutionProcess::SiteComputeLikelihood(int i, double** aux, bool cond
 			total += tmp;
 			meanrate += tmp * GetRate(i,j);
 		}
-		sitelogL[i] = log(total) + max;
+		sitelogl = log(total) + max;
 		if (isnan(sitelogL[i]))	{
 			cerr << "nan site logl\n";
 			cerr << max << '\t' << total << '\n';
@@ -713,10 +722,9 @@ double SubstitutionProcess::SiteComputeLikelihood(int i, double** aux, bool cond
 			exit(1);
 		}
 		meanrate /= total;
-		meansiterate[i] = meanrate;
+		// meansiterate[i] = meanrate;
 	}
-
-	return sitelogL[i];
+	return sitelogl;
 }
 	
 
@@ -728,7 +736,7 @@ double SubstitutionProcess::SiteComputeLikelihood(int i, double** aux, bool cond
 //	otherwise, aux is assumed to be a conditional likelihood vector multiplied by stationaries, and thus can be used to compute those likelihoods 
 //	(CPU level 2)
 //-------------------------------------------------------------------------
-
+/*
 void SubstitutionProcess::SiteDrawAllocations(int i, double** aux)	{
 
 	if (aux)	{
@@ -795,5 +803,5 @@ int SubstitutionProcess::SiteChooseState(int i, double** t)	{
 	tmp[k] =  1;
 	return k;
 }
-
+*/
 

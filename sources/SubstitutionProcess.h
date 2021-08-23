@@ -121,7 +121,7 @@ class SubstitutionProcess : public virtual RateProcess, public virtual ProfilePr
 	// only for the category specified for that site by double* ratealloc
 
 	// CPU : level 1
-	void Reset(double*** condl, bool condalloc = false);
+	void Reset(double*** condl, bool condalloc = false, bool all = false);
 	void Multiply(double*** from, double*** to, bool condalloc = false);
 	void MultiplyByStationaries(double*** from, bool condalloc = false);
 	void Offset(double*** condl, bool condalloc = false);
@@ -164,7 +164,7 @@ class SubstitutionProcess : public virtual RateProcess, public virtual ProfilePr
 
 	// CPU : level 1
 	// if aux==0, assumes likelihoods have been computed
-	void SiteDrawAllocations(int site, double** aux);
+	// void SiteDrawAllocations(int site, double** aux);
 
 	// CPU : level 1
 	void SiteReset(int site, double** condl, bool condalloc = false);
@@ -186,7 +186,7 @@ class SubstitutionProcess : public virtual RateProcess, public virtual ProfilePr
 	// CPU : level 1
 	// implemented in GTR or POisson Substitution process
 	// here, assumes that each site is under the rate category defined by double* ratealloc
-	virtual int SiteChooseState(int site, double** aux);
+	// virtual int SiteChooseState(int site, double** aux);
 
 
 	int sitemin;

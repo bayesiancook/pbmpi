@@ -180,8 +180,7 @@ double PhyloProcess::SiteLogLikelihood(int site)	{
 	SiteActivateSumOverRateAllocation(site);
 	SitePostOrderPruning(site,GetRoot());
 	SiteMultiplyByStationaries(site,sitecondlmap[0]);
-	SiteComputeLikelihood(site,sitecondlmap[0]);
-	return sitelogL[site];
+	return SiteComputeLikelihood(site,sitecondlmap[0]);
 }
 
 void PhyloProcess::SitePostOrderPruning(int site, const Link* from)	{
