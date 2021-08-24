@@ -708,17 +708,17 @@ void RASCATSBDPGammaPhyloProcess::SlaveGetSiteSteppingLogLikelihoodNonIS(int sit
     }
 
     double slave_logl = 0;
-    if (tot)    {
+    if (tot > 0)    {
         slave_logl = log(tot) + max;
     }
-    else    {
-        cerr << "idle slave\n";
-    }
 
-    for (int k=kmin; k<kmax; k++)   {
-        post[k-kmin] /= tot;
+    int slave_alloc = -1;
+    if (tot > 0)    {
+        for (int k=kmin; k<kmax; k++)   {
+            post[k-kmin] /= tot;
+        }
+        slave_alloc = rnd::GetRandom().FiniteDiscrete(krange, post) + kmin;
     }
-    int slave_alloc = krange ? rnd::GetRandom().FiniteDiscrete(krange, post) + kmin : -1;
 
     double master_logl[GetNprocs()];
     int master_alloc[GetNprocs()];
