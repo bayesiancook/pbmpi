@@ -354,7 +354,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 
 	virtual void ReadPB(int argc, char* argv[]);
 	virtual void Read(string name, int burnin, int every, int until);
-	virtual void ReadSiteLogL(string name, int burnin, int every, int until);
+	virtual void ReadSiteLogL(string name, int burnin, int every, int until, int verbose);
 	virtual void ReadCV(string testdatafile, string name, int burnin, int every, int until, int iscodon = 0, GeneticCodeType codetype = Universal);
 	virtual void ReadSiteCV(string testdatafile, string name, int burnin, int every, int until, int iscodon = 0, GeneticCodeType codetype = Universal);
 	virtual void AllPostPred(string name, int burnin, int every, int until, int rateprior, int profileprior, int rootprior);

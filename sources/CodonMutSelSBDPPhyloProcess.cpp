@@ -208,6 +208,7 @@ void CodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
 	int savetrees = 0;
 
 	int sitelogl = 0;
+    int verbose = 0;
 
 	int ancstatepostprobs = 0;
 
@@ -290,6 +291,9 @@ void CodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
 			else if (s == "-sitelogl")	{
 				sitelogl = 1;
 			}
+            else if (s == "-v") {
+                verbose = 1;
+            }
 
 			else if ( (s == "-x") || (s == "-extract") )	{
 				i++;
@@ -343,7 +347,7 @@ void CodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
 		ReadAncestral(name,burnin,every,until);
 	}
 	else if (sitelogl)	{
-		ReadSiteLogL(name,burnin,every,until);
+		ReadSiteLogL(name,burnin,every,until,verbose);
 	}
 	/*
 	else if (sel)	{

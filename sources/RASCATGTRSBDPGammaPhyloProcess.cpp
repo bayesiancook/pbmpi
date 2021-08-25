@@ -210,6 +210,7 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	int ss = 0;
 	int cv = 0;
 	int sitelogl = 0;
+    int verbose = 0;
 	int rr = 0;
 	int rates = 0;
 	int map = 0;
@@ -320,6 +321,9 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 			else if (s == "-sitelogl")	{
 				sitelogl = 1;
 			}
+            else if (s == "-v") {
+                verbose = 1;
+            }
             else if (s == "-cutoff")    {
                 i++;
                 siteloglcutoff = atof(argv[i]);
@@ -407,7 +411,7 @@ void RASCATGTRSBDPGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	}
 	else if (sitelogl)	{
         GlobalSetSiteLogLCutoff();
-		ReadSiteLogL(name,burnin,every,until);
+		ReadSiteLogL(name,burnin,every,until,verbose);
 	}
 	else if (ss)	{
 		ReadSiteProfiles(name,burnin,every,until);
