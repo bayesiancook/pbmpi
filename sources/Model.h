@@ -186,6 +186,8 @@ class Model	{
 
 	Model(string inname, int myid, int nprocs)	{
 
+        steppingdnsite = 0;
+
 		name = inname;
 
 		ifstream is((name + ".param").c_str());
