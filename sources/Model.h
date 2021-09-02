@@ -562,11 +562,6 @@ class Model	{
                     double varlogp = totlogp2/npoint - meanlogp*meanlogp;
                     double meanlogprior = totlogprior / npoint;
 
-                    ofstream pos((name + ".param").c_str());
-                    pos.precision(numeric_limits<double>::digits10);
-                    ToStream(pos,true);
-                    pos.close();
-
                     ofstream los((name + ".stepping").c_str(), ios_base::app);
                     if (maxvar) {
                         los << frac1 << '\t' << nsite1 << '\t' << logZ << '\t' << meanlogp << '\t' << meanlogprior << '\t' << varlogp << '\t' << npoint << '\t' << effsize << '\t' << prelogZ << '\t' << premeanlogp << '\t' << premeanlogprior << '\t' << prevarlogp << '\t' << minnpoint << '\t' << preeffsize <<  '\n';
@@ -575,7 +570,12 @@ class Model	{
                         los << frac1 << '\t' << nsite1 << '\t' << logZ << '\t' << meanlogp << '\t' << meanlogprior << '\t' << varlogp << '\t' << npoint << '\t' << effsize << '\n';
                     }
                     los.close();
+
                     steppingcycle++;
+                    ofstream pos((name + ".param").c_str());
+                    pos.precision(numeric_limits<double>::digits10);
+                    ToStream(pos,true);
+                    pos.close();
                 }
             }
 		}	
