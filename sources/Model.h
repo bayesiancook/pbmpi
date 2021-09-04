@@ -53,11 +53,11 @@ class Model	{
     double steppingmaxvar;
     int steppingmaxsize;
     string empstepping;
-    int halfway;
+    double empramp;
     int steppingcycle;
     int randstepping;
 
-	Model(string datafile, string treefile, int modeltype, int nratecat, int mixturetype, int ncat, int nmodemax, GeneticCodeType codetype, int suffstat, int fixncomp, int empmix, string mixtype, string rrtype, int iscodon, int fixtopo, int NSPR, int NNNI, int fixcodonprofile, int fixomega, int fixbl, int omegaprior, int kappaprior, int dirweightprior, double mintotweight, int dc, int inevery, int inuntil, int insaveall, int inincinit, int topoburnin, int insteppingdnsite, int insteppingburnin, int insteppingsize, double insteppingmaxvar, int insteppingmaxsize, int inrandstepping, string inempstepping, int inhalfway, string inname, int myid, int nprocs)	{
+	Model(string datafile, string treefile, int modeltype, int nratecat, int mixturetype, int ncat, int nmodemax, GeneticCodeType codetype, int suffstat, int fixncomp, int empmix, string mixtype, string rrtype, int iscodon, int fixtopo, int NSPR, int NNNI, int fixcodonprofile, int fixomega, int fixbl, int omegaprior, int kappaprior, int dirweightprior, double mintotweight, int dc, int inevery, int inuntil, int insaveall, int inincinit, int topoburnin, int insteppingdnsite, int insteppingburnin, int insteppingsize, double insteppingmaxvar, int insteppingmaxsize, int inrandstepping, string inempstepping, double inempramp, string inname, int myid, int nprocs)	{
 
 		every = inevery;
 		until = inuntil;
@@ -71,7 +71,7 @@ class Model	{
         steppingmaxsize = insteppingmaxsize;
         randstepping = inrandstepping;
         empstepping = inempstepping;
-        halfway = inhalfway;
+        empramp = inempramp;
         steppingcycle = 0;
 
 		// 1 : CAT
@@ -200,7 +200,7 @@ class Model	{
         if (type == "STEPPING") {
             is >> steppingdnsite >> steppingburnin >> steppingsize >> steppingmaxvar >> steppingmaxsize;
             is >> empstepping;
-            is >> halfway;
+            is >> empramp;
             is >> steppingcycle;
             is >> randstepping;
             is >> type;
@@ -248,7 +248,7 @@ class Model	{
                 ss << "STEPPING\n";
                 ss << steppingdnsite << '\t' << steppingburnin << '\t' << steppingsize << '\t' << steppingmaxvar << '\t' << steppingmaxsize << '\n';
                 ss << empstepping << '\n';
-                ss << halfway << '\n';
+                ss << empramp << '\n';
                 ss << steppingcycle << '\n';
                 ss << randstepping << '\n';
             }
@@ -299,7 +299,7 @@ class Model	{
         }
         else    {
             SteppingRun(steppingdnsite, steppingburnin, steppingsize,
-                        steppingmaxvar, steppingmaxsize, randstepping, empstepping, halfway);
+                        steppingmaxvar, steppingmaxsize, randstepping, empstepping, empramp);
         }
     }
 
@@ -354,7 +354,7 @@ class Model	{
 		cerr << '\n';
 	}
 
-	void SteppingRun(int step, int burnin, int minnpoint, double maxvar, double maxnpoint, int rand, string empname, int halfway)    {
+	void SteppingRun(int step, int burnin, int minnpoint, double maxvar, double maxnpoint, int rand, string empname, double empramp)    {
 
 
         // deprecated option for importance sampling estimation of mixture log likelihood
@@ -392,11 +392,9 @@ class Model	{
 		while (RunningStatus() && (steppingcycle < ncycle)) {
 
             double frac1 = ((double) steppingcycle) / ncycle;
-            if (halfway)    {
-                frac1 *= 2;
-                if (frac1 > 1.0)    {
-                    frac1 = 1.0;
-                }
+            frac1 *= empramp;
+            if (frac1 > 1.0)    {
+                frac1 = 1.0;
             }
             int nsite1 = steppingcycle * step;
             if (nsite1 > process->GetNsite()) {
@@ -404,11 +402,9 @@ class Model	{
             }
 
             double frac2 = ((double) steppingcycle + 1.0) / ncycle;
-            if (halfway)    {
-                frac2 *= 2;
-                if (frac2 > 1.0)    {
-                    frac2 = 1.0;
-                }
+            frac2 *= empramp;
+            if (frac2 > 1.0)    {
+                frac2 = 1.0;
             }
             int nsite2 = (steppingcycle + 1) * step;
             if (nsite2 > process->GetNsite()) {

@@ -81,7 +81,7 @@ int main(int argc, char* argv[])	{
     double steppingmaxvar = 0;
     int steppingmaxnpoint = 0;
     string empstepping = "None";
-    int halfway = 0;
+    double empramp = 1.0;
     int randstepping = 0;
 
     bool help = false;
@@ -174,10 +174,14 @@ int main(int argc, char* argv[])	{
                 empstepping = argv[i];
             }
             else if (s == "-emphalf")   {
-                halfway = 1;
+                empramp = 2.0;
             }
             else if (s == "-empfull")   {
-                halfway = 0;
+                empramp = 1.0;
+            }
+            else if (s == "-empramp")   {
+                i++;
+                empramp = atof(argv[i]);
             }
             else if (s == "-rndstepping")   {
                 randstepping = 1;
@@ -618,7 +622,7 @@ int main(int argc, char* argv[])	{
 				exit(1);
 			}
 		}
-		model = new Model(datafile,treefile,modeltype,dgam,mixturetype,ncat,nmodemax,type,suffstat,fixncomp,empmix,mixtype,rrtype,iscodon,fixtopo,NSPR,NNNI,fixcodonprofile,fixomega,fixbl,omegaprior,kappaprior,dirweightprior,mintotweight,dc,every,until,saveall,incinit,topoburnin,steppingdnsite,steppingburnin,steppingminnpoint,steppingmaxvar,steppingmaxnpoint,randstepping,empstepping,halfway,name,myid,nprocs);
+		model = new Model(datafile,treefile,modeltype,dgam,mixturetype,ncat,nmodemax,type,suffstat,fixncomp,empmix,mixtype,rrtype,iscodon,fixtopo,NSPR,NNNI,fixcodonprofile,fixomega,fixbl,omegaprior,kappaprior,dirweightprior,mintotweight,dc,every,until,saveall,incinit,topoburnin,steppingdnsite,steppingburnin,steppingminnpoint,steppingmaxvar,steppingmaxnpoint,randstepping,empstepping,empramp,name,myid,nprocs);
 		if (! myid)	{
             cerr << '\n';
             cerr << "chain name : " << name << '\n';
