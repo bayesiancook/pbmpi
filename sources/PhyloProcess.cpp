@@ -2987,7 +2987,16 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until, i
 	}
 
 	ofstream cos((name + ".cpo").c_str());
-	cos << "CPO                   : " << GetNsite() * meancpo << '\n';
+	cos << "cross-fit\t" << meancpo << '\n';
+    cos << "WAIC     \t" << (meantotlogl - 0.5*totvarlogl)/GetNsite() << '\n';
+    cos << "self-fit \t" << (meantotlogl + 0.5*totvarlogl)/GetNsite() << '\n';
+    cos << "ultimate-fit\t" << (meantotlogl + (2*vartotlogl - totvarlogl)/4)/GetNsite() << '\n';
+	cos << "post-mean-logl\t" << meantotlogl/GetNsite() << '\n';
+    cos << '\n';
+    cos << "tot post var sitelogl      " << totvarlogl << '\n';
+    cos << "post var tot sitelogl (d)  " << 2*vartotlogl << '\n';
+
+    /*
     cos << "CPO per site          : " << meancpo << '\n';
     cos << "ESS (mean / min)      : " << meaness << '\t' << miness << '\n';
 
@@ -2995,14 +3004,11 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until, i
     cerr << "CPO per site          : " << meancpo << '\n';
     cerr << "ESS (mean / min)      : " << meaness << '\t' << miness << '\n';
 
+    cos << "per site              : " << (meantotlogl - 0.5*totvarlogl)/GetNsite() << '\n';
+    cos << "M0                    : " << meantotlogl + (2*vartotlogl - totvarlogl)/4 << '\n';
+    cos << "per site              : " << (meantotlogl + (2*vartotlogl - totvarlogl)/4)/GetNsite() << '\n';
     cos << '\n';
-	cos << "post mean tot logl    : " << meantotlogl << '\n';
-    cos << "2*post var totlogl (d): " << 2*vartotlogl << '\n';
-    cos << "tot post var logl (T0): " << totvarlogl << '\n';
-    cos << "violation index (T0/d): " << totvarlogl / 2 / vartotlogl << '\n';
-    cos << "Bayes TIC             : " << meantotlogl - 0.5*totvarlogl << '\n';
-    cos << "Bayes AIC             : " << meantotlogl - vartotlogl << '\n';
-    cos << '\n';
+    */
 }
 
 void PhyloProcess::ReadAncestral(string name, int burnin, int every, int until)	{
