@@ -383,7 +383,7 @@ void RASCATGTRFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 		ReadSiteProfiles(name,burnin,every,until);
 	}
 	else if (rr)	{
-		ReadRelRates(name,burnin,every,until);
+		ReadRelRates(name,burnin,every,until,verbose);
 	}
 	else if (rates)	{
 		ReadSiteRates(name,burnin,every,until);
@@ -534,7 +534,7 @@ void RASCATGTRFiniteGammaPhyloProcess::SlaveComputeSiteLogL()	{
 }
 
 
-void RASCATGTRFiniteGammaPhyloProcess::ReadRelRates(string name, int burnin, int every, int until)	{
+void RASCATGTRFiniteGammaPhyloProcess::ReadRelRates(string name, int burnin, int every, int until, int verbose)	{
 
 	ifstream is((name + ".chain").c_str());
 	if (!is)	{
@@ -556,6 +556,11 @@ void RASCATGTRFiniteGammaPhyloProcess::ReadRelRates(string name, int burnin, int
 		meanrr[k] = 0;
 	}
 
+    ofstream* pos = 0;
+    if (verbose)    {
+        pos = new ofstream((name + ".postrr").c_str());
+    }
+
 	while (i < until)	{
 		cerr << ".";
 		cerr.flush();
@@ -573,6 +578,13 @@ void RASCATGTRFiniteGammaPhyloProcess::ReadRelRates(string name, int burnin, int
 			meanrr[k] += rr[k] / total;
 		}
 
+        if (verbose)    {
+            for (int k=0; k<GetNrr(); k++)	{
+                *pos << rr[k] / total << '\t';
+            }
+            *pos << '\n';
+        }
+
 		int nrep = 1;
 		while ((i<until) && (nrep < every))	{
 			FromStream(is);
@@ -581,6 +593,11 @@ void RASCATGTRFiniteGammaPhyloProcess::ReadRelRates(string name, int burnin, int
 		}
 	}
 	cerr << '\n';
+
+    if (verbose)    {
+        delete pos;
+    }
+
 	for (int k=0; k<GetNrr(); k++)	{
 		meanrr[k] /= samplesize;
 	}

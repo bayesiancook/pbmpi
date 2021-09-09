@@ -373,7 +373,7 @@ class RASCATGTRFiniteGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloPro
 	void SlaveComputeSiteLogL();
 	void ReadPostHyper(string name, int burnin, int every, int until);
 
-	void ReadRelRates(string name, int burnin, int every, int until);
+	void ReadRelRates(string name, int burnin, int every, int until, int verbose);
 	void ReadSiteProfiles(string name, int burnin, int every, int until);
 
 	protected:
