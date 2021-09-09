@@ -953,6 +953,8 @@ void RASCATGammaPhyloProcess::ReadClusters(string name, int burnin, int every, i
 	}
 	int samplesize = 0;
 
+    ofstream kos((name + ".kappa").c_str());
+
 	while (i < until)	{
 		cerr << ".";
 		cerr.flush();
@@ -960,6 +962,7 @@ void RASCATGammaPhyloProcess::ReadClusters(string name, int burnin, int every, i
 		FromStream(is);
 		i++;
 
+        kos << kappa << '\n';
         UpdateOccupancyNumbers();
         double k = GetNOccupiedComponent();
         double keff = GetEffectiveComponentNumber();
