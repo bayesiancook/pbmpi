@@ -440,7 +440,7 @@ class Model	{
             double prevarlogp = 0;
             double premeanlogprior = 0;
 
-            int finalnpoint = minnpoint;
+            double targetnpoint = minnpoint;
 
             if (maxvar) {
                 int npoint = 0;
@@ -493,13 +493,14 @@ class Model	{
                 }
 
                 if (prevarlogp > maxvar)   {
-                    finalnpoint *= exp(prevarlogp)/exp(maxvar);
-                    // finalnpoint *= prevarlogp/maxvar;
-                    if (finalnpoint > maxnpoint) {
-                        finalnpoint = maxnpoint;
+                    targetnpoint *= exp(prevarlogp)/exp(maxvar);
+                    if (targetnpoint > maxnpoint) {
+                        targetnpoint = maxnpoint;
                     }
                 }
             }
+
+            int finalnpoint = int(targetnpoint);
 
             double maxlogp = 0;
             double totp1 = 0;
