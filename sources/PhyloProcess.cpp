@@ -2494,6 +2494,10 @@ void PhyloProcess::PostPred(int ppredtype, string name, int burnin, int every, i
 
 void PhyloProcess::GlobalSetTestData()	{
 	testnsite = testdata->GetNsite();
+    if (testnsite > GetNsite()) {
+        cerr << "error in CV: validation dataset should have less columns than training dataset\n";
+        exit(1);
+    }
 	int* tmp = new int[testnsite * GetNtaxa()];
 	testdata->GetDataVector(tmp);
 
