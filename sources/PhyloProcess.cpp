@@ -2832,12 +2832,8 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until, i
 	int samplesize = 0;
 
     // posterior mean and variance (across the chain) of site-specific logls
-    vector<double> meansitelogl(GetNsite(),0);
-    vector<double> varsitelogl(GetNsite(),0);
-
-    // posterior mean and variance of total log likelihood 
-    double meantotlogl = 0;
-    double vartotlogl = 0;
+    vector<double> site_postmeanlogl(GetNsite(),0);
+    vector<double> site_postvarlogl(GetNsite(),0);
 
 	double* tmp = new double[GetNsite()];
 	vector<double>* logl = new vector<double>[GetNsite()];
@@ -2876,21 +2872,12 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until, i
 					exit(1);
 				}
 				logl[j].push_back(tmp[j]);
-				meansitelogl[j] += tmp[j];
-                varsitelogl[j] += tmp[j]*tmp[j];
-				if (std::isnan(meansitelogl[j]))	{
-					cerr << "error: mean logl is nan (when summing over replicates\n";
-					cerr << "site : " << j << '\n';
-					cerr << "proc : " << i << '\n';
-					exit(1);
-				}
+				site_postmeanlogl[j] += tmp[j];
+                site_postvarlogl[j] += tmp[j]*tmp[j];
 				total += tmp[j];
 			}
 		}
 		
-		// cerr << total << '\n';
-        meantotlogl += total;
-        vartotlogl += total*total;
 		int nrep = 1;
 		while ((i<until) && (nrep < every))	{
 			FromStream(is);
@@ -2912,94 +2899,144 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until, i
         cerr << "site log likelihoods over the mcmc in " << name << ".mcmcsitelogls\n";
     }
 
-    meantotlogl /= samplesize;
-    vartotlogl /= samplesize;
-    vartotlogl -= meantotlogl*meantotlogl;
-	for (int i=0; i<GetNsite(); i++)	{
-		meansitelogl[i] /= samplesize;
-        varsitelogl[i] /= samplesize;
-        varsitelogl[i] -= meansitelogl[i]*meansitelogl[i];
+    double mean_postmeanlogl = 0;
+    double var_postmeanlogl = 0;
+    double mean_postvarlogl = 0;
+    double var_postvarlogl = 0;
+
+    for (int i=0; i<GetNsite(); i++)    {
+        site_postmeanlogl[i] /= samplesize;
+        site_postvarlogl[i] /= samplesize;
+        site_postvarlogl[i] -= site_postmeanlogl[i] * site_postmeanlogl[i];
+        mean_postmeanlogl += site_postmeanlogl[i];
+        var_postmeanlogl += site_postmeanlogl[i] * site_postmeanlogl[i];
+        mean_postvarlogl += site_postvarlogl[i];
+        var_postvarlogl += site_postvarlogl[i] * site_postvarlogl[i];
     }
 
-    // estimate of T0 = Trace(I_0^(-1) . H_0)
-    double totvarlogl = 0;
-	for (int i=0; i<GetNsite(); i++)	{
-        totvarlogl += varsitelogl[i];
-    }
+    mean_postmeanlogl /= GetNsite();
+    var_postmeanlogl /= GetNsite();
+    var_postmeanlogl -= mean_postmeanlogl * mean_postmeanlogl;
 
+    mean_postvarlogl /= GetNsite();
+    var_postvarlogl /= GetNsite();
+    var_postvarlogl -= mean_postvarlogl * mean_postvarlogl;
+
+    // site cpo score (in log)
+	double* site_logcpo = new double[GetNsite()];
     // mean and var across sites
-	double acrosssites_meanlogl = 0;
-    double acrosssites_varlogl = 0;
-	for (int i=0; i<GetNsite(); i++)	{
-		acrosssites_meanlogl += meansitelogl[i];
-		acrosssites_varlogl += meansitelogl[i] * meansitelogl[i];
-	}
-    acrosssites_meanlogl /= GetNsite();
-    acrosssites_varlogl /= GetNsite();
-    acrosssites_varlogl -= acrosssites_meanlogl*acrosssites_meanlogl;
-    if (fabs(GetNsite()*acrosssites_meanlogl - meantotlogl) > 1e-6)   {
-        cerr << "error: non matching mean tot logl\n";
-        exit(1);
-    }
+	double mean_logcpo = 0;
+	double var_logcpo = 0;
+    // corresponding ESS
+	double* cpo_siteess = new double[GetNsite()];
+    // mean ESS
+    double cpo_meaness = 0;
+    // frac ESS<10
+    double cpo_ness10 = 0;
 
-	double meancpo = 0;
-	double varcpo = 0;
-	double* cpo = new double[GetNsite()];
-	double* siteess = new double[GetNsite()];
-    double meaness = 0;
-    double miness = 0;
-    double ness10 = 0;
+    // log of site posterior mean likelihoods (for waic1)
+    double* site_logpostmeanl = new double[GetNsite()];
+    // mean and var across sites
+    double mean_logpostmeanl= 0;
+    double var_logpostmeanl = 0;
+    // corresponding ESS
+    double* postmeanl_siteess = new double[GetNsite()];
+    // mean ESS
+    double postmeanl_meaness = 0;
+    // frac ESS < 10
+    double postmeanl_ness10 = 0;
 
 	for (int i=0; i<GetNsite(); i++)	{
 		double min = 0;
+        double max = 0;
 		int count = 0;
 		for (vector<double>::iterator j=logl[i].begin(); j != logl[i].end(); j++)	{
-			if (min > (*j))	{
+			if ((!count) || (min > (*j)))	{
 				min = *j;
+			}
+			if ((!count) || (max < (*j)))	{
+				max = *j;
 			}
 			count++;
 		}
-		double hmean = 0;
-        vector<double> weight;
+
+        // cpo
+        double site_cpo = 0;
+        vector<double> cpo_weight;
 		for (vector<double>::iterator j=logl[i].begin(); j != logl[i].end(); j++)	{
-			hmean += exp(min - (*j));
-            weight.push_back(exp(min-(*j)));
+			site_cpo += exp(min - (*j));
+            cpo_weight.push_back(exp(min-(*j)));
 		}
-        double invess = 0;
+
+        double cpo_invess = 0;
         for (int j=0; j<count; j++) {
-            weight[j] /= hmean;
-            invess += weight[j]*weight[j];
+            cpo_weight[j] /= site_cpo;
+            cpo_invess += cpo_weight[j] * cpo_weight[j];
         }
-		hmean /= count;
-		cpo[i] = min - log(hmean);
-		meancpo += cpo[i];
-		varcpo += cpo[i] * cpo[i];
-        siteess[i] = 1.0 / invess;
-        meaness += siteess[i];
-        if ((!i) || (miness > siteess[i]))  {
-            miness = siteess[i];
+		site_cpo /= count;
+		site_logcpo[i] = min - log(site_cpo);
+		mean_logcpo += site_logcpo[i];
+		var_logcpo += site_logcpo[i] * site_logcpo[i];
+        cpo_siteess[i] = 1.0 / cpo_invess;
+        cpo_meaness += cpo_siteess[i];
+        if (cpo_siteess[i] < 10.0)  {
+            cpo_ness10 ++;
         }
-        if (siteess[i] < 10.0)  {
-            ness10 ++;
+
+        // postmeanl
+        double site_postmeanl = 0;
+        vector<double> postmeanl_weight;
+		for (vector<double>::iterator j=logl[i].begin(); j != logl[i].end(); j++)	{
+			site_postmeanl += exp((*j) - max);
+            postmeanl_weight.push_back(exp((*j) - max));
+		}
+
+        double postmeanl_invess = 0;
+        for (int j=0; j<count; j++) {
+            postmeanl_weight[j] /= site_postmeanl;
+            postmeanl_invess += postmeanl_weight[j] * postmeanl_weight[j];
+        }
+		site_postmeanl /= count;
+		site_logpostmeanl[i] = log(site_postmeanl) + max;
+        mean_logpostmeanl += site_logpostmeanl[i];
+        var_logpostmeanl += site_logpostmeanl[i] * site_logpostmeanl[i];
+        
+        postmeanl_siteess[i] = 1.0 / postmeanl_invess;
+        postmeanl_meaness += postmeanl_siteess[i];
+        if (postmeanl_siteess[i] < 10.0)  {
+            postmeanl_ness10 ++;
         }
 	}
-	meancpo /= GetNsite();
-	varcpo /= GetNsite();
-	varcpo -= meancpo * meancpo;
-    meaness /= GetNsite();
-    ness10 /= GetNsite();
+
+	mean_logcpo /= GetNsite();
+	var_logcpo /= GetNsite();
+	var_logcpo -= mean_logcpo * mean_logcpo;
+    cpo_meaness /= GetNsite();
+    cpo_ness10 /= GetNsite();
+
+	mean_logpostmeanl /= GetNsite();
+	var_logpostmeanl /= GetNsite();
+	var_logpostmeanl -= mean_logpostmeanl * mean_logpostmeanl;
+    postmeanl_meaness /= GetNsite();
+    postmeanl_ness10 /= GetNsite();
 
 	ofstream os((name + ".sitelogl").c_str());
-    os << "site\tlogl\tvar\tcpo\tess\n";
+    os << "site\tlogl\tvar\tlogcpo\tess\tlogpostmeanl\tess\n";
 	for (int i=0; i<GetNsite(); i++)	{
-		os << i+1 << '\t' << meansitelogl[i] << '\t' << varsitelogl[i] << '\t' << cpo[i] << '\t' << siteess[i] << '\n';
+		os << i+1 << '\t' << site_postmeanlogl[i] << '\t' << site_postvarlogl[i] << '\t' << site_logcpo[i] << '\t' << cpo_siteess[i] << '\t' << site_logpostmeanl[i] << '\t' << postmeanl_siteess[i] << '\n';
 	}
 
 	ofstream cos((name + ".cpo").c_str());
-    cos << "wAIC          " << (meantotlogl - 0.5*totvarlogl)/GetNsite() << '\n';
-	cos << "LOO-CV        " << meancpo << '\n';
-    cos << "mean(ESS)      " << meaness << '\n';
-    cos << "%(ESS<10)      " << 100*ness10 << '\n';
+
+    cos << "wAIC1         " << mean_logpostmeanl - mean_postvarlogl << '\n';
+    cos << "mean(ESS)      " << postmeanl_meaness << '\n';
+    cos << "%(ESS<10)      " << 100*postmeanl_ness10 << '\n';
+    cos << '\n';
+    cos << "wAIC2         " << mean_postmeanlogl - 0.5*mean_postvarlogl << '\n';
+    cos << '\n';
+	cos << "LOO-CV        " << mean_logcpo << '\n';
+    cos << "mean(ESS)      " << cpo_meaness << '\n';
+    cos << "%(ESS<10)      " << 100*cpo_ness10 << '\n';
 }
 
 void PhyloProcess::ReadAncestral(string name, int burnin, int every, int until)	{
