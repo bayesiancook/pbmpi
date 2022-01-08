@@ -2948,6 +2948,7 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until, i
 	double* siteess = new double[GetNsite()];
     double meaness = 0;
     double miness = 0;
+    double ness10 = 0;
 
 	for (int i=0; i<GetNsite(); i++)	{
 		double min = 0;
@@ -2978,11 +2979,15 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until, i
         if ((!i) || (miness > siteess[i]))  {
             miness = siteess[i];
         }
+        if (siteess[i] < 10.0)  {
+            ness10 ++;
+        }
 	}
 	meancpo /= GetNsite();
 	varcpo /= GetNsite();
 	varcpo -= meancpo * meancpo;
     meaness /= GetNsite();
+    ness10 /= GetNsite();
 
 	ofstream os((name + ".sitelogl").c_str());
     os << "site\tlogl\tvar\tcpo\tess\n";
@@ -2991,28 +2996,10 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until, i
 	}
 
 	ofstream cos((name + ".cpo").c_str());
-	cos << "cross-fit\t" << meancpo << '\n';
-    cos << "WAIC     \t" << (meantotlogl - 0.5*totvarlogl)/GetNsite() << '\n';
-    cos << "self-fit \t" << (meantotlogl + 0.5*totvarlogl)/GetNsite() << '\n';
-    cos << "ultimate-fit\t" << (meantotlogl + (2*vartotlogl - totvarlogl)/4)/GetNsite() << '\n';
-	cos << "post-mean-logl\t" << meantotlogl/GetNsite() << '\n';
-    cos << '\n';
-    cos << "tot post var sitelogl      " << totvarlogl << '\n';
-    cos << "post var tot sitelogl (d)  " << 2*vartotlogl << '\n';
-
-    /*
-    cos << "CPO per site          : " << meancpo << '\n';
-    cos << "ESS (mean / min)      : " << meaness << '\t' << miness << '\n';
-
-	cerr << "CPO                   : " << GetNsite() * meancpo << '\n';
-    cerr << "CPO per site          : " << meancpo << '\n';
-    cerr << "ESS (mean / min)      : " << meaness << '\t' << miness << '\n';
-
-    cos << "per site              : " << (meantotlogl - 0.5*totvarlogl)/GetNsite() << '\n';
-    cos << "M0                    : " << meantotlogl + (2*vartotlogl - totvarlogl)/4 << '\n';
-    cos << "per site              : " << (meantotlogl + (2*vartotlogl - totvarlogl)/4)/GetNsite() << '\n';
-    cos << '\n';
-    */
+    cos << "wAIC          " << (meantotlogl - 0.5*totvarlogl)/GetNsite() << '\n';
+	cos << "LOO-CV        " << meancpo << '\n';
+    cos << "mean(ESS)      " << meaness << '\n';
+    cos << "%(ESS<10)      " << 100*ness10 << '\n';
 }
 
 void PhyloProcess::ReadAncestral(string name, int burnin, int every, int until)	{
