@@ -56,6 +56,6 @@ if __name__ == "__main__":
 
     (mean_raw_score, mean_score, min_score, max_score, mean_bias, stdev, mean_ess, nmin_ess, m) = readbf(runnames)
 
-    print("{0:^5s} {1:^10s} {2:^10s} {3:^10s} {4:^10s} {5:^10s} {6:^10s} {7:^10s} {8:^10s}".format("n", "score", "debiased", "min", "max", "bias", "stdev", "mean ess", "#ess<10"))
+    print("{0:^5s} {1:^10s} {2:^10s} {3:^10s} {4:^10s} {5:^10s} {6:^10s} {7:^10s} {8:^10s}".format("n", "score", "debiased", "CI95min", "CI95max", "bias", "stdev", "mean ess", "#ess<10"))
     print("{0:5d} {1:10.4f} {2:10.4f} {3:10.4f} {4:10.4f} {5:10.4f} {6:10.4f} {7:10.4f} ({8}/{9})".format(m, mean_raw_score, mean_score, min_score, max_score, mean_bias, stdev, mean_ess, nmin_ess, m))
 
