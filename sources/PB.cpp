@@ -157,7 +157,7 @@ int main(int argc, char* argv[])	{
                 i++;
                 steppingminnpoint = atoi(argv[i]);
             }
-            else if (s == "-selftunedstepping" || s == "self_tuned_sis")  {
+            else if (s == "-selftunedstepping" || s == "-self_tuned_sis")  {
                 i++;
                 steppingdnsite = atoi(argv[i]);
                 i++;
