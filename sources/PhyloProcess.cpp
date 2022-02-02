@@ -3028,15 +3028,17 @@ void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until, i
 
 	ofstream cos((name + ".cpo").c_str());
 
-    cos << "wAIC1         " << mean_logpostmeanl - mean_postvarlogl << '\n';
+    cos << "wAIC          " << mean_logpostmeanl - mean_postvarlogl << '\n';
     cos << "mean(ESS)      " << postmeanl_meaness << '\n';
     cos << "%(ESS<10)      " << 100*postmeanl_ness10 << '\n';
-    cos << '\n';
-    cos << "wAIC2         " << mean_postmeanlogl - 0.5*mean_postvarlogl << '\n';
     cos << '\n';
 	cos << "LOO-CV        " << mean_logcpo << '\n';
     cos << "mean(ESS)      " << cpo_meaness << '\n';
     cos << "%(ESS<10)      " << 100*cpo_ness10 << '\n';
+    cos << '\n';
+    cos << "note: these are raw point estimates\n";
+    cos << "to get an estimate of the bias / stdev, at least 2 independent runs are needed\n";
+    cos << "these can then be post-analysed using the python script pbmpi/scripts/read_loocv_waic.py\n";
 }
 
 void PhyloProcess::ReadAncestral(string name, int burnin, int every, int until)	{
