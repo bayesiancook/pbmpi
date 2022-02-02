@@ -115,7 +115,7 @@ if __name__ == "__main__":
     min_loo = loo - a*stdev_loo
     max_loo = loo + a*stdev_loo
 
-    print("{0:10s} {1:^10s} {2:^10s} {3:^10s} {4:^10s} {5:^10s} {6:^10s} {7:^10s} {8:^10s}".format("", "debiased score", "bias", "stdev", "CI95min", "CI95max", "ess", "#ess<10", "f_ess<10"))
-    print("{0:10s} {1:10.4f} {2:10.4f} {3:10.4f} {4:10.4f} {5:10.4f} {6:10.4f} ({7}/{9}) {8:10.3f}".format("LOO-CV", loo, bias_loo, stdev_loo, min_loo, max_loo, mean_ess_loocv, nmin_ess_loocv, fmin_ess_loocv, m))
-    print("{0:10s} {1:10.4f} {2:10.4f} {3:10.4f} {4:10.4f} {5:10.4f} {6:10.4f} ({7}/{9}) {8:10.3f}".format("waic", waic, bias_waic, stdev_waic, min_waic, max_waic, mean_ess_waic, nmin_ess_waic, fmin_ess_waic, m))
+    print("{0:10s} {1:^10s} {2:^10s} {3:^10s} {4:^10s} {5:^10s} {6:^10s} {7:^10s} {8:^10s}".format("", "debiased score", "bias", "stdev", "CI95min", "CI95max", "ess", "%(ess<10)", "f(ess<10)"))
+    print("{0:10s} {1:10.4f} {2:10.4f} {3:10.4f} {4:10.4f} {5:10.4f} {6:10.4f} {7:10.3f} {8:10.3f}".format("LOO-CV", loo, bias_loo, stdev_loo, min_loo, max_loo, mean_ess_loocv, nmin_ess_loocv/m, fmin_ess_loocv, m))
+    print("{0:10s} {1:10.4f} {2:10.4f} {3:10.4f} {4:10.4f} {5:10.4f} {6:10.4f} {7:10.3f} {8:10.3f}".format("waic", waic, bias_waic, stdev_waic, min_waic, max_waic, mean_ess_waic, nmin_ess_waic/m, fmin_ess_waic, m))
 
