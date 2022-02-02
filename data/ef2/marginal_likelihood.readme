@@ -1,0 +1,37 @@
+Computing the marginal likelihood under a model.
+
+The GTR+Gamma4 model is taken as an example, on ef2.ali, under a fixed tree topology (ef2.tree).
+
+1. run a plain mcmc under the GTR model:
+pb_mpi -d ef2.ali -T ef2.tree -gtr -ncat 1 -dgam 4 -x 1 1100 gtref2_plain
+
+2. get the posterior mean estimates of the model parameters 
+readpb_mpi -x 100 1 -posthyper gtref2_plain
+
+-> produces a file: gtref2_plain.posthyper, containing the posterior estimates that will be used to make a reference distribution
+
+3. run the sequential importance sampling method (sIS), with 2 independent runs.
+
+pb_mpi -f -d ef2.ali -T ef2.tree -gtr -ncat 1 -dgam 4 -selftunedstepping 1 10 30 0.1 1000 -empstepping gtref2_plain.posthyper gtref2_sis1 
+pb_mpi -f -d ef2.ali -T ef2.tree -gtr -ncat 1 -dgam 4 -selftunedstepping 1 10 30 0.1 1000 -empstepping gtref2_plain.posthyper gtref2_sis2 
+
+-> produces 2 files: gtref2_sis1.stepping and gtref2_sis2.stepping
+
+some words about the options for tuning the sIS run:
+-selftuned_sis 1 10 30 0.1 1000
+1   : one site at a time
+10  : burn-in
+30  : min number of cycles (K_min)
+0.1 : target variance (v_0)
+1000: max number of cycles (K_max)
+thus, for each site: a burnin of 10 cycles is done, followed 30 cycles for computing an estimate of the site log likelihood variance v, which is used to compute the number of cycles K_i = min(K_min exp(v-v0), K_max); finally K_i cycles are run, giving K_i log likelihood values that are used to compute the site-specific importance sampling estimate (saved in .stepping file)
+
+4. collect the site-specific scores, compute mean score, bias and error
+
+python3 scripts/read_sis.py gtref2_sis?.stepping
+
+should return (up to numerical stochastic error), something like:
+
+  n     score     debiased     CI95min    CI95max     bias      stdev     mean ess   #ess<10  
+  627   -28.6594   -28.6480   -28.7022   -28.5939    -0.0114     0.0043    31.7643 (0/627)
+
