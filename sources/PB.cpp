@@ -149,7 +149,7 @@ int main(int argc, char* argv[])	{
 				i++;
 				topoburnin = atoi(argv[i]);
 			}
-            else if (s == "-stepping")  {
+            else if (s == "-stepping" || s == "-sis")  {
                 i++;
                 steppingdnsite = atoi(argv[i]);
                 i++;
@@ -157,7 +157,7 @@ int main(int argc, char* argv[])	{
                 i++;
                 steppingminnpoint = atoi(argv[i]);
             }
-            else if (s == "-selftunedstepping")  {
+            else if (s == "-selftunedstepping" || s == "self_tuned_sis")  {
                 i++;
                 steppingdnsite = atoi(argv[i]);
                 i++;
@@ -169,7 +169,7 @@ int main(int argc, char* argv[])	{
                 i++;
                 steppingmaxnpoint = atoi(argv[i]);
             }
-            else if (s == "-empstepping")   {
+            else if (s == "-empstepping" || s == "-emp_ref")   {
                 i++;
                 empstepping = argv[i];
             }
