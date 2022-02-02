@@ -32,7 +32,7 @@ uses the .posthyper file given as an argument to compute the reference distribut
 
 4. collect the site-specific scores, compute mean score, bias and error
 
-python3 scripts/read_sis.py gtref2_sis?.stepping
+python3 scripts/read_marglikelihood.py gtref2_sis?.stepping
 
 should return (up to numerical stochastic error), something like:
 
