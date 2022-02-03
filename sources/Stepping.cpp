@@ -177,10 +177,16 @@ void PhyloProcess::DeleteSiteConditionalLikelihoods()	{
 double PhyloProcess::SiteLogLikelihood(int site)	{
 
 	PrepareSiteLogLikelihood(site);
-	SiteActivateSumOverRateAllocation(site);
+    if (! SumOverRateAllocations())  {
+        cerr << "error in PhyloProcess::SiteLogLikelihood(site): sum over rate allocations not activated\n";
+        exit(1);
+    }
+	// SiteActivateSumOverRateAllocation(site);
 	SitePostOrderPruning(site,GetRoot());
 	SiteMultiplyByStationaries(site,sitecondlmap[0]);
-	return SiteComputeLikelihood(site,sitecondlmap[0]);
+	double ret = SiteComputeLikelihood(site,sitecondlmap[0]);
+	// SiteInactivateSumOverRateAllocation(site);
+    return ret;
 }
 
 void PhyloProcess::SitePostOrderPruning(int site, const Link* from)	{

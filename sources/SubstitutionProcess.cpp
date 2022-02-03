@@ -662,13 +662,6 @@ double SubstitutionProcess::SiteComputeLikelihood(int i, double** aux, bool cond
 		if (tot == 0)	{
 			// dirty !
 			tot = 1e-12;
-			/*
-			cerr << "pruning : 0 \n";
-			for (int k=0; k<GetNstate(i); k++)	{
-				cerr << t[k] << '\n';
-			}
-			exit(1);
-			*/
 		}
 		sitelogl = log(tot) + (*t);
 		t -= nstate;
@@ -688,13 +681,6 @@ double SubstitutionProcess::SiteComputeLikelihood(int i, double** aux, bool cond
 				exit(1);
 				// dirty !
 				tot = 1e-12;
-				/*
-				cerr << "pruning : 0 \n";
-				for (int k=0; k<GetNstate(i); k++)	{
-					cerr << t[k] << '\n';
-				}
-				exit(1);
-				*/
 			}
 			logl[j] = log(tot) + (*t);
 			t -= nstate;
@@ -713,7 +699,7 @@ double SubstitutionProcess::SiteComputeLikelihood(int i, double** aux, bool cond
 			meanrate += tmp * GetRate(i,j);
 		}
 		sitelogl = log(total) + max;
-		if (isnan(sitelogL[i]))	{
+		if (isnan(sitelogl))    {
 			cerr << "nan site logl\n";
 			cerr << max << '\t' << total << '\n';
 			for (int j=0; j<GetNrate(i); j++)	{
