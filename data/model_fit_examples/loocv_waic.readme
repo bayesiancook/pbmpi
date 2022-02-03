@@ -1,43 +1,70 @@
 Computing the leave-one-out cross validation (LOO-CV) score and the widely applicable information criterion (wAIC)
 
-The CAT-Poisson-Gamma4 model is taken as an example, on ef2.ali, under a fixed tree topology (ef2.tree).
+The CAT-Poisson-Gamma4 model is taken as an example, on ef2.ali, under a fixed tree topology (ef2.tree). Of note, fixing the tree topology is not mandatory for computing the fit, but this will be computationally less expensive.
 
-1. run 2 independent plain mcmc chains under the CAT model (saving every ten points)
+1. run 2 independent plain mcmc chains under the CAT model (here, saving every 10 cycles, for a total of 11000 cycles, thus 1100 MCMC points saved).
 
 pb_mpi -d ef2.ali -T ef2.tree -f81 -dp -dgam 4 -x 10 1100 catef2_plain1
 pb_mpi -d ef2.ali -T ef2.tree -f82 -dp -dgam 4 -x 10 1100 catef2_plain2
 
+check the quality of the runs (using a burnin of 100, after visual inspection of the traceplots):
+
+tracecomp -x 100 catef2_plain?.trace
+
+name                effsize	rel_diff
+
+loglik              840		0.125997
+length              943		0.0569384
+alpha               991		0.138605
+Nmode               915		0.0921728
+statent             819		0.109174
+statalpha           870		0.0628273
+
+-> good effective sample sizes, relative discrepancies are also reasonably good.
+
 2. get the site-specific log likelihood statistics
-(with burnin=100 + thinning every 10: targeting a total of 100 MCMC points;
-thinning is used here because computing site log likelihoods is expensive under the cat model)
+
+with burnin=100 + thinning every 10: targeting a total of 100 MCMC points;
+thinning is used here because computing site log likelihoods is expensive under the cat model.
 
 readpb_mpi -x 100 10 -sitelogl catef2_plain1
 readpb_mpi -x 100 10 -sitelogl catef2_plain2
 
 -> produces 2 files: catef2_plain1.sitelogl and catef2_plain2.sitelogl, containing the site-specific log-likelihood stats
 
-3. collect the site-specific scores, compute mean score, bias and error
+3. collect the site-specific scores, compute mean score, bias and error, using the script names read_loocv_waic.py in the scripts folder:
 
 python3 scripts/read_loocv_waic.py gtref2_plain?.sitelogl
 
-should return (up to numerical stochastic error), something like:
+in the present case, this should return (up to numerical stochastic error), something like:
 
            debiased score    bias      stdev     CI95min    CI95max      ess     %(ess<10)  f(ess<10) 
 LOO-CV       -27.6375     0.0346     0.0094   -27.7573   -27.5177    58.3814      0.091      0.200
 waic         -27.6574    -0.0138     0.0087   -27.7680   -27.5468    61.0064      0.041      0.086
+
+the scores of interest are the debiased LOO-CV and wAIC scores.
 
 4. evaluation of the quality of the estimation:
 
 %(ess<10) : propotion of sites for which the effective sample size (ESS) is less than 10 (here, less than 1%)
 f(ess<10) : fraction of the score itself contributed by those sites
 
-These two fractions should be low (ideally, less than 0.1, although in practice, for models that are very different in their fit, up to 0.3 will still give reasonable estimates of the fit and qualitatively reliable model selection).
+These two fractions should be low (ideally, less than 0.1, although in practice, for models that are very different in their fit, up to 0.3 should still give reasonable estimates of the fit and qualitatively reliable model selection).
 
-If there are concerns or if a more accurate (or more certain) estimate is needed (in particular, when comparing models that are close in their respective fit), then a large sample is needed. In the present case, this can be done by not thinning at step 2, i.e.:
+If there are concerns or if a more accurate/reliable estimate is needed (in particular, when comparing models that are close in their respective fit), then a large sample is needed. In the present case, this can be done by not thinning at step 2, and thus computing over 1000 MCMC points, not 100:
 
 readpb_mpi -x 100 1 -sitelogl catef2_plain1
 readpb_mpi -x 100 1 -sitelogl catef2_plain2
 
-or, if even that is not sufficient, by running longer MCMC runs at step 1.
+and then again collect the results and summarize with the python script:
 
+python3 scripts/read_loocv_waic.py gtref2_plain?.sitelogl
+
+which finally returns more accurate estimates than with thinning, also showing good ESS statistics:
+
+           debiased score    bias      stdev     CI95min    CI95max      ess     %(ess<10)  f(ess<10) 
+LOO-CV       -27.6689     0.0107     0.0066   -27.7526   -27.5851   550.4161      0.022      0.055
+waic         -27.6800    -0.0016     0.0015   -27.6990   -27.6609   589.8704      0.000      0.000
+
+Increasing the number of independent runs, just from 2 to 4, may also be useful: this will not change the ESS statistics, bias and stdev, but it will (quite substantially) reduce the width of the confidence intervals.
 
