@@ -333,13 +333,13 @@ void RASCATFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 				map = 1;
 			}
 
-			else if (s == "-oldcv")	{
+			else if (s == "-jointcv")	{
 				cv = 1;
 				i++;
 				testdatafile = argv[i];
 			}
 
-			else if ((s == "-cv") || (s == "-sitecv"))	{
+			else if (s == "-sitecv")	{
 				cv = 2;
 				i++;
 				testdatafile = argv[i];

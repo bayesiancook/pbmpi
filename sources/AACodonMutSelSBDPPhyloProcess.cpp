@@ -425,12 +425,12 @@ void AACodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
 		int i = 1;
 		while (i < argc)	{
 			string s = argv[i];
-			if (s == "-oldcv")	{
+			if (s == "-jointcv")	{
 				cv = 1;
 				i++;
 				testdatafile = argv[i];
 			}
-			else if ((s == "-cv") || (s == "-sitecv"))	{
+			else if (s == "-sitecv")	{
 				cv = 2;
 				i++;
 				testdatafile = argv[i];

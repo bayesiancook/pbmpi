@@ -2685,6 +2685,7 @@ void PhyloProcess::ReadSiteCV(string testdatafile, string name, int burnin, int 
 	}
     cerr << '\n';
 
+    /*
     ofstream sos((name + ".cvsitelogl").c_str());
     for (int j=0; j<samplesize; j++)    {
         for (int i=0; i<testnsite; i++) {
@@ -2694,6 +2695,7 @@ void PhyloProcess::ReadSiteCV(string testdatafile, string name, int burnin, int 
     }
 
     cerr << "site log likelihoods over the mcmc in " << name << ".cvsitelogl\n";
+    */
 
     ofstream los((name + ".cvlog").c_str());
     los << samplesize << '\t' << testnsite << '\n';
@@ -2703,7 +2705,8 @@ void PhyloProcess::ReadSiteCV(string testdatafile, string name, int burnin, int 
 
 	double* siteess = new double[testnsite];
     double meaness = 0;
-    double miness = 0;
+    double miness = 10;
+    double nminess = 0;
 
     for (int i=0; i<testnsite; i++) {
         double max = 0;
@@ -2724,8 +2727,8 @@ void PhyloProcess::ReadSiteCV(string testdatafile, string name, int burnin, int 
             invess += w*w;
         }
         siteess[i] = 1.0 / invess;
-        if ((!i) || (miness > siteess[i]))  {
-            miness = siteess[i];
+        if (siteess[i] < miness)   {
+            nminess++;
         }
         meaness += siteess[i];
 
@@ -2736,6 +2739,7 @@ void PhyloProcess::ReadSiteCV(string testdatafile, string name, int burnin, int 
     }
     meancvscore /= testnsite;
     meaness /= testnsite;
+    nminess /= testnsite;
         
 	ofstream scos((name + ".sitecv").c_str());
     scos << "site\tcv\tess\n";
@@ -2767,7 +2771,6 @@ void PhyloProcess::ReadSiteCV(string testdatafile, string name, int burnin, int 
     meanlog /= samplesize;
     varlog /= samplesize;
     varlog -= meanlog*meanlog;
-    double normapproxcv = meanlog + 0.5*varlog;
 
 	double tot = 0;
 	for (int j=0; j<samplesize; j++)	{
@@ -2779,39 +2782,15 @@ void PhyloProcess::ReadSiteCV(string testdatafile, string name, int burnin, int 
         double w = exp(scorelist[j] - max) / tot;
         invess += w*w;
 	}
-    double ess = 1.0 / invess;
-
 	tot /= samplesize;
-	double meanscore = log(tot) + max;
 	
-	ofstream os((name + ".cv").c_str());
-	os << "score       : " << meanscore << '\n';
-    os << "ess         : " << ess << '\n';
-    os << "norm approx : " << normapproxcv << '\n';
-
-	ofstream cos((name + ".meansitecv").c_str());
-    cos << "mean site cv : " << meancvscore << '\n';
-    cos << "tot site cv  : " << testnsite * meancvscore << '\n';
-    cos << "ess : " << meaness << '\t' << miness << '\n';
-
-	cerr << '\n';
-	cerr << "joint cv (posterior average of the product of site-likelihoods of validation set)\n";
-    cerr << "mcmc estimate : " << meanscore << '\n';
-    cerr << "ess           :  " << ess << '\n';
-    if (ess < 30.0) {
-        cerr << "warning: low eff sample size, unreliable mcmc estimate for joint cv score\n";
-    }
-    cerr << "normal approx : " << normapproxcv << '\n';
-
-    cerr << '\n';
-	cerr << "site cv (posterior average taken separately for each site of the validation set)\n";
-    cerr << "mcmc estimate : " << testnsite * meancvscore << '\n';
-    cerr << "per site      : " << meancvscore << '\n';
-    cerr << "ess           :  " << meaness << '\t' << "(min over sites: " << miness << ")\n";
-    if (meaness < 30.0) {
-        cerr << "warning: low eff sample size, unreliable mcmc estimate for site cv score\n";
-    }
-	cerr << '\n';
+	ofstream cos((name + ".cv").c_str());
+	cos << "site cv (posterior average taken separately for each site of the validation set)\n";
+    cos << "mcmc estimate  " << testnsite * meancvscore << '\n';
+    cos << "per site       " << meancvscore << '\n';
+    cos << "ESS            " << meaness << '\n';
+    cos << "%(ESS<10)      " << 100*nminess << '\n';
+    cerr << "cv results in " << name << ".cv\n";
 }
 
 void PhyloProcess::ReadSiteLogL(string name, int burnin, int every, int until, int verbose)	{
