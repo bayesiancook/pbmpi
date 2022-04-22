@@ -12,8 +12,8 @@ readpb_mpi -x 100 1 -posthyper gtref2_plain
 
 3. run the sequential importance sampling method (sIS), with 2 independent runs.
 
-pb_mpi -f -d ef2.ali -T ef2.tree -gtr -ncat 1 -dgam 4 -self_tuned_sis 1 10 30 0.1 1000 -emp_ref gtref2_plain.posthyper gtref2_sis1 
-pb_mpi -f -d ef2.ali -T ef2.tree -gtr -ncat 1 -dgam 4 -self_tuned_sis 1 10 30 0.1 1000 -emp_ref gtref2_plain.posthyper gtref2_sis2 
+mpirun -np 4 pb_mpi -f -d ef2.ali -T ef2.tree -gtr -ncat 1 -dgam 4 -self_tuned_sis 1 10 30 0.1 1000 -emp_ref gtref2_plain.posthyper gtref2_sis1 
+mpirun -np 4 pb_mpi -f -d ef2.ali -T ef2.tree -gtr -ncat 1 -dgam 4 -self_tuned_sis 1 10 30 0.1 1000 -emp_ref gtref2_plain.posthyper gtref2_sis2 
 
 -> produces 2 files: gtref2_sis1.stepping and gtref2_sis2.stepping
 
