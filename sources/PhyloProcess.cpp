@@ -3086,14 +3086,14 @@ void PhyloProcess::ReadMapStats(string name, int burnin, int every, int until){
 		stringstream osfmap;
 		osfmap << name << '_' << i << ".suffstatmap";
 		ofstream osmap((osfmap.str()).c_str());
-		osmap << "branchID" << "\t";
+		osmap << "branchID";
 		for(int k = 0; k < GetStateSpace()->GetNstate(); k++){
-			osmap << GetStateSpace()->GetState(k) << "\t";
+			osmap<< "\t" << GetStateSpace()->GetState(k);
 		}
 		for(int k = 0; k < GetStateSpace()->GetNstate(); k++){
 			for(int l = 0; l < GetStateSpace()->GetNstate(); l++){
 				if (k != l ){
-					osmap << GetStateSpace()->GetState(k)<<">"<<GetStateSpace()->GetState(l) << "\t";
+					osmap<< "\t" << GetStateSpace()->GetState(k)<<">"<<GetStateSpace()->GetState(l);
 				}
 			}
 		}
