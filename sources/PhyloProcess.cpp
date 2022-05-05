@@ -3285,6 +3285,7 @@ void PhyloProcess::WriteSuffStat(ostream& os, const Link* from, int i){
 			branchwaitingtime[state_from]+= t; 
 			int state_to = plink->GetState();
 			branchpaircount[pair<int,int>(state_from, state_to)]++;
+			state_from = state_to;
 		}
 		
 		os << GetBranchIndex(from->GetBranch());
