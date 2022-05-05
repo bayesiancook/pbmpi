@@ -3082,6 +3082,13 @@ void PhyloProcess::ReadMapStats(string name, int burnin, int every, int until){
 	double meandiff = 0;
 	double vardiff = 0;
 	double meanobs = 0;
+
+	stringstream osfreftree;
+	osfreftree << name  << ".reftreemap";
+	ofstream osreftree((osfreftree.str()).c_str());
+	WriteTreeBranchName(osreftree, GetRoot());
+	osreftree.close();
+
 	for(int i = 0; i < GetNsite(); i++){
 		stringstream osfmap;
 		osfmap << name << '_' << i << ".suffstatmap";
@@ -3332,6 +3339,28 @@ void PhyloProcess::WriteTreeMapping(ostream& os, const Link* from, int i){
 		for(Plink* plink = mybsp->Last(); plink ; plink = plink->Prev()){
 			os << ':' << plink->GetRelativeTime() * l << ':' << GetStateSpace()->GetState(plink->GetState());
 		}
+	}
+}
+
+void PhyloProcess::WriteTreeBranchName(ostream& os, const Link* from){
+	if(from->isLeaf()){
+		os << from->GetNode()->GetName() << "_" << GetBranchIndex(from->Next()->GetBranch());
+	}
+	else{
+		os << '(';
+		for (const Link* link=from->Next(); link!=from; link=link->Next()){
+			WriteTreeBranchName(os, link->Out());
+			if (link->Next() != from)       {
+				os << ',';
+			}
+		}
+		os << ')';
+	}
+	if(from->isRoot()){
+		os << GetBranchIndex(from->Next()->GetBranch()) << ";\n";     
+	}
+	else{
+		os << GetBranchIndex(from->Next()->GetBranch());
 	}
 }
 
