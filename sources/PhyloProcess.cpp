@@ -3097,6 +3097,7 @@ void PhyloProcess::ReadMapStats(string name, int burnin, int every, int until){
 				}
 			}
 		}
+		osmap << "\n";
 		osmap.close();
 	}
 	while (i < until)	{
@@ -3128,7 +3129,7 @@ void PhyloProcess::ReadMapStats(string name, int burnin, int every, int until){
 		// WriteNodeStates(sos,GetRoot());
 		// sos << '\n';
 
-		double obs = GlobalCountMapping();
+		// double obs = GlobalCountMapping();
 
 		//Posterior Predictive Mappings
 		// GlobalUnfold();
