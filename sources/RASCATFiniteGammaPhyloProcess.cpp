@@ -178,6 +178,7 @@ void RASCATFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	int cv = 0;
 	int sitelogl = 0;
 	int map = 0;
+	int mapstats = 0;
 	int rates = 0;
 	string testdatafile = "";
 	int rateprior = 0;
@@ -273,6 +274,9 @@ void RASCATFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 			else if (s == "-map")	{
 				map = 1;
 			}
+			else if (s == "-mapstats")	{
+				mapstats = 1;
+			}
 			else if (s == "-cv")	{
 				cv = 1;
 				i++;
@@ -349,6 +353,9 @@ void RASCATFiniteGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	}
 	else if (map)	{
 		ReadMap(name,burnin,every,until);
+	}
+	else if (mapstats)	{
+		ReadMapStats(name,burnin,every,until);
 	}
 	else	{
 		Read(name,burnin,every,until);

@@ -3065,7 +3065,7 @@ void PhyloProcess::ReadMap(string name, int burnin, int every, int until){
 	cerr << meandiff << '\t' << sqrt(vardiff) << '\n';
 }
 
-void PhyloProcess::ReadMapStat(string name, int burnin, int every, int until){
+void PhyloProcess::ReadMapStats(string name, int burnin, int every, int until){
   	ifstream is((name + ".chain").c_str());
 	if (!is)	{
 		cerr << "error: no .chain file found\n";

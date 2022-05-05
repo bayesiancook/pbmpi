@@ -192,6 +192,7 @@ void CodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
 
 	int cv = 0;
 	int map = 0;
+	int mapstats = 0;
 	string testdatafile = "";
 	int rateprior = 0;
 	int profileprior = 0;
@@ -277,7 +278,9 @@ void CodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
 			else if (s == "-map")	{
 				map = 1;
 			}
-
+			else if (s == "-mapstats")	{
+				mapstats = 1;
+			}
 			else if (s == "-sitelogl")	{
 				sitelogl = 1;
 			}
@@ -336,14 +339,14 @@ void CodonMutSelSBDPPhyloProcess::ReadPB(int argc, char* argv[])	{
 	else if (sitelogl)	{
 		ReadSiteLogL(name,burnin,every,until);
 	}
-	/*
-	else if (sel)	{
-		ReadSDistributions(name,burnin,every,until);
-	}
+	
+	// else if (sel)	{
+	// 	ReadSDistributions(name,burnin,every,until);
+	// }
 	else if (mapstats)	{
 		ReadMapStats(name,burnin,every,until);
 	}
-	*/
+	
 	else if (ppred)	{
 		PostPred(ppred,name,burnin,every,until,rateprior,profileprior,rootprior,savetrees);
 	}

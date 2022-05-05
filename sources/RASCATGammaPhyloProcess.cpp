@@ -164,6 +164,7 @@ void RASCATGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	int ppred = 0;
 	int ss = 0;
 	int map = 0;
+	int mapstats =0;
 	// 1 : plain ppred (outputs simulated data)
 	// 2 : diversity statistic
 	// 3 : compositional statistic
@@ -264,7 +265,9 @@ void RASCATGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 			else if (s == "-map")	{
 				map = 1;
 			}
-
+			else if (s == "-mapstats")	{
+				mapstats = 1;
+			}
 			else if (s == "-sitelogl")	{
 				sitelogl = 1;
 			}
@@ -331,6 +334,9 @@ void RASCATGammaPhyloProcess::ReadPB(int argc, char* argv[])	{
 	}
 	else if (map)	{
 		ReadMap(name,burnin,every,until);
+	}
+	else if (mapstats)	{
+		ReadMapStats(name,burnin,every,until);
 	}
 	else if (cv)	{
 		ReadCV(testdatafile,name,burnin,every,until);
