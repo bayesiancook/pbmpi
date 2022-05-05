@@ -3154,7 +3154,7 @@ void PhyloProcess::ReadMapStats(string name, int burnin, int every, int until){
 		// vardiff += (obs-pred)*(obs-pred);
 		// meanobs += obs;
 
-		GlobalRestoreData();
+		// GlobalRestoreData();
 		GlobalUnfold();
 
 		for(int i = 0; i < GetNsite(); i++){
