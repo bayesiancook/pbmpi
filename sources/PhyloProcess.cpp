@@ -3344,7 +3344,7 @@ void PhyloProcess::WriteTreeMapping(ostream& os, const Link* from, int i){
 
 void PhyloProcess::WriteTreeBranchName(ostream& os, const Link* from){
 	if (from->isLeaf())	{
-		os << from->GetNode()->GetName() << "_" << GetBranchIndex(from->Next()->GetBranch());
+		os << from->GetNode()->GetName() << "_";
 	}
 	else	{
 		os << "(";
@@ -3356,7 +3356,7 @@ void PhyloProcess::WriteTreeBranchName(ostream& os, const Link* from){
 		}
 		os << ")";
 	}
-	if (! from->isRoot())	{
+	if (!from->isRoot())	{
 		os << GetBranchIndex(from->Next()->GetBranch()) << ":" << 1.0;
 	}
 }
