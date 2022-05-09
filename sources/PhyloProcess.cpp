@@ -3358,6 +3358,8 @@ void PhyloProcess::WriteTreeBranchName(ostream& os, const Link* from){
 	}
 	if (!from->isRoot())	{
 		os << GetBranchIndex(from->Next()->GetBranch()) << ":" << 1.0;
+	}else{
+		os << ";";
 	}
 }
 
