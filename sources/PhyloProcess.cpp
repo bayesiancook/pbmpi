@@ -3139,13 +3139,15 @@ void PhyloProcess::ReadMapStats(string name, int burnin, int every, int until){
 		// double obs = GlobalCountMapping();
 
 		//Posterior Predictive Mappings
-		// GlobalUnfold();
-		// GlobalUnclamp();
-		// GlobalCollapse();
+		GlobalUnfold();
+		GlobalUnclamp();
+		GlobalCollapse();
 
-		// GlobalSetDataFromLeaves();
+		GlobalSetDataFromLeaves();
 
 		// write posterior predictive mappings
+		GlobalWriteSuffStat(name);
+
 		// GlobalWriteMappings(name);
 
 		// write posterior predictive ancestral node states
@@ -3161,7 +3163,7 @@ void PhyloProcess::ReadMapStats(string name, int burnin, int every, int until){
 		// vardiff += (obs-pred)*(obs-pred);
 		// meanobs += obs;
 
-		// GlobalRestoreData();
+		GlobalRestoreData();
 		GlobalUnfold();
 
 		for(int i = 0; i < GetNsite(); i++){
@@ -3180,12 +3182,12 @@ void PhyloProcess::ReadMapStats(string name, int burnin, int every, int until){
 		}
 	}
 	cerr << '\n';
-	meandiff /= samplesize;
-	vardiff /= samplesize;
-	vardiff -= meandiff*meandiff;
-	meanobs /= samplesize;
-	cerr << "mean obs : " << meanobs << '\n';
-	cerr << meandiff << '\t' << sqrt(vardiff) << '\n';
+	// meandiff /= samplesize;
+	// vardiff /= samplesize;
+	// vardiff -= meandiff*meandiff;
+	// meanobs /= samplesize;
+	// cerr << "mean obs : " << meanobs << '\n';
+	// cerr << meandiff << '\t' << sqrt(vardiff) << '\n';
 }
 
 void PhyloProcess::GlobalWriteMappings(string name){
