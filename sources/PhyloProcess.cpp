@@ -3130,6 +3130,13 @@ void PhyloProcess::ReadMapStats(string name, int burnin, int every, int until){
 
 		// write posterior mappings
 		GlobalWriteSuffStat(name);
+		for(int i = 0; i < GetNsite(); i++){
+			stringstream osfmap;
+			osfmap << name << '_' << i << ".suffstatmap";
+			ofstream osmap((osfmap.str()).c_str(), ios_base::app);
+			osmap << '\n';
+			osmap.close();
+		}
 
 		// write posterior ancestral node states
 		// GlobalSetNodeStates();
