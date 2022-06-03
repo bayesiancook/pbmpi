@@ -3437,22 +3437,22 @@ void PhyloProcess::WriteSuffDiStat(ostream& os, const Link* from, int i){
 			
 			int state_from = mybsp_a->Last()->GetState();
 			double time = 0.0;
-			map_.push_back(std::tuple<int,double,int>(time,state_from,0));
+			map_.push_back(std::tuple<double,int,int>(time,state_from,0));
 			for(Plink* plink = mybsp_a->Last(); plink ; plink = plink->Prev()){
 				double t  = plink->GetRelativeTime() * l;
 				time += t;
 				int state_to = plink->GetState();
-				map_.push_back(std::tuple<int, double, int>(time,state_to,0));
+				map_.push_back(std::tuple<double,int,int>(time,state_to,0));
 			}
 			
 			state_from = mybsp_b->Last()->GetState();
 			time = 0.0;
-			map_.push_back(std::tuple<int,double,int>(time,state_from,1));
+			map_.push_back(std::tuple<double,int,int>(time,state_from,1));
 			for(Plink* plink = mybsp_a->Last(); plink ; plink = plink->Prev()){
 				double t  = plink->GetRelativeTime() * l;
 				time += t;
 				int state_to = plink->GetState();
-				map_.push_back(std::tuple<int, double, int>(time,state_to,1));
+				map_.push_back(std::tuple<double,int,int>(time,state_to,1));
 			}
 
 			sort(map_.begin(), map_.end());
@@ -3469,10 +3469,10 @@ void PhyloProcess::WriteSuffDiStat(ostream& os, const Link* from, int i){
 				branchwaitingtime[std::pair<int,int>(state_a,state_b)]+= get<0>(map_[i]);
 				if (new_pos == 0){
 					branchpaircount[std::tuple<std::pair<int,int>,std::pair<int,int>>(std::pair<int,int>(state_a,state_b),std::pair<int,int>(new_state,state_b))]++;
-					
+					state_a = new_state;
 				} else {
-					branchpaircount[std::tuple<std::pair<int,int>,std::pair<int,int>>(std::pair<int,int>(state_a,state_b),std::pair<int,int>(state_b,new_state))]++;
-
+					branchpaircount[std::tuple<std::pair<int,int>,std::pair<int,int>>(std::pair<int,int>(state_a,state_b),std::pair<int,int>(state_a,new_state))]++;
+					state_b = new_state;
 				}
 				
 			}
