@@ -3119,9 +3119,7 @@ void PhyloProcess::ReadMapStats(string name, int burnin, int every, int until){
 		osmap << "branchID";
 		for(int k = 0; k < GetStateSpace()->GetNstate(); k++){
 			for(int l = 0; l < GetStateSpace()->GetNstate(); l++){
-				if (k != l ){
-					osmap<< "\t" << GetStateSpace()->GetState(k)<<GetStateSpace()->GetState(l);
-				}		
+				osmap<< "\t" << GetStateSpace()->GetState(k)<<GetStateSpace()->GetState(l);
 			}
 		}
 		for(int k = 0; k < GetStateSpace()->GetNstate(); k++){
@@ -3432,7 +3430,7 @@ void PhyloProcess::WriteSuffDiStat(ostream& os, const Link* from, int i){
 		else{
 			BranchSitePath* mybsp_a = submap[GetBranchIndex(from->GetBranch())][i];
 			BranchSitePath* mybsp_b = submap[GetBranchIndex(from->GetBranch())][i+1];
-			std:vector<std::tuple<double,int,int>> map_;
+			std::vector<std::tuple<double,int,int>> map_;
 			
 
 			double l = GetLength(from->GetBranch());
