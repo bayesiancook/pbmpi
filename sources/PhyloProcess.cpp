@@ -3127,7 +3127,7 @@ void PhyloProcess::ReadMapStats(string name, int burnin, int every, int until){
 				for(int m = 0; m < GetStateSpace()->GetNstate(); m++){
 					for(int n = 0; n < GetStateSpace()->GetNstate(); n++){
 						if (std::pair<int,int>(k,l) != std::pair<int,int>(m,n) ){
-							osmap<< "\t" << GetStateSpace()->GetState(k)<<GetStateSpace()->GetState(l)<<"<"<<GetStateSpace()->GetState(m)<<GetStateSpace()->GetState(n);
+							osmap<< "\t" << GetStateSpace()->GetState(k)<<GetStateSpace()->GetState(l)<<">"<<GetStateSpace()->GetState(m)<<GetStateSpace()->GetState(n);
 						}
 					}
 				}
@@ -3463,7 +3463,7 @@ void PhyloProcess::WriteSuffDiStat(ostream& os, const Link* from, int i){
 			int state_a  = (get<2>(map_[0]) == 0) ? get<1>(map_[0]) :  get<1>(map_[1]);
 			int state_b  = (get<2>(map_[0]) == 1) ? get<1>(map_[0]) :  get<1>(map_[1]);
 
-			for (int i = 1; i < map_.size(); i++){
+			for (unsigned long i = 1; i < map_.size(); i++){
 				int new_state  = get<1>(map_[i]);
 				int new_pos  = get<2>(map_[i]);
 				branchwaitingtime[std::pair<int,int>(state_a,state_b)]+= get<0>(map_[i]);
