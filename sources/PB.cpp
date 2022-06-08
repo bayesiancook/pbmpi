@@ -218,6 +218,10 @@ int main(int argc, char* argv[])	{
 				modeltype = 2;
 				rrtype = "lg";
 			}
+			else if (s == "-flatgtraa")	{
+				modeltype = 2;
+				rrtype = "flatgtraa";
+			}
 			else if (s == "-wag")	{
 				modeltype = 2;
 				rrtype = "wag";
