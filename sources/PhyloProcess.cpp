@@ -3082,9 +3082,6 @@ void PhyloProcess::ReadMapStats(string name, int burnin, int every, int until){
 		i++;
 	}
 	int samplesize = 0;
-	double meandiff = 0;
-	double vardiff = 0;
-	double meanobs = 0;
 
 	stringstream osfreftree;
 	osfreftree << name  << ".reftreemap";
