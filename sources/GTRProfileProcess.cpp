@@ -373,6 +373,13 @@ void GTRProfileProcess::SetRR(string type)	{
 					
 				}
 			}
+            double total = 0;
+			for (int i=0; i<Nrr; i++)	{
+				total += rr[i];
+			}
+			for (int i=0; i<Nrr; i++)	{
+				rr[i] /= total / Nrr;
+			}
 		}	
 	}
 }
