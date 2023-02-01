@@ -446,6 +446,11 @@ void FiniteProfileProcess::ReadNcomponent(string filename)	{
 		}
 		int tmpNstate;
 		is >> tmpNstate;
+		if (tmpNstate != GetDim())	{
+            cerr << "error when reading empirical mixture : incorrect number of states\n";
+            cerr << "see manual for formatting an empirical mixture\n";
+			exit(1);
+		}
 		for (int k=0; k<tmpNstate; k++)	{
 			string c;
 			is >> c;
@@ -915,7 +920,8 @@ void FiniteProfileProcess::ReadStatFix(string filename)	{
 		int tmp;
 		is >> tmp;
 		if (tmp != Nstate)	{
-			cerr << "error when reading empirical mixture : bad number of states\n";
+			cerr << "error when reading empirical mixture : incorrect number of states\n";
+            cerr << "see manual for formatting an empirical mixture\n";
 			exit(1);
 		}
 		// read alphabet
