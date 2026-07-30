@@ -1950,6 +1950,9 @@ void PhyloProcess::GlobalGetMeanSiteRate()	{
 	if (! meansiterate)	{
 		meansiterate = new double[GetNsite()];
 	}
+	if (! meaneffsiterate)	{
+		meaneffsiterate = new double[GetNsite()];
+	}
 
 	assert(myid == 0);
 	int i,width,smin[nprocs-1],smax[nprocs-1];
@@ -1967,11 +1970,15 @@ void PhyloProcess::GlobalGetMeanSiteRate()	{
 	for(i=1; i<nprocs; ++i) {
 		MPI_Recv(meansiterate+smin[i-1],smax[i-1]-smin[i-1],MPI_DOUBLE,i,TAG1,MPI_COMM_WORLD,&stat);
 	}
+	for(i=1; i<nprocs; ++i) {
+		MPI_Recv(meaneffsiterate+smin[i-1],smax[i-1]-smin[i-1],MPI_DOUBLE,i,TAG1,MPI_COMM_WORLD,&stat);
+	}
 }
 
 void PhyloProcess::SlaveSendMeanSiteRate()	{
 	assert(myid > 0);
 	MPI_Send(meansiterate+sitemin,sitemax-sitemin,MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
+	MPI_Send(meaneffsiterate+sitemin,sitemax-sitemin,MPI_DOUBLE,0,TAG1,MPI_COMM_WORLD);
 }
 
 void PhyloProcess::GlobalBroadcastTree()	{
@@ -2087,8 +2094,10 @@ void PhyloProcess::ReadSiteRates(string name, int burnin, int every, int until)	
 	int samplesize = 0;
 
 	double* meanrate = new double[GetNsite()];
+	double* meaneffrate = new double[GetNsite()];
 	for (int i=0; i<GetNsite(); i++)	{
 		meanrate[i] = 0;
+		meaneffrate[i] = 0;
 	}
 
 	while (i < until)	{
@@ -2104,8 +2113,8 @@ void PhyloProcess::ReadSiteRates(string name, int burnin, int every, int until)	
 
 		// double length = GetRenormTotalLength();
 		for (int i=0; i<GetNsite(); i++)	{
-			// meansiterate[i] *= length;
 			meanrate[i] += meansiterate[i];
+			meaneffrate[i] += meaneffsiterate[i];
 		}
 
 		int nrep = 1;
@@ -2117,9 +2126,12 @@ void PhyloProcess::ReadSiteRates(string name, int burnin, int every, int until)	
 	}
 	cerr << '\n';
 	ofstream os((name + ".meansiterates").c_str());
+    os << "#\tnominal\teffective\n";
+    os << '\n';
 	for (int i=0; i<GetNsite(); i++)	{
 		meanrate[i] /= samplesize;
-		os << i << '\t' << meanrate[i] << '\n';
+		meaneffrate[i] /= samplesize;
+		os << i+1 << '\t' << meanrate[i] << '\t' << meaneffrate[i] << '\n';
 	}
 	cerr << "posterior mean site rates in " << name << ".meansiterates\n";
 

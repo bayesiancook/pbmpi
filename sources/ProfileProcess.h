@@ -60,6 +60,8 @@ class ProfileProcess {
 	int GetNsite() {return nsite;}
 	virtual double* GetProfile(int site) = 0;
 
+    virtual double GetSiteNormFactor(int site) = 0;
+
 	// virtual int GetNOccupiedComponent()  = 0;
 	virtual StateSpace* GetStateSpace() = 0;
 

@@ -67,7 +67,7 @@ class SubstitutionProcess : public virtual RateProcess, public virtual ProfilePr
 
 	public:
 
-	SubstitutionProcess() : condsitelogL(0), sitelogL(0), meansiterate(0), ratealloc(0), infprobcount(0), suboverflowcount(0) {}
+	SubstitutionProcess() : condsitelogL(0), sitelogL(0), meansiterate(0), meaneffsiterate(0), ratealloc(0), infprobcount(0), suboverflowcount(0) {}
 	virtual ~SubstitutionProcess() {}
 
 	// basic accessors, needed to perform elementary likelihood computations and substitution mappings
@@ -194,6 +194,7 @@ class SubstitutionProcess : public virtual RateProcess, public virtual ProfilePr
 	double** condsitelogL;
 	double* sitelogL;
 	double* meansiterate;
+	double* meaneffsiterate;
 	double logL;
 	int* ratealloc;
 

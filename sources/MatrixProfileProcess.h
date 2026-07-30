@@ -31,6 +31,10 @@ class MatrixProfileProcess : public virtual ProfileProcess	{
 	// access to matrices
 	virtual SubMatrix* GetMatrix(int site) = 0;
 
+    virtual double GetSiteNormFactor(int site)  {
+        return GetMatrix(site)->GetRate();
+    }
+
 	protected:
 
 	// create/delete all matrices

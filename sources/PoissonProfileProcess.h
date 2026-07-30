@@ -34,6 +34,15 @@ class PoissonProfileProcess : public virtual ProfileProcess {
 	// implemented in specialized phyloprocess subclasses
 	virtual const int* GetSiteProfileSuffStatCount(int site) = 0;
 
+    virtual double GetSiteNormFactor(int site)  {
+        const double* profile = GetProfile(site);
+        double tot = 0;
+        for (int i=0; i<GetDim(); i++)  {
+            tot += profile[i]*profile[i];
+        }
+        return 1 - tot;
+    }
+
 };
 
 #endif
