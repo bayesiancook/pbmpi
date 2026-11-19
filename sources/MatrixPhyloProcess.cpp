@@ -47,7 +47,9 @@ void MatrixPhyloProcess::Unfold()	{
 
 	CreateCondSiteLogL();
 	CreateConditionalLikelihoods();
-	UpdateConditionalLikelihoods();
+	if (unfoldupdate)	{
+		UpdateConditionalLikelihoods();
+	}
 }
 
 void MatrixPhyloProcess::UpdateConditionalLikelihoods()	{

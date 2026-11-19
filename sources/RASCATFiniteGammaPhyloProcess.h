@@ -303,7 +303,13 @@ class RASCATFiniteGammaPhyloProcess : public virtual PoissonPhyloProcess, public
             PoissonFiniteProfileProcess::Move(1,1,1);
             GlobalUpdateParameters();
 
-            GlobalUnfold();
+            // only the last unfold is followed by branch length / topology moves
+			if (rep < 4)	{
+				GlobalUnfoldBeforeCollapse();
+			}
+			else	{
+				GlobalUnfold();
+			}
         }
 		chronototal.Stop();
 

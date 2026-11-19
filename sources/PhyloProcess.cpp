@@ -41,7 +41,9 @@ void PhyloProcess::Unfold()	{
 	ActivateSumOverRateAllocations();
 	CreateCondSiteLogL();
 	CreateConditionalLikelihoods();
-	UpdateConditionalLikelihoods();
+	if (unfoldupdate)	{
+		UpdateConditionalLikelihoods();
+	}
 }
 
 void PhyloProcess::Collapse()	{
@@ -173,6 +175,14 @@ void PhyloProcess::UpdateConditionalLikelihoods()	{
 	ComputeLikelihood(condlmap[0]);
 
 	PreOrderPruning(GetRoot(),condlmap[0]);
+}
+
+// post-order pass only: sufficient for computing the likelihood at the root
+// and for Collapse() (rate allocations, node states, substitution mappings)
+void PhyloProcess::PostOrderUpdateConditionalLikelihoods()	{
+	PostOrderPruning(GetRoot(),condlmap[0]);
+	MultiplyByStationaries(condlmap[0]);
+	ComputeLikelihood(condlmap[0]);
 }
 
 void PhyloProcess::GlobalCheckLikelihood()	{
@@ -1459,7 +1469,7 @@ void PhyloProcess::GlobalUpdateConditionalLikelihoods()	{
 	// MPI
 	// just send Updateconlikelihood message to all slaves
 	assert(myid == 0);
-	MESSAGE signal = UPDATE;
+	MESSAGE signal = postorderunfold ? UPDATE_POSTORDER : UPDATE;
 	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 
 	GlobalComputeNodeLikelihood(GetRoot(),0);
@@ -1670,13 +1680,20 @@ void PhyloProcess::SlaveExecute(MESSAGE signal)	{
 		PropagateOverABranch(GetLinkForGibbs(arg[0]));
 		break;
 	case UNFOLD:
+		// the master always follows UNFOLD with UPDATE (or UPDATE_POSTORDER):
+		// computing the conditional likelihoods here as well would do the work twice
+		unfoldupdate = false;
 		Unfold();
+		unfoldupdate = true;
 		break;
 	case COLLAPSE:
 		Collapse();
 		break;
 	case 	UPDATE:
 		UpdateConditionalLikelihoods();
+		break;
+	case 	UPDATE_POSTORDER:
+		PostOrderUpdateConditionalLikelihoods();
 		break;
 	case UPDATE_SRATE:
 		SlaveUpdateSiteRateSuffStat();

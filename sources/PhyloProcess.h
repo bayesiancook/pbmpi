@@ -53,7 +53,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	// virtual void SlaveUpdate();
 
 	// default constructor: pointers set to nil
-	PhyloProcess() : missingmap(0), sitecondlmap(0), condlmap(0), siteratesuffstatcount(0), siteratesuffstatbeta(0), branchlengthsuffstatcount(0), branchlengthsuffstatbeta(0), condflag(false), data(0), bkdata(0), steppingrank(0), minsitecutoff(-1), maxsitecutoff(-1), myid(-1), nprocs(0), size(0), version("1.9"), totaltime(0), dataclamped(1), rateprior(0), profileprior(0), rootprior(1), topoburnin(0) {
+	PhyloProcess() : missingmap(0), sitecondlmap(0), condlmap(0), siteratesuffstatcount(0), siteratesuffstatbeta(0), branchlengthsuffstatcount(0), branchlengthsuffstatbeta(0), condflag(false), unfoldupdate(true), postorderunfold(false), data(0), bkdata(0), steppingrank(0), minsitecutoff(-1), maxsitecutoff(-1), myid(-1), nprocs(0), size(0), version("1.9"), totaltime(0), dataclamped(1), rateprior(0), profileprior(0), rootprior(1), topoburnin(0) {
 		fixbl = 0;
 		sitesuffstat = 1;
 	}
@@ -413,6 +413,16 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	virtual void GlobalUnfold();
 	virtual void GlobalCollapse();
 
+	// Same as GlobalUnfold(), for the case where the very next operation is GlobalCollapse().
+	// Collapse only reads the post-order conditional likelihoods (the pre-order ones are
+	// overwritten while sampling node states), so the pre-order pruning pass is skipped.
+	// Must not be used if anything else (branch length, topology moves...) comes before the next collapse.
+	void GlobalUnfoldBeforeCollapse()	{
+		postorderunfold = true;
+		GlobalUnfold();
+		postorderunfold = false;
+	}
+
     void GlobalResetAllConditionalLikelihoods();
     void SlaveResetAllConditionalLikelihoods();
 
@@ -534,6 +544,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	void CreateConditionalLikelihoods();
 	void DeleteConditionalLikelihoods();
 	virtual void UpdateConditionalLikelihoods();
+	void PostOrderUpdateConditionalLikelihoods();
 
 	double*** GetConditionalLikelihoodVector(const Link* link)	{
 		return condlmap[GetLinkIndex(link)];
@@ -594,6 +605,12 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	virtual int GetMyid() {
 		return myid;
 	}
+
+	// slave: if false, Unfold() allocates the conditional likelihoods but does not compute them
+	// (the master always sends an explicit update right after the UNFOLD message)
+	bool unfoldupdate;
+	// master: if true, the update sent after UNFOLD is restricted to the post-order pass
+	bool postorderunfold;
 
 	double*** sitecondlmap;
 	double**** condlmap;
