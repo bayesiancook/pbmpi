@@ -1643,6 +1643,64 @@ void PhyloProcess::GlobalGibbsSPRScan(Link* down, Link* up, double* loglarray)  
 // MPI: slave execute fonction
 // waits for messages
 // and call SlaveExecute();
+#ifdef PB_MPI_STATS
+// Diagnostic build (make ARCHFLAGS=-DPB_MPI_STATS): each slave records, for each type of message
+// received from the master, the number of messages, the time spent executing them, and the time
+// spent idle (waiting for the next message) after having executed them.
+// Written upon normal termination into mpistats.<rank>.txt, in the current directory.
+static const char* pb_message_names = "KILL,SCAN,UPDATE_RATE,UPDATE_RRATE,UPDATE_BLENGTH,UPDATE_SRATE,UPDATE_SPROFILE,PARAMETER_DIFFUSION,UNFOLD,COLLAPSE,LIKELIHOOD,RESET,RESETALL,MULTIPLY,SMULTIPLY,INITIALIZE,PROPAGATE,PROPOSE,RESTORE,UPDATE,DETACH,ATTACH,NNI,KNIT,BRANCHPROPAGATE,ROOT,REALLOC_MOVE,PROFILE_MOVE,MIX_MOVE,REALLOC_DONE,GIVEMEMORE,BCAST_TREE,UNCLAMP,SETDATA,SETNODESTATES,CVSCORE,SETTESTDATA,GENE_MOVE,SAMPLE,LENGTH,ALPHA,SAVETREES,LENGTHFACTOR,FROMSTREAM,TOSTREAM,SITELOGL,STEPPINGSITELOGL,FULLSITELOGL,RESTOREDATA,WRITE_MAPPING,NONSYNMAPPING,COUNTMAPPING,SITERATE,SIMULATE,SETRATEPRIOR,SETPROFILEPRIOR,SETROOTPRIOR,STATEPOSTPROBS,SITELOGLCUTOFF,SITELOGCV,PREPARESTEPPING,SETSTEPPINGFRAC,EMPIRICALFRAC,EMPIRICALPRIOR,CREATESITE,DELETESITE,UPDATE_POSTORDER,UPDATE_PARTIAL,BATCH";
+
+void PhyloProcess::WaitLoop()	{
+	const int nmax = 128;
+	long count[nmax];
+	double exectime[nmax];
+	double waitafter[nmax];
+	for (int i=0; i<nmax; i++)	{
+		count[i] = 0;
+		exectime[i] = 0;
+		waitafter[i] = 0;
+	}
+	MESSAGE signal;
+	int previous = -1;
+	double t0 = MPI_Wtime();
+	double start = t0;
+	do {
+		MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+		double t1 = MPI_Wtime();
+		if ((previous >= 0) && (previous < nmax))	{
+			waitafter[previous] += t1 - t0;
+		}
+		if (signal == KILL) break;
+		SlaveExecute(signal);
+		t0 = MPI_Wtime();
+		if ((signal >= 0) && (signal < nmax))	{
+			count[signal]++;
+			exectime[signal] += t0 - t1;
+		}
+		previous = signal;
+	} while(true);
+	double total = MPI_Wtime() - start;
+	stringstream fname;
+	fname << "mpistats." << GetMyid() << ".txt";
+	ofstream os(fname.str().c_str());
+	os << "#message\tcount\texec_s\twait_after_s\texec_%\twait_after_%\n";
+	stringstream names(pb_message_names);
+	string messagename;
+	double totexec = 0;
+	double totwait = 0;
+	for (int i=0; i<nmax; i++)	{
+		if (! getline(names,messagename,','))	{
+			messagename = "?";
+		}
+		if (count[i])	{
+			os << messagename << '\t' << count[i] << '\t' << exectime[i] << '\t' << waitafter[i] << '\t' << 100*exectime[i]/total << '\t' << 100*waitafter[i]/total << '\n';
+			totexec += exectime[i];
+			totwait += waitafter[i];
+		}
+	}
+	os << "TOTAL\t-\t" << totexec << '\t' << totwait << '\t' << 100*totexec/total << '\t' << 100*totwait/total << '\n';
+}
+#else
 void PhyloProcess::WaitLoop()	{
 	MESSAGE signal;
 	do {
@@ -1651,6 +1709,7 @@ void PhyloProcess::WaitLoop()	{
 		SlaveExecute(signal);
 	} while(true);
 }
+#endif
 
 // MPI: slave execute fonction
 // waits for messages
