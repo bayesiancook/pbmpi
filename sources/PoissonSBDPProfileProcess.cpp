@@ -172,6 +172,9 @@ void PoissonSBDPProfileProcess::SlaveMixMove()	{
 
 		int NAccepted = 0;
 
+		// profiles do not change during the reallocation move
+		PrepareLogProfileCache(K0);
+
 		for (int allocrep=0; allocrep<nallocrep; allocrep++)	{
 
 			for (int site=smin[GetMyid()-1]; site<smax[GetMyid()-1]; site++)	{
@@ -235,6 +238,7 @@ void PoissonSBDPProfileProcess::SlaveMixMove()	{
 				alloc[site] = mode;
 			}
 		}
+		ReleaseLogProfileCache();
 		MPI_Send(alloc,GetNsite(),MPI_INT,0,TAG1,MPI_COMM_WORLD);
 
 		// MPI_Barrier(MPI_COMM_WORLD);

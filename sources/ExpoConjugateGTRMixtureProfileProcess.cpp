@@ -115,8 +115,16 @@ double ExpoConjugateGTRMixtureProfileProcess::LogStatProb(int site, int cat)	{
 	const double* beta = GetSiteProfileSuffStatBeta(site);
 	double* pi = profile[cat];
 	double total = 0;
-	for (int k=0; k<GetDim(); k++)	{
-		total += count[k] * log(pi[k]) - beta[k] * pi[k];
+	const double* logpi = GetCachedLogProfile(cat);
+	if (logpi)	{
+		for (int k=0; k<GetDim(); k++)	{
+			total += count[k] * logpi[k] - beta[k] * pi[k];
+		}
+	}
+	else	{
+		for (int k=0; k<GetDim(); k++)	{
+			total += count[k] * log(pi[k]) - beta[k] * pi[k];
+		}
 	}
 	return total;
 }

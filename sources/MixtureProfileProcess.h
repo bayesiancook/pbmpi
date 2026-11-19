@@ -19,13 +19,14 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 
 #include <cmath>
 #include "ProfileProcess.h"
+#include <vector>
 
 // general superclass for all finite process mixtures on site-specific profiles
 class MixtureProfileProcess: public virtual ProfileProcess	{
 
 	public:
 
-	MixtureProfileProcess() : profile(0) {}
+	MixtureProfileProcess() : profile(0), logprofilecachesize(0) {}
 	virtual ~MixtureProfileProcess(){}
 
 	double* GetProfile(int site)	{
@@ -177,6 +178,32 @@ class MixtureProfileProcess: public virtual ProfileProcess	{
 	virtual void SwapComponents(int cat1, int cat2);
 
     virtual void SetEmpiricalDirWeightPrior(double* inalpha, double* inbeta);
+
+	// Cache of log(profile[cat][k]) for cat < ncat, used by LogStatProb(site,cat) when it is called
+	// for many sites against the same components (allocation moves): the logs then only
+	// depend on the component, and need not be recomputed for each site.
+	// The cache must be released before any profile is modified.
+	void PrepareLogProfileCache(int ncat)	{
+		logprofilecache.resize(ncat * GetDim());
+		for (int cat=0; cat<ncat; cat++)	{
+			for (int k=0; k<GetDim(); k++)	{
+				logprofilecache[cat*GetDim() + k] = log(profile[cat][k]);
+			}
+		}
+		logprofilecachesize = ncat;
+	}
+
+	void ReleaseLogProfileCache()	{
+		logprofilecachesize = 0;
+	}
+
+	// returns 0 if not cached
+	const double* GetCachedLogProfile(int cat)	{
+		return (cat < logprofilecachesize) ? &logprofilecache[cat*GetDim()] : 0;
+	}
+
+	std::vector<double> logprofilecache;
+	int logprofilecachesize;
 
 	double** profile;
 	double* allocprofile;
