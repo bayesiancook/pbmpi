@@ -20,8 +20,6 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 #include "SubstitutionProcess.h"
 #include "MatrixProfileProcess.h"
 #include <vector>
-#include <unordered_map>
-#include <functional>
 
 class MatrixSubstitutionProcess : public virtual SubstitutionProcess, public virtual MatrixProfileProcess	{
 
@@ -48,20 +46,25 @@ class MatrixSubstitutionProcess : public virtual SubstitutionProcess, public vir
 
 	private:
 
-	// scratch space for PropagateImpl, kept between calls to avoid reallocations:
-	// values of exp(time * rate * eigenvalue), computed once per (matrix, rate) pair and per call
-	struct ExpKey	{
-		const SubMatrix* matrix;
+	// scratch space for PropagateImpl, kept between calls to avoid reallocations.
+	// For each (matrix, rate) pair met during one call, one PropEntry:
+	// - exp(time * rate * eigenvalue), computed once (in expbuffer, at expoff)
+	// - for leaf branches: the result vector for each observed state, computed once
+	//   (in leafbuffer; its position is in leafindex[leafbase + state], -1 if not yet computed)
+	// The entries of a matrix form a list (next), whose head is propheads[matrix->propslot].
+	struct PropEntry	{
 		double rate;
-		bool operator==(const ExpKey& o) const {return (matrix == o.matrix) && (rate == o.rate);}
+		size_t expoff;
+		int next;
+		int leafbase;
 	};
-	struct ExpKeyHash	{
-		size_t operator()(const ExpKey& k) const {
-			return std::hash<const void*>()(k.matrix) ^ (std::hash<double>()(k.rate) * 0x9e3779b97f4a7c15ULL);
-		}
-	};
-	std::unordered_map<ExpKey,size_t,ExpKeyHash> expindex;
+	std::vector<PropEntry> propentries;
+	std::vector<int> propheads;
 	std::vector<double> expbuffer;
+	std::vector<int> leafindex;
+	std::vector<double> leafbuffer;
+	std::vector<int> leafclipped;
+	unsigned long long propstamp = 0;
 	std::vector<double> propaux;
 
 	protected:

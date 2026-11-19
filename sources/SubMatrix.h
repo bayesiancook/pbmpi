@@ -111,6 +111,11 @@ class SubMatrix  	{
 	double* 		GetEigenVal();
 	double** 		GetEigenVect();
 	double** 		GetInvEigenVect();
+	// scratch fields for MatrixSubstitutionProcess::PropagateImpl: index of this matrix in the
+	// per-call cache of that function, valid when propstamp equals the stamp of the current call
+	unsigned long long	propstamp = 0;
+	int			propslot = 0;
+
 	// transposed, contiguous versions (see ut and invut below)
 	const double*		GetTransposedEigenVect()	{
 		if (! diagflag) Diagonalise();

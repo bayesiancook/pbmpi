@@ -105,6 +105,101 @@ void MatrixSubstitutionProcess::PropagateFromLeaf(const int* state, double*** fr
 // - if leafstate is given, 'up' is known to be the unit vector of the observed state
 //   (for non-missing data), in which case P^{-1} . up is just a column of P^{-1}
 
+// The matrix x vector products are done column by column: y = M . x, where mt holds M transposed
+// (column l of M is mt[l*n .. l*n+n-1]). For each k, the terms are added in the order l = 0..n-1,
+// starting from 0.0, with a separate multiplication and addition: this is exactly the arithmetic
+// of the plain row by row loops, so the result is bit-identical (as long as the compiler is not
+// allowed to contract a*b+c into a fused multiply-add: no -mfma / -march=native without -ffp-contract=off).
+//
+// With GCC / clang, the k are processed in blocks of 20 using explicit vector types, with the
+// accumulators of a block held in registers across the whole loop over l (5 registers of 4 doubles
+// with AVX, 10 registers of 2 doubles otherwise). Amino acids are one block; codons 3 blocks + 1.
+
+#if defined(__GNUC__) && !defined(PB_NO_VECTOR_KERNEL)
+
+#ifdef __AVX__
+typedef double pbvec __attribute__((vector_size(32), aligned(8), may_alias));
+#define PBVEC_SET1(x) ((pbvec){(x),(x),(x),(x)})
+#define PBVEC_W 4
+#else
+typedef double pbvec __attribute__((vector_size(16), aligned(8), may_alias));
+#define PBVEC_SET1(x) ((pbvec){(x),(x)})
+#define PBVEC_W 2
+#endif
+#define PBVEC_LD(p) (*(const pbvec*)(p))
+#define PBVEC_ST(p,v) (*(pbvec*)(p) = (v))
+
+static inline void MatVecBlock20(const double* __restrict__ mt, const double* __restrict__ x, double* __restrict__ y, const int n)	{
+	const pbvec zero = PBVEC_SET1(0.0);
+#if PBVEC_W == 4
+	pbvec a0 = zero, a1 = zero, a2 = zero, a3 = zero, a4 = zero;
+	for(int l=0; l<n; l++)	{
+		const pbvec xl = PBVEC_SET1(x[l]);
+		const double* col = mt + l*n;
+		a0 += PBVEC_LD(col) * xl;
+		a1 += PBVEC_LD(col+4) * xl;
+		a2 += PBVEC_LD(col+8) * xl;
+		a3 += PBVEC_LD(col+12) * xl;
+		a4 += PBVEC_LD(col+16) * xl;
+	}
+	PBVEC_ST(y,a0); PBVEC_ST(y+4,a1); PBVEC_ST(y+8,a2); PBVEC_ST(y+12,a3); PBVEC_ST(y+16,a4);
+#else
+	pbvec a0 = zero, a1 = zero, a2 = zero, a3 = zero, a4 = zero, a5 = zero, a6 = zero, a7 = zero, a8 = zero, a9 = zero;
+	for(int l=0; l<n; l++)	{
+		const pbvec xl = PBVEC_SET1(x[l]);
+		const double* col = mt + l*n;
+		a0 += PBVEC_LD(col) * xl;
+		a1 += PBVEC_LD(col+2) * xl;
+		a2 += PBVEC_LD(col+4) * xl;
+		a3 += PBVEC_LD(col+6) * xl;
+		a4 += PBVEC_LD(col+8) * xl;
+		a5 += PBVEC_LD(col+10) * xl;
+		a6 += PBVEC_LD(col+12) * xl;
+		a7 += PBVEC_LD(col+14) * xl;
+		a8 += PBVEC_LD(col+16) * xl;
+		a9 += PBVEC_LD(col+18) * xl;
+	}
+	PBVEC_ST(y,a0); PBVEC_ST(y+2,a1); PBVEC_ST(y+4,a2); PBVEC_ST(y+6,a3); PBVEC_ST(y+8,a4);
+	PBVEC_ST(y+10,a5); PBVEC_ST(y+12,a6); PBVEC_ST(y+14,a7); PBVEC_ST(y+16,a8); PBVEC_ST(y+18,a9);
+#endif
+}
+
+static inline void MatVecCols(const double* __restrict__ mt, const double* __restrict__ x, double* __restrict__ y, const int n)	{
+	int kb = 0;
+	for(; kb+20<=n; kb+=20)	{
+		MatVecBlock20(mt+kb,x,y+kb,n);
+	}
+	if (kb < n)	{
+		for(int k=kb; k<n; k++)	{
+			y[k] = 0.0;
+		}
+		for(int l=0; l<n; l++)	{
+			const double xl = x[l];
+			const double* col = mt + l*n;
+			for(int k=kb; k<n; k++)	{
+				y[k] += col[k] * xl;
+			}
+		}
+	}
+}
+
+#else
+
+static inline void MatVecCols(const double* __restrict__ mt, const double* __restrict__ x, double* __restrict__ y, const int n)	{
+	for(int k=0; k<n; k++)	{
+		y[k] = 0.0;
+	}
+	for(int l=0; l<n; l++)	{
+		const double xl = x[l];
+		const double* col = mt + l*n;
+		for(int k=0; k<n; k++)	{
+			y[k] += col[k] * xl;
+		}
+	}
+}
+
+#endif
+
 void MatrixSubstitutionProcess::PropagateImpl(double*** from, double*** to, double time, bool condalloc, const int* leafstate)	{
 
 	int i,j,k,l;
@@ -113,8 +208,13 @@ void MatrixSubstitutionProcess::PropagateImpl(double*** from, double*** to, doub
 		propaux.resize(nstate);
 	}
 	double* __restrict__ aux = &propaux[0];
-	expindex.clear();
+	propstamp++;
+	propentries.clear();
+	propheads.clear();
 	expbuffer.clear();
+	leafindex.clear();
+	leafbuffer.clear();
+	leafclipped.clear();
 
 	for(i=sitemin; i<sitemax; i++)	{
 		if (ActiveSite(i))  {
@@ -124,93 +224,146 @@ void MatrixSubstitutionProcess::PropagateImpl(double*** from, double*** to, doub
 			double* eigenval = matrix->GetEigenVal();
 			const int nrate = GetNrate(i);
 			const int obs = leafstate ? leafstate[i] : -1;
+			if (matrix->propstamp != propstamp)	{
+				matrix->propstamp = propstamp;
+				matrix->propslot = (int) propheads.size();
+				propheads.push_back(-1);
+			}
+			const int slot = matrix->propslot;
 			for(j=0; j<nrate; j++)	{
 				if ((!condalloc) || (ratealloc[i] == j))	{
 					const double* up = from[i][j];
 					double* down = to[i][j];
 					const double rate = GetRate(i,j);
 
-					// exp(length * L)
-					ExpKey key;
-					key.matrix = matrix;
-					key.rate = rate;
-					std::pair<std::unordered_map<ExpKey,size_t,ExpKeyHash>::iterator,bool> ins = expindex.insert(std::make_pair(key,expbuffer.size()));
-					if (ins.second)	{
+					// entry of this (matrix,rate) pair, with exp(length * L)
+					int e = propheads[slot];
+					while ((e != -1) && (propentries[e].rate != rate))	{
+						e = propentries[e].next;
+					}
+					if (e == -1)	{
+						PropEntry entry;
+						entry.rate = rate;
+						entry.expoff = expbuffer.size();
+						entry.next = propheads[slot];
+						entry.leafbase = -1;
 						const double length = time * rate;
 						expbuffer.resize(expbuffer.size() + nstate);
-						double* e = &expbuffer[ins.first->second];
+						double* ex = &expbuffer[entry.expoff];
 						for(k=0; k<nstate; k++)	{
-							e[k] = exp(length * eigenval[k]);
+							ex[k] = exp(length * eigenval[k]);
 						}
+						e = (int) propentries.size();
+						propentries.push_back(entry);
+						propheads[slot] = e;
 					}
-					const double* expdiag = &expbuffer[ins.first->second];
+					const double* expdiag = &expbuffer[propentries[e].expoff];
 
-					// The matrix x vector products are done column by column:
-					// for each k, the terms are still added in the order l = 0..nstate-1 (same result
-					// as a row by row computation), but the inner loop over k can be vectorized.
-
-					// P^{-1} . up  -> aux
 					if (obs >= 0)	{
-						const double* col = inveigenvect_t + obs*nstate;
-						for(k=0; k<nstate; k++)	{
-							// 0.0 + x, so as to get exactly what the general case gives (including when x == -0.0)
-							aux[k] = 0.0 + col[k];
+						// leaf with an observed state: 'up' is the unit vector of that state, so the result
+						// only depends on (matrix, rate, state): it is computed once and then copied
+						if (propentries[e].leafbase == -1)	{
+							propentries[e].leafbase = (int) leafindex.size();
+							leafindex.resize(leafindex.size() + nstate, -1);
+						}
+						int& idx = leafindex[propentries[e].leafbase + obs];
+						if (idx == -1)	{
+							// P^{-1} . up is just a column of P^{-1}
+							const double* col = inveigenvect_t + obs*nstate;
+							for(k=0; k<nstate; k++)	{
+								// 0.0 + x, so as to get exactly what the general case gives (including when x == -0.0)
+								aux[k] = (0.0 + col[k]) * expdiag[k];
+							}
+							MatVecCols(eigenvect_t, aux, down, nstate);
+							bool isnan = false;
+							for(k=0; k<nstate; k++)	{
+								if (std::isnan(down[k]))	{
+									isnan = true;
+								}
+							}
+							if (isnan)	{
+								cerr << "error in back prop\n";
+								for(l=0; l<nstate; l++)	{
+									cerr << up[l] << '\t' << down[l] << '\t' << matrix->Stationary(l) << '\n';
+								}
+								exit(1);
+							}
+							int nclipped = 0;
+							for(k=0; k<nstate; k++)	{
+								if (down[k] < 0.0)	{
+									nclipped++;
+									down[k] = 0.0;
+								}
+							}
+							infprobcount += nclipped;
+							const int newidx = (int) leafclipped.size();
+							leafclipped.push_back(nclipped);
+							leafbuffer.resize(leafbuffer.size() + nstate);
+							double* store = &leafbuffer[(size_t) newidx * nstate];
+							for(k=0; k<nstate; k++)	{
+								store[k] = down[k];
+							}
+							// (leafindex was not resized since idx was taken)
+							idx = newidx;
+						}
+						else	{
+							const double* store = &leafbuffer[(size_t) idx * nstate];
+							for(k=0; k<nstate; k++)	{
+								down[k] = store[k];
+							}
+							infprobcount += leafclipped[idx];
 						}
 					}
 					else	{
+						bool negative = false;
 						for(k=0; k<nstate; k++)	{
-							if (up[k] < 0.0)	{
-								cerr << "error in backward propagate: negative prob : " << up[k] << "\n";
+							negative |= (up[k] < 0.0);
+						}
+						if (negative)	{
+							for(k=0; k<nstate; k++)	{
+								if (up[k] < 0.0)	{
+									cerr << "error in backward propagate: negative prob : " << up[k] << "\n";
+									exit(1);
+								}
+							}
+						}
+
+						// P^{-1} . up  -> aux
+						MatVecCols(inveigenvect_t, up, aux, nstate);
+
+						// exp(length * L) . aux  -> aux
+						for(k=0; k<nstate; k++)	{
+							aux[k] *= expdiag[k];
+						}
+
+						// P . aux -> down
+						MatVecCols(eigenvect_t, aux, down, nstate);
+
+						// rare cases: numerical errors (exit) and slightly negative values (set to 0)
+						bool bad = false;
+						for(k=0; k<nstate; k++)	{
+							bad |= !(down[k] >= 0.0);
+						}
+						if (bad)	{
+							bool isnan = false;
+							for(k=0; k<nstate; k++)	{
+								if (std::isnan(down[k]))	{
+									isnan = true;
+								}
+							}
+							if (isnan)	{
+								cerr << "error in back prop\n";
+								for(l=0; l<nstate; l++)	{
+									cerr << up[l] << '\t' << down[l] << '\t' << matrix->Stationary(l) << '\n';
+								}
 								exit(1);
 							}
-						}
-						for(k=0; k<nstate; k++)	{
-							aux[k] = 0.0;
-						}
-						for(l=0; l<nstate; l++)	{
-							const double x = up[l];
-							const double* col = inveigenvect_t + l*nstate;
 							for(k=0; k<nstate; k++)	{
-								aux[k] += col[k] * x;
+								if (down[k] < 0.0)	{
+									infprobcount++;
+									down[k] = 0.0;
+								}
 							}
-						}
-					}
-
-					// exp(length * L) . aux  -> aux
-					for(k=0; k<nstate; k++)	{
-						aux[k] *= expdiag[k];
-					}
-
-					// P . aux -> down
-					for(k=0; k<nstate; k++)	{
-						down[k] = 0.0;
-					}
-					for(l=0; l<nstate; l++)	{
-						const double x = aux[l];
-						const double* col = eigenvect_t + l*nstate;
-						for(k=0; k<nstate; k++)	{
-							down[k] += col[k] * x;
-						}
-					}
-					bool isnan = false;
-					for(k=0; k<nstate; k++)	{
-						if (std::isnan(down[k]))	{
-							isnan = true;
-						}
-					}
-
-					// exit in case of numerical errors
-					if (isnan)	{
-						cerr << "error in back prop\n";
-						for(l=0; l<nstate; l++)	{
-							cerr << up[l] << '\t' << down[l] << '\t' << matrix->Stationary(l) << '\n';
-						}
-						exit(1);
-					}
-					for(k=0; k<nstate; k++)	{
-						if (down[k] < 0.0)	{
-							infprobcount++;
-							down[k] = 0.0;
 						}
 					}
 
