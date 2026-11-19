@@ -82,36 +82,51 @@ void SubstitutionProcess::DeleteCondSiteLogL()	{
 	}
 }
 
+// A conditional likelihood vector is accessed as condl[site][rate][state] (with one additional
+// entry, at index Nstate, for the log of the scaling factor).
+// The numbers are stored in one single block (and the per-site arrays of pointers in another one),
+// rather than in one small array per site and per rate: this is much cheaper to allocate and to delete
+// (which is done for all vectors at each Unfold / Collapse), and keeps consecutive sites close in memory.
 double*** SubstitutionProcess::CreateConditionalLikelihoodVector()	{
-	//cout << "VECTOR ALLOCATION: " << sitemax << "  " << sitemin << endl;
-	// double*** condl = new double**[sitemax - sitemin];
 	double*** condl = new double**[GetNsite()];
-	for (int i=sitemin; i<sitemax; i++)	{
-	// for (int i=0; i<GetNsite(); i++)	{
-		condl[i] = new double*[GetNrate(i)];
-		for (int j=0, nrate=GetNrate(i); j<nrate; j++)	{
-			condl[i][j] = new double[GetNstate(i) + 1];
-			double* tmp = condl[i][j];
-			for (int k=0, nst=GetNstate(i); k<nst; k++)	{
-				tmp[k] = 1.0;
-			}
-			tmp[GetNstate(i)] = 0;
-		}
+	for (int i=0; i<GetNsite(); i++)	{
+		condl[i] = 0;
 	}
-	//cout << "Test element " << condl[0][1][0] << endl;
+	if (sitemin >= sitemax)	{
+		return condl;
+	}
+	size_t nptr = 0;
+	size_t nval = 0;
+	for (int i=sitemin; i<sitemax; i++)	{
+		nptr += GetNrate(i);
+		nval += ((size_t) GetNrate(i)) * (GetNstate(i) + 1);
+	}
+	double** ptr = new double*[nptr];
+	double* val = new double[nval];
+	for (int i=sitemin; i<sitemax; i++)	{
+		condl[i] = ptr;
+		int nrate = GetNrate(i);
+		int nstate = GetNstate(i);
+		for (int j=0; j<nrate; j++)	{
+			condl[i][j] = val;
+			for (int k=0; k<nstate; k++)	{
+				val[k] = 1.0;
+			}
+			val[nstate] = 0;
+			val += nstate + 1;
+		}
+		ptr += nrate;
+	}
 	return condl;
 }
 
 void SubstitutionProcess::DeleteConditionalLikelihoodVector(double*** condl)	{
-	for (int i=sitemin; i<sitemax; i++)	{
-	// for (int i=0; i<GetNsite(); i++)	{
-		for (int j=0, nrate=GetNrate(i); j<nrate; j++)	{
-			delete[] condl[i][j];
-		}
-		delete[] condl[i];
+	if (sitemin < sitemax)	{
+		// first entries of the two blocks allocated in CreateConditionalLikelihoodVector
+		delete[] condl[sitemin][0];
+		delete[] condl[sitemin];
 	}
 	delete[] condl;
-	condl = 0;
 }
 
 //-------------------------------------------------------------------------
