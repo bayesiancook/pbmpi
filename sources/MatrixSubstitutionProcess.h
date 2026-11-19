@@ -19,6 +19,9 @@ along with PhyloBayes. If not, see <http://www.gnu.org/licenses/>.
 
 #include "SubstitutionProcess.h"
 #include "MatrixProfileProcess.h"
+#include <vector>
+#include <unordered_map>
+#include <functional>
 
 class MatrixSubstitutionProcess : public virtual SubstitutionProcess, public virtual MatrixProfileProcess	{
 
@@ -38,6 +41,30 @@ class MatrixSubstitutionProcess : public virtual SubstitutionProcess, public vir
 
 	// CPU Level 3: implementations of likelihood propagation and substitution mapping methods
 	void Propagate(double*** from, double*** to, double time, bool condalloc = false);
+	void PropagateFromLeaf(const int* state, double*** from, double*** to, double time, bool condalloc = false);
+
+	// common implementation; leafstate == 0 : general case
+	void PropagateImpl(double*** from, double*** to, double time, bool condalloc, const int* leafstate);
+
+	private:
+
+	// scratch space for PropagateImpl, kept between calls to avoid reallocations:
+	// values of exp(time * rate * eigenvalue), computed once per (matrix, rate) pair and per call
+	struct ExpKey	{
+		const SubMatrix* matrix;
+		double rate;
+		bool operator==(const ExpKey& o) const {return (matrix == o.matrix) && (rate == o.rate);}
+	};
+	struct ExpKeyHash	{
+		size_t operator()(const ExpKey& k) const {
+			return std::hash<const void*>()(k.matrix) ^ (std::hash<double>()(k.rate) * 0x9e3779b97f4a7c15ULL);
+		}
+	};
+	std::unordered_map<ExpKey,size_t,ExpKeyHash> expindex;
+	std::vector<double> expbuffer;
+	std::vector<double> propaux;
+
+	protected:
 
 	void SitePropagate(int site, double** from, double** to, double time, bool condalloc = false);
 

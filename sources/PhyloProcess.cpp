@@ -269,7 +269,13 @@ void PhyloProcess::PostOrderPruning(const Link* from, double*** aux)	{
 	else	{
 		for (const Link* link=from->Next(); link!=from; link=link->Next())	{
 			PostOrderPruning(link->Out(),aux);
-			Propagate(aux,GetConditionalLikelihoodVector(link),GetLength(link->GetBranch()));
+			if (link->Out()->isLeaf())	{
+				// aux has just been initialized from the data at that leaf
+				PropagateFromLeaf(GetData(link->Out()),aux,GetConditionalLikelihoodVector(link),GetLength(link->GetBranch()));
+			}
+			else	{
+				Propagate(aux,GetConditionalLikelihoodVector(link),GetLength(link->GetBranch()));
+			}
 		}
 		Reset(aux);
 		for (const Link* link=from->Next(); link!=from; link=link->Next())	{
