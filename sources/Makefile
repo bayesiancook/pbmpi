@@ -1,5 +1,9 @@
 CC=mpic++
-CPPFLAGS= -Wall -O3 -std=c++11
+# ARCHFLAGS: optional CPU-specific flags, e.g. "make ARCHFLAGS=-mavx2" on machines with AVX2.
+# Avoid flags that change floating point results (-ffast-math, or -mfma / -march=native
+# without -ffp-contract=off) unless you accept chains that differ from the reference build.
+ARCHFLAGS=
+CPPFLAGS= -Wall -O3 -std=c++11 $(ARCHFLAGS)
 LDFLAGS= -O3
 SRCS=  TaxonSet.cpp Tree.cpp Random.cpp SequenceAlignment.cpp CodonSequenceAlignment.cpp \
 	StateSpace.cpp CodonStateSpace.cpp ZippedSequenceAlignment.cpp SubMatrix.cpp \

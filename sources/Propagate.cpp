@@ -112,21 +112,21 @@ void MatrixSubstitutionProcess::PropagateImpl(double*** from, double*** to, doub
 	if ((int) propaux.size() < nstate)	{
 		propaux.resize(nstate);
 	}
-	double* aux = &propaux[0];
+	double* __restrict__ aux = &propaux[0];
 	expindex.clear();
 	expbuffer.clear();
 
 	for(i=sitemin; i<sitemax; i++)	{
 		if (ActiveSite(i))  {
 			SubMatrix* matrix = GetMatrix(i);
-			double** eigenvect = matrix->GetEigenVect();
-			double** inveigenvect = matrix->GetInvEigenVect();
+			const double* __restrict__ eigenvect_t = matrix->GetTransposedEigenVect();
+			const double* __restrict__ inveigenvect_t = matrix->GetTransposedInvEigenVect();
 			double* eigenval = matrix->GetEigenVal();
 			const int nrate = GetNrate(i);
 			const int obs = leafstate ? leafstate[i] : -1;
 			for(j=0; j<nrate; j++)	{
 				if ((!condalloc) || (ratealloc[i] == j))	{
-					double* up = from[i][j];
+					const double* up = from[i][j];
 					double* down = to[i][j];
 					const double rate = GetRate(i,j);
 
@@ -145,14 +145,16 @@ void MatrixSubstitutionProcess::PropagateImpl(double*** from, double*** to, doub
 					}
 					const double* expdiag = &expbuffer[ins.first->second];
 
+					// The matrix x vector products are done column by column:
+					// for each k, the terms are still added in the order l = 0..nstate-1 (same result
+					// as a row by row computation), but the inner loop over k can be vectorized.
+
 					// P^{-1} . up  -> aux
-					// exp(length * L) . aux  -> aux
 					if (obs >= 0)	{
+						const double* col = inveigenvect_t + obs*nstate;
 						for(k=0; k<nstate; k++)	{
 							// 0.0 + x, so as to get exactly what the general case gives (including when x == -0.0)
-							double tot = 0.0;
-							tot += inveigenvect[k][obs];
-							aux[k] = tot * expdiag[k];
+							aux[k] = 0.0 + col[k];
 						}
 					}
 					else	{
@@ -163,27 +165,38 @@ void MatrixSubstitutionProcess::PropagateImpl(double*** from, double*** to, doub
 							}
 						}
 						for(k=0; k<nstate; k++)	{
-							const double* inv = inveigenvect[k];
-							double tot = 0.0;
-							for(l=0; l<nstate; l++)	{
-								tot += inv[l] * up[l];
+							aux[k] = 0.0;
+						}
+						for(l=0; l<nstate; l++)	{
+							const double x = up[l];
+							const double* col = inveigenvect_t + l*nstate;
+							for(k=0; k<nstate; k++)	{
+								aux[k] += col[k] * x;
 							}
-							aux[k] = tot * expdiag[k];
 						}
 					}
 
+					// exp(length * L) . aux  -> aux
+					for(k=0; k<nstate; k++)	{
+						aux[k] *= expdiag[k];
+					}
+
 					// P . aux -> down
+					for(k=0; k<nstate; k++)	{
+						down[k] = 0.0;
+					}
+					for(l=0; l<nstate; l++)	{
+						const double x = aux[l];
+						const double* col = eigenvect_t + l*nstate;
+						for(k=0; k<nstate; k++)	{
+							down[k] += col[k] * x;
+						}
+					}
 					bool isnan = false;
 					for(k=0; k<nstate; k++)	{
-						const double* eig = eigenvect[k];
-						double tot = 0.0;
-						for(l=0; l<nstate; l++)	{
-							tot += eig[l] * aux[l];
-						}
-						if (std::isnan(tot))	{
+						if (std::isnan(down[k]))	{
 							isnan = true;
 						}
-						down[k] = tot;
 					}
 
 					// exit in case of numerical errors

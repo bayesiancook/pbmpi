@@ -69,6 +69,9 @@ void SubMatrix::Create()	{
 		invu[i] = new double[Nstate];
 	}
 
+	ut = new double[Nstate*Nstate];
+	invut = new double[Nstate*Nstate];
+
 	v = new double[Nstate];
 	vi = new double[Nstate];
 
@@ -111,6 +114,8 @@ SubMatrix::~SubMatrix()	{
 	delete[] Q;
 	delete[] u;
 	delete[] invu;
+	delete[] ut;
+	delete[] invut;
 
 	if (mPow)	{
 		for (int n=0; n<UniSubNmax; n++)	{
@@ -295,6 +300,13 @@ int SubMatrix::Diagonalise()	{
 		CheckReversibility();
 		ToStream(cerr);
 		exit(1);
+	}
+
+	for (int k=0; k<Nstate; k++)	{
+		for (int l=0; l<Nstate; l++)	{
+			ut[l*Nstate + k] = u[k][l];
+			invut[l*Nstate + k] = invu[k][l];
+		}
 	}
 
 	diagflag = true;
