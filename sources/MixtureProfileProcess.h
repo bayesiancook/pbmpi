@@ -205,6 +205,10 @@ class MixtureProfileProcess: public virtual ProfileProcess	{
 	std::vector<double> logprofilecache;
 	int logprofilecachesize;
 
+	double CachedLogGamma(int slot, double x);
+	std::vector<double> loggammakey;
+	std::vector<double> loggammaval;
+
 	double** profile;
 	double* allocprofile;
 	double* dirweight;
