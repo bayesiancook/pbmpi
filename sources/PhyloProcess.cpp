@@ -583,40 +583,19 @@ double PhyloProcess::MoveTopo(int spr, int nni){
 }
 
 double PhyloProcess::GibbsSPR(int nrep)	{
-	// useless, assuming that preceding move maintains conditinal likelihoods correctly updated
-	GlobalUpdateConditionalLikelihoods();
-	/*
-	GlobalComputeNodeLikelihood(GetRoot()->Next());
-	if (logL >  -2000)	{
-		cerr << "error before gibbs\n";
-		exit(1);
+
+	// Each call to GibbsSPR() below starts (GlobalRootAtRandom) and ends with a complete
+	// update of the conditional likelihoods. So there is no need for an additional update
+	// before or after the series: it would recompute exactly the same thing.
+	if (nrep <= 0)	{
+		GlobalUpdateConditionalLikelihoods();
+		return 0;
 	}
-	*/
 
 	double naccepted = 0;
 	for (int rep=0; rep<nrep; rep++)	{
 		naccepted += GibbsSPR();
 	}
-	// necessary, assuming that following move assumes likelihoods are updated
-	/*
-	GlobalComputeNodeLikelihood(GetRoot()->Next());
-	if (logL >  -2000)	{
-		cerr << "error after gibbs\n";
-		exit(1);
-	}
-	*/
-
-	/*
-	MPI_Status stat;
-	MESSAGE signal = BCAST_TREE;
-	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
-	GlobalBroadcastTree();
-	*/
-	
-	GlobalUpdateConditionalLikelihoods();
-
-
-
 	return naccepted / nrep;
 }
 
