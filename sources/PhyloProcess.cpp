@@ -177,6 +177,60 @@ void PhyloProcess::UpdateConditionalLikelihoods()	{
 	PreOrderPruning(GetRoot(),condlmap[0]);
 }
 
+// see GlobalPartialUpdateConditionalLikelihoods
+void PhyloProcess::PartialUpdateConditionalLikelihoods(const Node* target)	{
+
+	vector<char> mark(GetNnode(),0);
+	if (! MarkAncestors(GetRoot(),target,mark))	{
+		// target not found: should not happen, but a complete update is always correct
+		UpdateConditionalLikelihoods();
+		return;
+	}
+	PartialPostOrderPruning(GetRoot(),condlmap[0],mark);
+	MultiplyByStationaries(condlmap[0]);
+	ComputeLikelihood(condlmap[0]);
+	PreOrderPruning(GetRoot(),condlmap[0]);
+}
+
+// mark[node index] = 1 for the target node and for all its ancestors
+bool PhyloProcess::MarkAncestors(const Link* from, const Node* target, vector<char>& mark)	{
+	bool found = (from->GetNode() == target);
+	for (const Link* link=from->Next(); link!=from; link=link->Next())	{
+		if (MarkAncestors(link->Out(),target,mark))	{
+			found = true;
+		}
+	}
+	int index = from->GetNode()->GetIndex();
+	if ((index < 0) || (index >= (int) mark.size()))	{
+		cerr << "error in PhyloProcess::MarkAncestors: node index out of range\n";
+		exit(1);
+	}
+	mark[index] = found;
+	return found;
+}
+
+// same as PostOrderPruning, but only for marked nodes (called on marked nodes only):
+// the vectors sent by the subtrees hanging below non-marked nodes are assumed to be up to date
+void PhyloProcess::PartialPostOrderPruning(const Link* from, double*** aux, const vector<char>& mark)	{
+
+	if (from->isLeaf())	{
+		Initialize(aux,GetData(from));
+	}
+	else	{
+		for (const Link* link=from->Next(); link!=from; link=link->Next())	{
+			if (mark[link->Out()->GetNode()->GetIndex()])	{
+				PartialPostOrderPruning(link->Out(),aux,mark);
+				Propagate(aux,GetConditionalLikelihoodVector(link),GetLength(link->GetBranch()));
+			}
+		}
+		Reset(aux);
+		for (const Link* link=from->Next(); link!=from; link=link->Next())	{
+			Multiply(GetConditionalLikelihoodVector(link),aux);
+		}
+		Offset(aux);
+	}
+}
+
 // post-order pass only: sufficient for computing the likelihood at the root
 // and for Collapse() (rate allocations, node states, substitution mappings)
 void PhyloProcess::PostOrderUpdateConditionalLikelihoods()	{
@@ -594,16 +648,17 @@ double PhyloProcess::GibbsSPR(int nrep)	{
 
 	double naccepted = 0;
 	for (int rep=0; rep<nrep; rep++)	{
-		naccepted += GibbsSPR();
+		// after a first call, the conditional likelihoods are up to date, which allows for partial updates
+		naccepted += GibbsSPR(rep > 0);
 	}
 	return naccepted / nrep;
 }
 
-int PhyloProcess::GibbsSPR()	{
+int PhyloProcess::GibbsSPR(bool uptodate)	{
 
 	Link* up = 0;
 	Link* down = 0;
-	GlobalRootAtRandom();
+	GlobalRootAtRandom(uptodate);
 	GetTree()->DrawSubTree(down,up);
 
 	if (down->isRoot())	{
@@ -617,6 +672,15 @@ int PhyloProcess::GibbsSPR()	{
 	int sizebefore = GetTree()->GetSize();
 	int subtreesize = GetTree()->GetSize(down);
 
+	// the node to which the subtree is attached: after detaching the subtree,
+	// only that node and its ancestors have a different subtree hanging below them
+	Link* upperlink = 0;
+	for (Link* link=up->Out()->Next(); link!=up->Out(); link=link->Next())	{
+		if (! link->isRoot())	{
+			upperlink = link;
+		}
+	}
+
 	Link* fromdown = GlobalDetach(down,up);
 	
 	int sizeafter = GetTree()->GetSize();
@@ -626,7 +690,12 @@ int PhyloProcess::GibbsSPR()	{
 		exit(1);
 	}
 
-	GlobalUpdateConditionalLikelihoods();
+	if (upperlink)	{
+		GlobalPartialUpdateConditionalLikelihoods(upperlink);
+	}
+	else	{
+		GlobalUpdateConditionalLikelihoods();
+	}
 	
 	GlobalGibbsSPRScan(down,up,loglarray);
 	map<pair<Link*,Link*>, double> loglmap;
@@ -683,7 +752,9 @@ int PhyloProcess::GibbsSPR()	{
 		exit(1);
 	}
 	GlobalAttach(down,up,i->first.first,i->first.second);
-	GlobalUpdateConditionalLikelihoods();
+	// only the node at the base of the regrafted subtree (the node of up) and its ancestors
+	// have a different subtree hanging below them
+	GlobalPartialUpdateConditionalLikelihoods(up);
 	return accepted;
 }
 
@@ -1455,6 +1526,17 @@ void PhyloProcess::GlobalUpdateConditionalLikelihoods()	{
 	// GlobalCheckLikelihood();
 }
 
+void PhyloProcess::GlobalPartialUpdateConditionalLikelihoods(const Link* target)	{
+
+	assert(myid == 0);
+	MESSAGE signal = UPDATE_PARTIAL;
+	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+	int index = GetLinkIndex(target);
+	MPI_Bcast(&index,1,MPI_INT,0,MPI_COMM_WORLD);
+
+	GlobalComputeNodeLikelihood(GetRoot(),0);
+}
+
 Link* PhyloProcess::GlobalDetach(Link* down, Link* up)	{
 
 	// MPI
@@ -1483,7 +1565,7 @@ void PhyloProcess::GlobalAttach(Link* down, Link* up, Link* fromdown, Link* from
 	GetTree()->Attach(down,up,fromdown,fromup);
 }
 
-void PhyloProcess::GlobalRootAtRandom()	{
+void PhyloProcess::GlobalRootAtRandom(bool partialupdate)	{
 
 	//Link* newroot = GetTree()->ChooseLinkAtRandom();
 	// I have to do it this way because GetLink returns a const Link pointer, 
@@ -1506,9 +1588,17 @@ void PhyloProcess::GlobalRootAtRandom()	{
 		cerr << "error : root at leaf\n";
 		exit(1);
 	}
+	// a link of the node currently at the root
+	Link* oldrootlink = GetRoot()->Next();
 	GetTree()->RootAt(newroot);
-	GlobalUpdateConditionalLikelihoods();	
-	
+	if (partialupdate)	{
+		// the post-order vectors that depend on the position of the root
+		// are those of the nodes between the new and the old root
+		GlobalPartialUpdateConditionalLikelihoods(oldrootlink);
+	}
+	else	{
+		GlobalUpdateConditionalLikelihoods();
+	}
 }
 
 
@@ -1670,6 +1760,10 @@ void PhyloProcess::SlaveExecute(MESSAGE signal)	{
 		break;
 	case 	UPDATE:
 		UpdateConditionalLikelihoods();
+		break;
+	case 	UPDATE_PARTIAL:
+		MPI_Bcast(&n,1,MPI_INT,0,MPI_COMM_WORLD);
+		PartialUpdateConditionalLikelihoods(GetLinkForGibbs(n)->GetNode());
 		break;
 	case 	UPDATE_POSTORDER:
 		PostOrderUpdateConditionalLikelihoods();
