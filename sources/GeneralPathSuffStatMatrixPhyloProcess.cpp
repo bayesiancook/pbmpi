@@ -45,7 +45,9 @@ void GeneralPathSuffStatMatrixPhyloProcess::Unfold()	{
 	CreateCondSiteLogL();
 	CreateConditionalLikelihoods();
 
-	UpdateConditionalLikelihoods();
+	if (unfoldupdate)	{
+		UpdateConditionalLikelihoods();
+	}
 }
 
 void GeneralPathSuffStatMatrixPhyloProcess::Collapse()	{

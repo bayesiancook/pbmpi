@@ -197,6 +197,16 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	const TaxonSet* GetTaxonSet() const {return data->GetTaxonSet();}
 
 	void GlobalUpdateConditionalLikelihoods();
+
+	// Same result as GlobalUpdateConditionalLikelihoods(), at a lower cost, in the following situation:
+	// all conditional likelihoods were up to date, and then the tree was modified (re-rooting, detaching or
+	// attaching a subtree) in such a way that the only post-order vectors that have changed are those of
+	// the nodes whose subtree contains the node of 'target' (i.e. that node and its ancestors).
+	// Only those are recomputed in the post-order pass (the pre-order pass is done entirely).
+	void GlobalPartialUpdateConditionalLikelihoods(const Link* target);
+	void PartialUpdateConditionalLikelihoods(const Node* target);
+	bool MarkAncestors(const Link* from, const Node* target, vector<char>& mark);
+	void PartialPostOrderPruning(const Link* from, double*** aux, const vector<char>& mark);
 	double GlobalComputeNodeLikelihood(const Link* from, int auxindex = -1);
 
     /*
@@ -413,6 +423,16 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	virtual void GlobalUnfold();
 	virtual void GlobalCollapse();
 
+	// Same as GlobalUnfold(), for the case where the very next operation is GlobalCollapse().
+	// Collapse only reads the post-order conditional likelihoods (the pre-order ones are
+	// overwritten while sampling node states), so the pre-order pruning pass is skipped.
+	// Must not be used if anything else (branch length, topology moves...) comes before the next collapse.
+	void GlobalUnfoldBeforeCollapse()	{
+		postorderunfold = true;
+		GlobalUnfold();
+		postorderunfold = false;
+	}
+
     void GlobalResetAllConditionalLikelihoods();
     void SlaveResetAllConditionalLikelihoods();
 
@@ -425,7 +445,8 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	double GlobalProposeMove(const Branch* branch, double tuning);
 	void GlobalRestore(const Branch* branch);
 
-	void GlobalRootAtRandom();
+	// if partialupdate is true: assumes that all conditional likelihoods are up to date when called
+	void GlobalRootAtRandom(bool partialupdate = false);
 	Link* GlobalDetach(Link* down, Link* up);
 	// void GlobalDetach(Link* down, Link* up);
 	void GlobalAttach(Link* down, Link* up, Link* fromdown, Link* fromup);
@@ -481,7 +502,8 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 
 
 
-	int GibbsSPR();
+	// uptodate: all conditional likelihoods are known to be up to date when called
+	int GibbsSPR(bool uptodate);
 	// double GibbsSPR();
 	void GlobalGibbsSPRScan(Link* down, Link* up, double* loglarray);
 	void RecursiveGibbsSPRScan(Link* from, Link* fromup, Link* down, Link* up, double* loglarray, int& n);
@@ -534,6 +556,7 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	void CreateConditionalLikelihoods();
 	void DeleteConditionalLikelihoods();
 	virtual void UpdateConditionalLikelihoods();
+	void PostOrderUpdateConditionalLikelihoods();
 
 	double*** GetConditionalLikelihoodVector(const Link* link)	{
 		return condlmap[GetLinkIndex(link)];
@@ -594,6 +617,12 @@ class PhyloProcess : public virtual SubstitutionProcess, public virtual BranchPr
 	virtual int GetMyid() {
 		return myid;
 	}
+
+	// slave: if false, Unfold() allocates the conditional likelihoods but does not compute them
+	// (the master always sends an explicit update right after the UNFOLD message)
+	bool unfoldupdate = true;
+	// master: if true, the update sent after UNFOLD is restricted to the post-order pass
+	bool postorderunfold = false;
 
 	double*** sitecondlmap;
 	double**** condlmap;

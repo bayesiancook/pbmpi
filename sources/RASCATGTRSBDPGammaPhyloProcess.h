@@ -319,7 +319,13 @@ class RASCATGTRSBDPGammaPhyloProcess : public virtual ExpoConjugateGTRPhyloProce
 				LengthRelRateMove(0.01,10);
 			}
 
-			GlobalUnfold();
+			// only the last unfold is followed by branch length / topology moves
+			if (rep < 4)	{
+				GlobalUnfoldBeforeCollapse();
+			}
+			else	{
+				GlobalUnfold();
+			}
 		}
 
 		chronototal.Stop();

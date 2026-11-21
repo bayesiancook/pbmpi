@@ -282,7 +282,13 @@ class RASCATSBDPGammaPhyloProcess : public virtual RASCATGammaPhyloProcess, publ
 			}
 			GlobalUpdateParameters();
 
-			GlobalUnfold();
+			// only the last unfold is followed by branch length / topology moves
+			if (rep < 4)	{
+				GlobalUnfoldBeforeCollapse();
+			}
+			else	{
+				GlobalUnfold();
+			}
 		}
 		chronototal.Stop();
 

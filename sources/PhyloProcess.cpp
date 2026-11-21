@@ -41,7 +41,9 @@ void PhyloProcess::Unfold()	{
 	ActivateSumOverRateAllocations();
 	CreateCondSiteLogL();
 	CreateConditionalLikelihoods();
-	UpdateConditionalLikelihoods();
+	if (unfoldupdate)	{
+		UpdateConditionalLikelihoods();
+	}
 }
 
 void PhyloProcess::Collapse()	{
@@ -173,6 +175,68 @@ void PhyloProcess::UpdateConditionalLikelihoods()	{
 	ComputeLikelihood(condlmap[0]);
 
 	PreOrderPruning(GetRoot(),condlmap[0]);
+}
+
+// see GlobalPartialUpdateConditionalLikelihoods
+void PhyloProcess::PartialUpdateConditionalLikelihoods(const Node* target)	{
+
+	vector<char> mark(GetNnode(),0);
+	if (! MarkAncestors(GetRoot(),target,mark))	{
+		// target not found: should not happen, but a complete update is always correct
+		UpdateConditionalLikelihoods();
+		return;
+	}
+	PartialPostOrderPruning(GetRoot(),condlmap[0],mark);
+	MultiplyByStationaries(condlmap[0]);
+	ComputeLikelihood(condlmap[0]);
+	PreOrderPruning(GetRoot(),condlmap[0]);
+}
+
+// mark[node index] = 1 for the target node and for all its ancestors
+bool PhyloProcess::MarkAncestors(const Link* from, const Node* target, vector<char>& mark)	{
+	bool found = (from->GetNode() == target);
+	for (const Link* link=from->Next(); link!=from; link=link->Next())	{
+		if (MarkAncestors(link->Out(),target,mark))	{
+			found = true;
+		}
+	}
+	int index = from->GetNode()->GetIndex();
+	if ((index < 0) || (index >= (int) mark.size()))	{
+		cerr << "error in PhyloProcess::MarkAncestors: node index out of range\n";
+		exit(1);
+	}
+	mark[index] = found;
+	return found;
+}
+
+// same as PostOrderPruning, but only for marked nodes (called on marked nodes only):
+// the vectors sent by the subtrees hanging below non-marked nodes are assumed to be up to date
+void PhyloProcess::PartialPostOrderPruning(const Link* from, double*** aux, const vector<char>& mark)	{
+
+	if (from->isLeaf())	{
+		Initialize(aux,GetData(from));
+	}
+	else	{
+		for (const Link* link=from->Next(); link!=from; link=link->Next())	{
+			if (mark[link->Out()->GetNode()->GetIndex()])	{
+				PartialPostOrderPruning(link->Out(),aux,mark);
+				Propagate(aux,GetConditionalLikelihoodVector(link),GetLength(link->GetBranch()));
+			}
+		}
+		Reset(aux);
+		for (const Link* link=from->Next(); link!=from; link=link->Next())	{
+			Multiply(GetConditionalLikelihoodVector(link),aux);
+		}
+		Offset(aux);
+	}
+}
+
+// post-order pass only: sufficient for computing the likelihood at the root
+// and for Collapse() (rate allocations, node states, substitution mappings)
+void PhyloProcess::PostOrderUpdateConditionalLikelihoods()	{
+	PostOrderPruning(GetRoot(),condlmap[0]);
+	MultiplyByStationaries(condlmap[0]);
+	ComputeLikelihood(condlmap[0]);
 }
 
 void PhyloProcess::GlobalCheckLikelihood()	{
@@ -573,48 +637,29 @@ double PhyloProcess::MoveTopo(int spr, int nni){
 }
 
 double PhyloProcess::GibbsSPR(int nrep)	{
-	// useless, assuming that preceding move maintains conditinal likelihoods correctly updated
-	GlobalUpdateConditionalLikelihoods();
-	/*
-	GlobalComputeNodeLikelihood(GetRoot()->Next());
-	if (logL >  -2000)	{
-		cerr << "error before gibbs\n";
-		exit(1);
+
+	// Each call to GibbsSPR() below starts with a complete update of the conditional
+	// likelihoods (GlobalRootAtRandom) and keeps them up to date with partial updates
+	// after detaching and attaching. So there is no need for an additional complete
+	// update before or after the series.
+	if (nrep <= 0)	{
+		GlobalUpdateConditionalLikelihoods();
+		return 0;
 	}
-	*/
 
 	double naccepted = 0;
 	for (int rep=0; rep<nrep; rep++)	{
-		naccepted += GibbsSPR();
+		// after a first call, the conditional likelihoods are up to date, which allows for partial updates
+		naccepted += GibbsSPR(rep > 0);
 	}
-	// necessary, assuming that following move assumes likelihoods are updated
-	/*
-	GlobalComputeNodeLikelihood(GetRoot()->Next());
-	if (logL >  -2000)	{
-		cerr << "error after gibbs\n";
-		exit(1);
-	}
-	*/
-
-	/*
-	MPI_Status stat;
-	MESSAGE signal = BCAST_TREE;
-	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
-	GlobalBroadcastTree();
-	*/
-	
-	GlobalUpdateConditionalLikelihoods();
-
-
-
 	return naccepted / nrep;
 }
 
-int PhyloProcess::GibbsSPR()	{
+int PhyloProcess::GibbsSPR(bool uptodate)	{
 
 	Link* up = 0;
 	Link* down = 0;
-	GlobalRootAtRandom();
+	GlobalRootAtRandom(uptodate);
 	GetTree()->DrawSubTree(down,up);
 
 	if (down->isRoot())	{
@@ -628,6 +673,15 @@ int PhyloProcess::GibbsSPR()	{
 	int sizebefore = GetTree()->GetSize();
 	int subtreesize = GetTree()->GetSize(down);
 
+	// the node to which the subtree is attached: after detaching the subtree,
+	// only that node and its ancestors have a different subtree hanging below them
+	Link* upperlink = 0;
+	for (Link* link=up->Out()->Next(); link!=up->Out(); link=link->Next())	{
+		if (! link->isRoot())	{
+			upperlink = link;
+		}
+	}
+
 	Link* fromdown = GlobalDetach(down,up);
 	
 	int sizeafter = GetTree()->GetSize();
@@ -637,7 +691,12 @@ int PhyloProcess::GibbsSPR()	{
 		exit(1);
 	}
 
-	GlobalUpdateConditionalLikelihoods();
+	if (upperlink)	{
+		GlobalPartialUpdateConditionalLikelihoods(upperlink);
+	}
+	else	{
+		GlobalUpdateConditionalLikelihoods();
+	}
 	
 	GlobalGibbsSPRScan(down,up,loglarray);
 	map<pair<Link*,Link*>, double> loglmap;
@@ -694,7 +753,9 @@ int PhyloProcess::GibbsSPR()	{
 		exit(1);
 	}
 	GlobalAttach(down,up,i->first.first,i->first.second);
-	GlobalUpdateConditionalLikelihoods();
+	// only the node at the base of the regrafted subtree (the node of up) and its ancestors
+	// have a different subtree hanging below them
+	GlobalPartialUpdateConditionalLikelihoods(up);
 	return accepted;
 }
 
@@ -1459,11 +1520,22 @@ void PhyloProcess::GlobalUpdateConditionalLikelihoods()	{
 	// MPI
 	// just send Updateconlikelihood message to all slaves
 	assert(myid == 0);
-	MESSAGE signal = UPDATE;
+	MESSAGE signal = postorderunfold ? UPDATE_POSTORDER : UPDATE;
 	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
 
 	GlobalComputeNodeLikelihood(GetRoot(),0);
 	// GlobalCheckLikelihood();
+}
+
+void PhyloProcess::GlobalPartialUpdateConditionalLikelihoods(const Link* target)	{
+
+	assert(myid == 0);
+	MESSAGE signal = UPDATE_PARTIAL;
+	MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+	int index = GetLinkIndex(target);
+	MPI_Bcast(&index,1,MPI_INT,0,MPI_COMM_WORLD);
+
+	GlobalComputeNodeLikelihood(GetRoot(),0);
 }
 
 Link* PhyloProcess::GlobalDetach(Link* down, Link* up)	{
@@ -1494,7 +1566,7 @@ void PhyloProcess::GlobalAttach(Link* down, Link* up, Link* fromdown, Link* from
 	GetTree()->Attach(down,up,fromdown,fromup);
 }
 
-void PhyloProcess::GlobalRootAtRandom()	{
+void PhyloProcess::GlobalRootAtRandom(bool partialupdate)	{
 
 	//Link* newroot = GetTree()->ChooseLinkAtRandom();
 	// I have to do it this way because GetLink returns a const Link pointer, 
@@ -1517,9 +1589,17 @@ void PhyloProcess::GlobalRootAtRandom()	{
 		cerr << "error : root at leaf\n";
 		exit(1);
 	}
+	// a link of the node currently at the root
+	Link* oldrootlink = GetRoot()->Next();
 	GetTree()->RootAt(newroot);
-	GlobalUpdateConditionalLikelihoods();	
-	
+	if (partialupdate)	{
+		// the post-order vectors that depend on the position of the root
+		// are those of the nodes between the new and the old root
+		GlobalPartialUpdateConditionalLikelihoods(oldrootlink);
+	}
+	else	{
+		GlobalUpdateConditionalLikelihoods();
+	}
 }
 
 
@@ -1564,6 +1644,64 @@ void PhyloProcess::GlobalGibbsSPRScan(Link* down, Link* up, double* loglarray)  
 // MPI: slave execute fonction
 // waits for messages
 // and call SlaveExecute();
+#ifdef PB_MPI_STATS
+// Diagnostic build (make ARCHFLAGS=-DPB_MPI_STATS): each slave records, for each type of message
+// received from the master, the number of messages, the time spent executing them, and the time
+// spent idle (waiting for the next message) after having executed them.
+// Written upon normal termination into mpistats.<rank>.txt, in the current directory.
+static const char* pb_message_names = "KILL,SCAN,UPDATE_RATE,UPDATE_RRATE,UPDATE_BLENGTH,UPDATE_SRATE,UPDATE_SPROFILE,PARAMETER_DIFFUSION,UNFOLD,COLLAPSE,LIKELIHOOD,RESET,RESETALL,MULTIPLY,SMULTIPLY,INITIALIZE,PROPAGATE,PROPOSE,RESTORE,UPDATE,DETACH,ATTACH,NNI,KNIT,BRANCHPROPAGATE,ROOT,REALLOC_MOVE,PROFILE_MOVE,MIX_MOVE,REALLOC_DONE,GIVEMEMORE,BCAST_TREE,UNCLAMP,SETDATA,SETNODESTATES,CVSCORE,SETTESTDATA,GENE_MOVE,SAMPLE,LENGTH,ALPHA,SAVETREES,LENGTHFACTOR,FROMSTREAM,TOSTREAM,SITELOGL,STEPPINGSITELOGL,FULLSITELOGL,RESTOREDATA,WRITE_MAPPING,NONSYNMAPPING,COUNTMAPPING,SITERATE,SIMULATE,SETRATEPRIOR,SETPROFILEPRIOR,SETROOTPRIOR,STATEPOSTPROBS,SITELOGLCUTOFF,SITELOGCV,PREPARESTEPPING,SETSTEPPINGFRAC,EMPIRICALFRAC,EMPIRICALPRIOR,CREATESITE,DELETESITE,UPDATE_POSTORDER,UPDATE_PARTIAL";
+
+void PhyloProcess::WaitLoop()	{
+	const int nmax = 128;
+	long count[nmax];
+	double exectime[nmax];
+	double waitafter[nmax];
+	for (int i=0; i<nmax; i++)	{
+		count[i] = 0;
+		exectime[i] = 0;
+		waitafter[i] = 0;
+	}
+	MESSAGE signal;
+	int previous = -1;
+	double t0 = MPI_Wtime();
+	double start = t0;
+	do {
+		MPI_Bcast(&signal,1,MPI_INT,0,MPI_COMM_WORLD);
+		double t1 = MPI_Wtime();
+		if ((previous >= 0) && (previous < nmax))	{
+			waitafter[previous] += t1 - t0;
+		}
+		if (signal == KILL) break;
+		SlaveExecute(signal);
+		t0 = MPI_Wtime();
+		if ((signal >= 0) && (signal < nmax))	{
+			count[signal]++;
+			exectime[signal] += t0 - t1;
+		}
+		previous = signal;
+	} while(true);
+	double total = MPI_Wtime() - start;
+	stringstream fname;
+	fname << "mpistats." << GetMyid() << ".txt";
+	ofstream os(fname.str().c_str());
+	os << "#message\tcount\texec_s\twait_after_s\texec_%\twait_after_%\n";
+	stringstream names(pb_message_names);
+	string messagename;
+	double totexec = 0;
+	double totwait = 0;
+	for (int i=0; i<nmax; i++)	{
+		if (! getline(names,messagename,','))	{
+			messagename = "?";
+		}
+		if (count[i])	{
+			os << messagename << '\t' << count[i] << '\t' << exectime[i] << '\t' << waitafter[i] << '\t' << 100*exectime[i]/total << '\t' << 100*waitafter[i]/total << '\n';
+			totexec += exectime[i];
+			totwait += waitafter[i];
+		}
+	}
+	os << "TOTAL\t-\t" << totexec << '\t' << totwait << '\t' << 100*totexec/total << '\t' << 100*totwait/total << '\n';
+}
+#else
 void PhyloProcess::WaitLoop()	{
 	MESSAGE signal;
 	do {
@@ -1572,6 +1710,7 @@ void PhyloProcess::WaitLoop()	{
 		SlaveExecute(signal);
 	} while(true);
 }
+#endif
 
 // MPI: slave execute fonction
 // waits for messages
@@ -1670,13 +1809,24 @@ void PhyloProcess::SlaveExecute(MESSAGE signal)	{
 		PropagateOverABranch(GetLinkForGibbs(arg[0]));
 		break;
 	case UNFOLD:
+		// the master always follows UNFOLD with UPDATE (or UPDATE_POSTORDER):
+		// computing the conditional likelihoods here as well would do the work twice
+		unfoldupdate = false;
 		Unfold();
+		unfoldupdate = true;
 		break;
 	case COLLAPSE:
 		Collapse();
 		break;
 	case 	UPDATE:
 		UpdateConditionalLikelihoods();
+		break;
+	case 	UPDATE_PARTIAL:
+		MPI_Bcast(&n,1,MPI_INT,0,MPI_COMM_WORLD);
+		PartialUpdateConditionalLikelihoods(GetLinkForGibbs(n)->GetNode());
+		break;
+	case 	UPDATE_POSTORDER:
+		PostOrderUpdateConditionalLikelihoods();
 		break;
 	case UPDATE_SRATE:
 		SlaveUpdateSiteRateSuffStat();
