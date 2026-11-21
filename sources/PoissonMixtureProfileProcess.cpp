@@ -105,8 +105,16 @@ double PoissonMixtureProfileProcess::DiffLogSampling(int cat, int site)	{
 double PoissonMixtureProfileProcess::LogStatProb(int site, int cat)	{
 	const int* nsub = GetSiteProfileSuffStatCount(site);
 	double total = 0;
-	for (int k=0; k<GetDim(); k++)	{
-		total += nsub[k] * log(profile[cat][k]);
+	const double* logpi = GetCachedLogProfile(cat);
+	if (logpi)	{
+		for (int k=0; k<GetDim(); k++)	{
+			total += nsub[k] * logpi[k];
+		}
+	}
+	else	{
+		for (int k=0; k<GetDim(); k++)	{
+			total += nsub[k] * log(profile[cat][k]);
+		}
 	}
 	return total;
 }

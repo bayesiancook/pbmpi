@@ -90,6 +90,9 @@ double MatrixFiniteProfileProcess::SlaveIncrementalFiniteMove()	{
 		// receive weights sent by master
 		MPI_Bcast(weight,Ncomponent,MPI_DOUBLE,0,MPI_COMM_WORLD);
 
+		// profiles do not change during the reallocation move
+		PrepareLogProfileCache(Ncomponent);
+
 		// do the incremental reallocation move on my site range
 		for (int site=GetSiteMin(); site<GetSiteMax(); site++)	{
 
@@ -128,6 +131,8 @@ double MatrixFiniteProfileProcess::SlaveIncrementalFiniteMove()	{
 			}
 			alloc[site] = mode;
 		}
+
+		ReleaseLogProfileCache();
 
 		// send new allocations to master
 		MPI_Send(alloc,GetNsite(),MPI_INT,0,TAG1,MPI_COMM_WORLD);

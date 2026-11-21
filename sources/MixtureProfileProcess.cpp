@@ -256,14 +256,40 @@ double MixtureProfileProcess::LogStatPrior()	{
 	return total;
 }
 
+// logGamma(x), remembering the last value computed for a given slot
+// (slots 0..dim-1: dirweight[k]; slot dim: sum of the weights).
+// LogStatPrior(cat) is typically called for all components in turn with the same weights:
+// the log gamma terms are then the same for all of them.
+double MixtureProfileProcess::CachedLogGamma(int slot, double x)	{
+	if ((int) loggammakey.size() != GetDim() + 1)	{
+		loggammakey.assign(GetDim() + 1, -1.0);
+		loggammaval.assign(GetDim() + 1, 0.0);
+	}
+	if (loggammakey[slot] != x)	{
+		loggammaval[slot] = rnd::GetRandom().logGamma(x);
+		loggammakey[slot] = x;
+	}
+	return loggammaval[slot];
+}
+
 double MixtureProfileProcess::LogStatPrior(int cat)	{
 	double total = 0;
 	double totalweight = 0;
-	for (int k=0; k<GetDim(); k++)	{
-		total += (dirweight[k] - 1) * log(profile[cat][k]) - rnd::GetRandom().logGamma(dirweight[k]);
-		totalweight += dirweight[k];
+	// same terms, added in the same order, with or without the caches
+	const double* logpi = GetCachedLogProfile(cat);
+	if (logpi)	{
+		for (int k=0; k<GetDim(); k++)	{
+			total += (dirweight[k] - 1) * logpi[k] - CachedLogGamma(k,dirweight[k]);
+			totalweight += dirweight[k];
+		}
 	}
-	total += rnd::GetRandom().logGamma(totalweight);
+	else	{
+		for (int k=0; k<GetDim(); k++)	{
+			total += (dirweight[k] - 1) * log(profile[cat][k]) - CachedLogGamma(k,dirweight[k]);
+			totalweight += dirweight[k];
+		}
+	}
+	total += CachedLogGamma(GetDim(),totalweight);
 	logstatprior[cat] = total;
 	return total;
 }
@@ -304,6 +330,9 @@ double MixtureProfileProcess::ProfileSuffStatLogProb()	{
 
 double MixtureProfileProcess::MoveDirWeights(double tuning, int nrep)	{
 	double naccepted = 0;
+	// the profiles do not change during this move (only the weights of their prior):
+	// their logarithms, needed by LogStatPrior, are computed once
+	PrepareLogProfileCache(GetNcomponent());
 	for (int rep=0; rep<nrep; rep++)	{
 		for (int k=0; k<GetDim(); k++)	{
 			double deltalogprob = - LogHyperPrior() - LogStatPrior();
@@ -321,6 +350,7 @@ double MixtureProfileProcess::MoveDirWeights(double tuning, int nrep)	{
 			}
 		}
 	}
+	ReleaseLogProfileCache();
 	ResampleEmptyProfiles();
 	return naccepted / nrep / GetDim();
 }

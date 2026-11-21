@@ -469,9 +469,13 @@ class Model	{
                     pretotlogp1 += delta;
                     pretotlogp2 += delta*delta;
                     if ((!premaxlogp) || (premaxlogp < delta))    {
-                        pretotp1 *= exp(premaxlogp-delta);
+                        // rescale the running sums to the new maximum. While they are empty there is nothing
+                        // to rescale, and 0 * exp(large) would give nan when the first delta is very negative
+                        if (pretotp1 != 0.0)    {
+                            pretotp1 *= exp(premaxlogp-delta);
+                            pretotp2 *= exp(2*(premaxlogp-delta));
+                        }
                         pretotp1 += 1.0;
-                        pretotp2 *= exp(2*(premaxlogp-delta));
                         pretotp2 += 1.0;
                         premaxlogp = delta;
                     }
@@ -536,9 +540,13 @@ class Model	{
                 totlogp1 += delta;
                 totlogp2 += delta*delta;
                 if ((!maxlogp) || (maxlogp < delta))    {
-                    totp1 *= exp(maxlogp-delta);
+                    // rescale the running sums to the new maximum. While they are empty there is nothing
+                    // to rescale, and 0 * exp(large) would give nan when the first delta is very negative
+                    if (totp1 != 0.0)    {
+                        totp1 *= exp(maxlogp-delta);
+                        totp2 *= exp(2*(maxlogp-delta));
+                    }
                     totp1 += 1.0;
-                    totp2 *= exp(2*(maxlogp-delta));
                     totp2 += 1.0;
                     maxlogp = delta;
                 }
