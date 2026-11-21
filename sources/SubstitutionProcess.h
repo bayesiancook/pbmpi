@@ -136,6 +136,14 @@ class SubstitutionProcess : public virtual RateProcess, public virtual ProfilePr
 	// implemented in GTR or POisson Substitution process
 	virtual void Propagate(double*** from, double*** to, double time, bool condalloc = false) = 0;
 
+	// Same as Propagate, for the case where 'from' has just been set by Initialize(from,state,condalloc),
+	// i.e. it is the conditional likelihood vector of a leaf whose observed states are in 'state'.
+	// Subclasses can override this to take advantage of the fact that the vector is then either
+	// a unit vector (observed state) or all ones (missing data). Must give the same result as Propagate.
+	virtual void PropagateFromLeaf(const int* state, double*** from, double*** to, double time, bool condalloc = false)	{
+		Propagate(from,to,time,condalloc);
+	}
+
 	virtual void SimuPropagate(int* stateup, int* statedown, double time) = 0;
 
 	// CPU : level 1

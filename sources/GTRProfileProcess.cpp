@@ -32,6 +32,14 @@ void GTRProfileProcess::Create(int innsite, int indim)	{
 		rr = new double[Nrr];
         emprralpha = new double[Nrr];
         emprrbeta = new double[Nrr];
+        // Gamma(1,1) is the ordinary prior on the relative rates. With these defaults, the
+        // empirical-prior formulas (a = f + (1-f)*emprralpha, b = f + (1-f)*emprrbeta) give
+        // the ordinary prior for any value of f when no empirical prior has been loaded,
+        // as is already the case for the Dirichlet weights, kappa and the branch lengths.
+        for (int i=0; i<Nrr; i++)   {
+            emprralpha[i] = 1.0;
+            emprrbeta[i] = 1.0;
+        }
 		SampleRR();
 	}
 }

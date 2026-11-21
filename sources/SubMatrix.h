@@ -111,6 +111,20 @@ class SubMatrix  	{
 	double* 		GetEigenVal();
 	double** 		GetEigenVect();
 	double** 		GetInvEigenVect();
+	// scratch fields for MatrixSubstitutionProcess::PropagateImpl: index of this matrix in the
+	// per-call cache of that function, valid when propstamp equals the stamp of the current call
+	unsigned long long	propstamp = 0;
+	int			propslot = 0;
+
+	// transposed, contiguous versions (see ut and invut below)
+	const double*		GetTransposedEigenVect()	{
+		if (! diagflag) Diagonalise();
+		return ut;
+	}
+	const double*		GetTransposedInvEigenVect()	{
+		if (! diagflag) Diagonalise();
+		return invut;
+	}
 
 
 	// uniformization resampling methods
@@ -174,6 +188,11 @@ class SubMatrix  	{
 
 	double ** u;
 	double ** invu;
+	// transposed copies of u and invu, in one block each: ut[l*Nstate + k] = u[k][l]
+	// (a column of u is then contiguous, which is what the matrix x vector products
+	// of the pruning algorithm need in order to be vectorized by the compiler)
+	double * ut;
+	double * invut;
 	double * v;
 	double * vi;
 
