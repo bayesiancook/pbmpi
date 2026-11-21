@@ -2,6 +2,8 @@ CC=mpic++
 # ARCHFLAGS: optional CPU-specific flags, e.g. "make ARCHFLAGS=-mavx2" on machines with AVX2.
 # Avoid flags that change floating point results (-ffast-math, or -mfma / -march=native
 # without -ffp-contract=off) unless you accept chains that differ from the reference build.
+# -DPB_NO_VECTOR_KERNEL (in ARCHFLAGS) builds the matrix Propagate kernel with plain loops instead of
+# the GCC/clang vector extensions. The result is the same; use it for other compilers or to compare.
 ARCHFLAGS=
 CPPFLAGS= -Wall -O3 -std=c++11 $(ARCHFLAGS)
 LDFLAGS= -O3
