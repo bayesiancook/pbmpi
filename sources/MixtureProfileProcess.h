@@ -26,7 +26,7 @@ class MixtureProfileProcess: public virtual ProfileProcess	{
 
 	public:
 
-	MixtureProfileProcess() : profile(0), logprofilecachesize(0) {}
+	MixtureProfileProcess() : logprofilecachesize(0), profile(0) {}
 	virtual ~MixtureProfileProcess(){}
 
 	double* GetProfile(int site)	{
